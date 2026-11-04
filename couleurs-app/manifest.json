@@ -1,0 +1,9 @@
+{
+  "name": "Tirage des Couleurs",
+  "short_name": "Couleurs",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f4fb",
+  "theme_color": "#5b3fa0",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tirage des Couleurs</title>
+<meta name="theme-color" content="#5b3fa0">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{
+  --bg:#f6f4fb; --surface:#ffffff; --text:#1d1830; --muted:#6b6580; --border:#e2ddef;
+  --accent:#5b3fa0; --accent-text:#ffffff; --danger:#b3261e; --chip:#efeaf9;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#14111c; --surface:#1f1a2b; --text:#eee9f9; --muted:#a49cbb; --border:#342c47;
+    --accent:#a58bf0; --accent-text:#14111c; --danger:#f2867d; --chip:#2a2339;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14111c; --surface:#1f1a2b; --text:#eee9f9; --muted:#a49cbb; --border:#342c47;
+  --accent:#a58bf0; --accent-text:#14111c; --danger:#f2867d; --chip:#2a2339;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 16px 8px;border-bottom:1px solid var(--border)}
+header h1{font-size:1.15rem;margin:0}
+main{max-width:720px;margin:0 auto;padding:16px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--surface);border-top:1px solid var(--border);
+  padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:10px 4px;font-size:.78rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button .ic{font-size:1.3rem;line-height:1}
+nav button.on{color:var(--accent);font-weight:600}
+section{display:none}
+section.on{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:1.05rem;margin:0 0 10px}
+h3{font-size:.95rem;margin:12px 0 4px;color:var(--accent)}
+label{display:block;font-size:.85rem;color:var(--muted);margin:8px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px}
+textarea{min-height:110px;resize:vertical}
+input[type=color]{padding:2px;height:44px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1;min-width:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:10px;padding:11px 14px;font:inherit;font-weight:600;
+  background:var(--accent);color:var(--accent-text);cursor:pointer}
+.btn.sec{background:var(--chip);color:var(--text)}
+.btn.danger{background:none;color:var(--danger);border:1px solid var(--danger)}
+.btn.sm{padding:7px 10px;font-size:.85rem}
+.bignum{font-size:2rem;text-align:center;font-weight:700;letter-spacing:.05em}
+.swatch{width:44px;height:44px;border-radius:10px;border:1px solid var(--border);flex:none}
+.swatch.lg{width:72px;height:72px;border-radius:14px}
+.muted{color:var(--muted);font-size:.88rem}
+.result .field{margin-top:10px}
+.result .field b{display:block;color:var(--accent);font-size:.85rem;text-transform:uppercase;letter-spacing:.04em}
+.result .field p{margin:2px 0 0;white-space:pre-wrap}
+.list .item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.list .item:last-child{border-bottom:0}
+.list .item .t{flex:1;min-width:0}
+.list .item .t small{display:block;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-size:.72rem;background:var(--chip);border-radius:99px;padding:2px 8px;color:var(--muted)}
+.video-wrap{position:relative;border-radius:14px;overflow:hidden;background:#000;aspect-ratio:3/4}
+.video-wrap video{width:100%;height:100%;object-fit:cover;display:block}
+.reticle{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border:3px solid #fff;border-radius:12px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
+.pos{border-left:4px solid var(--accent);padding-left:10px;margin:14px 0}
+.empty{text-align:center;color:var(--muted);padding:24px 8px}
+dialog{border:0;border-radius:16px;padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--surface);color:var(--text)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog .dbody{padding:16px;overflow:auto}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.9rem;opacity:0;transition:.25s;pointer-events:none;z-index:50}
+.toast.show{opacity:1}
+.progress{height:6px;background:var(--chip);border-radius:6px;overflow:hidden;margin-top:8px}
+.progress div{height:100%;width:0;background:var(--accent);transition:width .2s}
+</style>
+</head>
+<body>
+<header><h1>🎨 Tirage des Couleurs</h1></header>
+
+<main>
+<!-- ============ CONSULTER ============ -->
+<section id="tab-lookup" class="on">
+  <div class="card">
+    <h2>Numéro de la couleur</h2>
+    <input id="lk-num" class="bignum" inputmode="numeric" placeholder="ex. 12" autocomplete="off">
+    <label for="lk-spread">Lire pour le tirage</label>
+    <select id="lk-spread"></select>
+    <label for="lk-pos">Position dans le tirage</label>
+    <select id="lk-pos"></select>
+  </div>
+  <div id="lk-result"></div>
+</section>
+
+<!-- ============ TIRAGE ============ -->
+<section id="tab-draw">
+  <div class="card">
+    <h2>Nouveau tirage</h2>
+    <label for="dr-spread">Type de tirage</label>
+    <select id="dr-spread"></select>
+    <p class="muted" id="dr-desc"></p>
+    <div id="dr-positions"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sec" id="dr-clear">Effacer</button>
+      <button class="btn" id="dr-save">Garder dans l'historique</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Historique</h2>
+    <div id="dr-history" class="list"></div>
+  </div>
+</section>
+
+<!-- ============ SCANNER ============ -->
+<section id="tab-scan">
+  <div class="card">
+    <h2>Scanner une carte</h2>
+    <p class="muted">Place la couleur de la carte dans le carré, sous une lumière stable. Pour une bonne reconnaissance, calibre d'abord chaque carte (fiche de la carte → « Calibrer avec la caméra »).</p>
+    <div class="video-wrap"><video id="sc-video" playsinline muted></video><div class="reticle"></div></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sec" id="sc-start">Allumer la caméra</button>
+      <button class="btn" id="sc-shot">Analyser</button>
+    </div>
+    <canvas id="sc-canvas" hidden></canvas>
+  </div>
+  <div id="sc-result"></div>
+</section>
+
+<!-- ============ MES CARTES ============ -->
+<section id="tab-cards">
+  <div class="card">
+    <div class="row"><h2 style="margin:0">Mes cartes</h2><button class="btn sm" id="cd-add" style="flex:none">+ Ajouter</button></div>
+    <input id="cd-filter" placeholder="Rechercher (numéro, nom, texte)…" style="margin-top:10px">
+    <div id="cd-list" class="list"></div>
+  </div>
+</section>
+
+<!-- ============ RÉGLAGES ============ -->
+<section id="tab-settings">
+  <div class="card">
+    <h2>Rubriques de chaque carte</h2>
+    <p class="muted">Les rubriques que tu recopies depuis le livre pour chaque couleur (par défaut « Lumière » et « Matière »). Une par ligne.</p>
+    <textarea id="st-fields" style="min-height:80px"></textarea>
+    <button class="btn sm" id="st-fields-save" style="margin-top:8px">Enregistrer les rubriques</button>
+  </div>
+  <div class="card">
+    <div class="row"><h2 style="margin:0">Types de tirage</h2><button class="btn sm" id="st-spread-add" style="flex:none">+ Ajouter</button></div>
+    <p class="muted">Décris chaque tirage du livre : ses positions et la rubrique à lire pour chaque position.</p>
+    <div id="st-spreads" class="list"></div>
+  </div>
+  <div class="card">
+    <h2>Créer les cartes d'un coup</h2>
+    <div class="row">
+      <input id="st-gen-from" type="number" value="1" aria-label="De">
+      <input id="st-gen-to" type="number" value="50" aria-label="À">
+      <button class="btn sm" id="st-gen" style="flex:none">Créer</button>
+    </div>
+    <p class="muted">Crée les cartes vides numérotées (les numéros existants sont conservés).</p>
+  </div>
+  <div class="card">
+    <h2>Sauvegarde</h2>
+    <p class="muted">Tes données restent sur cet appareil. Exporte régulièrement un fichier de sauvegarde.</p>
+    <div class="row">
+      <button class="btn sec" id="st-export">Exporter</button>
+      <label class="btn sec" style="margin:0">Importer<input type="file" id="st-import" accept="application/json" hidden></label>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn danger sm" id="st-reset">Tout effacer</button>
+      <select id="st-theme" style="flex:none;width:auto"><option value="">Thème auto</option><option value="light">Clair</option><option value="dark">Sombre</option></select>
+    </div>
+  </div>
+</section>
+</main>
+
+<nav>
+  <button data-tab="lookup" class="on"><span class="ic">🔢</span>Consulter</button>
+  <button data-tab="draw"><span class="ic">🃏</span>Tirage</button>
+  <button data-tab="scan"><span class="ic">📷</span>Scanner</button>
+  <button data-tab="cards"><span class="ic">📚</span>Cartes</button>
+  <button data-tab="settings"><span class="ic">⚙️</span>Réglages</button>
+</nav>
+
+<!-- Fiche carte -->
+<dialog id="dlg-card"><div class="dbody">
+  <div class="row"><h2 style="margin:0" id="ce-title">Carte</h2><button class="btn sec sm" style="flex:none" data-close>Fermer</button></div>
+  <div class="row">
+    <div><label for="ce-num">Numéro</label><input id="ce-num" inputmode="numeric"></div>
+    <div><label for="ce-hex">Couleur</label><input id="ce-hex" type="color" value="#888888"></div>
+  </div>
+  <label for="ce-name">Nom de la couleur</label><input id="ce-name">
+  <div class="row" style="margin-top:10px">
+    <button class="btn sec sm" id="ce-calib">📷 Calibrer avec la caméra</button>
+    <span class="muted" id="ce-calib-state"></span>
+  </div>
+  <div class="card" style="margin-top:12px;background:var(--bg)">
+    <b>Remplir depuis une photo de la page</b>
+    <p class="muted">Photographie la page de ton livre : le texte est lu sur ton appareil, puis tu le répartis dans les rubriques.</p>
+    <label class="btn sec sm" style="margin:0">📄 Photo de la page<input type="file" id="ce-ocr" accept="image/*" capture="environment" hidden></label>
+    <div class="progress" id="ce-ocr-prog" hidden><div></div></div>
+    <textarea id="ce-ocr-text" hidden placeholder="Texte reconnu…"></textarea>
+    <p class="muted" id="ce-ocr-help" hidden>Sélectionne un passage puis touche une rubrique pour l'y ajouter.</p>
+    <div class="row" id="ce-ocr-btns"></div>
+  </div>
+  <div id="ce-fields"></div>
+  <label for="ce-notes">Notes personnelles</label><textarea id="ce-notes" style="min-height:70px"></textarea>
+  <div class="row" style="margin-top:12px">
+    <button class="btn danger" id="ce-del">Supprimer</button>
+    <button class="btn" id="ce-save">Enregistrer</button>
+  </div>
+</div></dialog>
+
+<!-- Éditeur de tirage -->
+<dialog id="dlg-spread"><div class="dbody">
+  <div class="row"><h2 style="margin:0">Type de tirage</h2><button class="btn sec sm" style="flex:none" data-close>Fermer</button></div>
+  <label for="se-name">Nom</label><input id="se-name">
+  <label for="se-desc">Description / consigne</label><textarea id="se-desc" style="min-height:60px"></textarea>
+  <h3>Positions</h3>
+  <div id="se-positions"></div>
+  <button class="btn sec sm" id="se-addpos">+ Position</button>
+  <div class="row" style="margin-top:12px">
+    <button class="btn danger" id="se-del">Supprimer</button>
+    <button class="btn" id="se-save">Enregistrer</button>
+  </div>
+</div></dialog>
+
+<!-- Calibration -->
+<dialog id="dlg-calib"><div class="dbody">
+  <div class="row"><h2 style="margin:0">Calibrer</h2><button class="btn sec sm" style="flex:none" data-close>Fermer</button></div>
+  <p class="muted">Vise la carte, la couleur dans le carré, puis capture.</p>
+  <div class="video-wrap"><video id="cb-video" playsinline muted></video><div class="reticle"></div></div>
+  <button class="btn" id="cb-shot" style="margin-top:10px;width:100%">Capturer la couleur</button>
+</div></dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ---------------- Stockage ---------------- */
+const KEY = "tirage-couleurs-v1";
+const ALL = "__all__";
+const defaults = () => ({
+  fields: ["Lumière", "Matière"],
+  cards: [],
+  spreads: [
+    { id: uid(), name: "Une carte", desc: "Tirage simple : une seule couleur.", positions: [{ label: "La couleur du moment", field: ALL }] },
+    { id: uid(), name: "Lumière / Matière", desc: "Deux cartes : la première se lit en Lumière, la seconde en Matière. (À adapter selon le livre.)",
+      positions: [{ label: "Carte 1", field: "Lumière" }, { label: "Carte 2", field: "Matière" }] }
+  ],
+  history: [],
+  theme: ""
+});
+function uid(){ return Math.random().toString(36).slice(2, 10); }
+let db;
+function load(){
+  try { db = JSON.parse(localStorage.getItem(KEY)) || defaults(); } catch { db = defaults(); }
+  const d = defaults();
+  for (const k of Object.keys(d)) if (db[k] === undefined) db[k] = d[k];
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(db)); }
+  catch { toast("Impossible d'enregistrer sur cet appareil"); }
+}
+load();
+
+/* ---------------- Utilitaires ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2200); }
+const byNum = n => db.cards.find(c => String(c.num) === String(n).trim());
+const sortCards = () => db.cards.sort((a, b) => (parseFloat(a.num) || 0) - (parseFloat(b.num) || 0) || String(a.num).localeCompare(b.num));
+function hexToRgb(h){ h = (h || "#888888").replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); }
+function rgbToHex(rgb){ return "#" + rgb.map(v => Math.round(v).toString(16).padStart(2, "0")).join(""); }
+function rgbToLab([r, g, b]){
+  const f = v => { v /= 255; return v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92; };
+  r = f(r); g = f(g); b = f(b);
+  let x = (r * .4124 + g * .3576 + b * .1805) / .95047, y = r * .2126 + g * .7152 + b * .0722, z = (r * .0193 + g * .1192 + b * .9505) / 1.08883;
+  const t = v => v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116;
+  x = t(x); y = t(y); z = t(z);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+function dE(a, b){ const A = rgbToLab(a), B = rgbToLab(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); }
+
+function cardHtml(c, field){
+  if (!c) return `<div class="card empty">Aucune carte avec ce numéro.<br><button class="btn sm" style="margin-top:10px" onclick="openCard(null,'${esc($("#lk-num").value)}')">Créer cette carte</button></div>`;
+  const fields = field && field !== ALL ? [field] : db.fields;
+  const body = fields.map(f => {
+    const v = (c.values || {})[f];
+    return `<div class="field"><b>${esc(f)}</b><p>${v ? esc(v) : '<span class="muted">— pas encore rempli —</span>'}</p></div>`;
+  }).join("");
+  const others = field && field !== ALL && db.fields.length > 1
+    ? `<details style="margin-top:10px"><summary class="muted">Voir les autres rubriques</summary>${db.fields.filter(f => f !== field).map(f => `<div class="field"><b>${esc(f)}</b><p>${esc((c.values || {})[f] || "—")}</p></div>`).join("")}</details>` : "";
+  const notes = c.notes ? `<div class="field"><b>Mes notes</b><p>${esc(c.notes)}</p></div>` : "";
+  return `<div class="card result">
+    <div class="row" style="flex-wrap:nowrap"><div class="swatch lg" style="background:${esc(c.hex || "#888")}"></div>
+      <div><div style="font-size:1.4rem;font-weight:700">N° ${esc(c.num)}</div><div>${esc(c.name || "")}</div></div>
+      <button class="btn sec sm" style="flex:none" onclick="openCard('${esc(c.num)}')">Modifier</button></div>
+    ${body}${others}${notes}</div>`;
+}
+
+/* ---------------- Navigation ---------------- */
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(t){
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === t));
+  document.querySelectorAll("main section").forEach(s => s.classList.toggle("on", s.id === "tab-" + t));
+  if (t !== "scan") stopCam("#sc-video");
+  if (t === "cards") renderCards();
+  if (t === "settings") renderSettings();
+  if (t === "draw") renderDraw();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => b.closest("dialog").close());
+
+/* ---------------- Consulter ---------------- */
+function fillSpreadSelect(sel, keep){
+  sel.innerHTML = db.spreads.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  if (keep && db.spreads.some(s => s.id === keep)) sel.value = keep;
+}
+function renderLookup(){
+  const keepS = $("#lk-spread").value, keepP = $("#lk-pos").value;
+  $("#lk-spread").innerHTML = `<option value="">Toutes les rubriques</option>` + db.spreads.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  if (db.spreads.some(s => s.id === keepS)) $("#lk-spread").value = keepS;
+  const sp = db.spreads.find(s => s.id === $("#lk-spread").value);
+  $("#lk-pos").disabled = !sp;
+  $("#lk-pos").innerHTML = sp ? sp.positions.map((p, i) => `<option value="${i}">${i + 1}. ${esc(p.label)}${p.field && p.field !== ALL ? " → " + esc(p.field) : ""}</option>`).join("") : `<option>—</option>`;
+  if (sp && keepP && sp.positions[keepP]) $("#lk-pos").value = keepP;
+  showLookup();
+}
+function showLookup(){
+  const n = $("#lk-num").value.trim();
+  if (!n){ $("#lk-result").innerHTML = db.cards.length ? "" : `<div class="card empty">Commence par créer tes cartes dans <b>Réglages</b> puis remplis-les depuis ton livre dans <b>Cartes</b>.</div>`; return; }
+  const sp = db.spreads.find(s => s.id === $("#lk-spread").value);
+  const pos = sp ? sp.positions[$("#lk-pos").value] : null;
+  $("#lk-result").innerHTML = (pos ? `<p class="muted">${esc(sp.name)} — position « ${esc(pos.label)} »</p>` : "") + cardHtml(byNum(n), pos ? pos.field : ALL);
+}
+$("#lk-num").oninput = showLookup;
+$("#lk-spread").onchange = renderLookup;
+$("#lk-pos").onchange = showLookup;
+
+/* ---------------- Tirage ---------------- */
+let current = {};
+function renderDraw(){
+  fillSpreadSelect($("#dr-spread"), $("#dr-spread").value);
+  const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
+  $("#dr-desc").textContent = sp ? sp.desc || "" : "Aucun type de tirage. Ajoute-en dans Réglages.";
+  $("#dr-positions").innerHTML = sp ? sp.positions.map((p, i) => `
+    <div class="pos">
+      <div class="row"><b style="flex:2">${i + 1}. ${esc(p.label)}</b>
+        <input style="flex:1" inputmode="numeric" placeholder="N°" data-i="${i}" value="${esc(current[i] || "")}">
+        <button class="btn sec sm" style="flex:none" data-scan="${i}" title="Scanner">📷</button></div>
+      <div id="dr-res-${i}"></div>
+    </div>`).join("") : "";
+  $("#dr-positions").querySelectorAll("input").forEach(inp => inp.oninput = () => { current[inp.dataset.i] = inp.value; drawRes(sp, +inp.dataset.i); });
+  $("#dr-positions").querySelectorAll("[data-scan]").forEach(b => b.onclick = () => { scanTarget = { spread: sp.id, i: +b.dataset.scan }; showTab("scan"); startCam("#sc-video"); });
+  if (sp) sp.positions.forEach((_, i) => drawRes(sp, i));
+  renderHistory();
+}
+function drawRes(sp, i){
+  const n = (current[i] || "").trim(), el = $("#dr-res-" + i);
+  if (el) el.innerHTML = n ? cardHtml(byNum(n), sp.positions[i].field) : "";
+}
+$("#dr-spread").onchange = () => { current = {}; renderDraw(); };
+$("#dr-clear").onclick = () => { current = {}; renderDraw(); };
+$("#dr-save").onclick = () => {
+  const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
+  if (!sp || !Object.values(current).some(v => v)) return toast("Tirage vide");
+  const q = prompt("Question ou intention du tirage (facultatif) :") ?? "";
+  db.history.unshift({ id: uid(), date: new Date().toISOString(), spread: sp.id, spreadName: sp.name, nums: sp.positions.map((_, i) => current[i] || ""), q });
+  db.history = db.history.slice(0, 200); save(); renderHistory(); toast("Tirage enregistré");
+};
+function renderHistory(){
+  const h = db.history;
+  $("#dr-history").innerHTML = h.length ? h.map(x => `<div class="item" data-h="${x.id}">
+    <div class="row" style="flex:none;gap:4px">${x.nums.map(n => `<div class="swatch" style="width:22px;height:22px;background:${esc((byNum(n) || {}).hex || "transparent")}"></div>`).join("")}</div>
+    <div class="t">${esc(x.spreadName)} — ${x.nums.map(esc).join(", ")}<small>${new Date(x.date).toLocaleString("fr-FR")}${x.q ? " · " + esc(x.q) : ""}</small></div>
+    <button class="btn sec sm" style="flex:none" data-del="${x.id}">✕</button></div>`).join("") : `<div class="empty">Aucun tirage enregistré.</div>`;
+  $("#dr-history").querySelectorAll("[data-h]").forEach(el => el.onclick = e => {
+    if (e.target.dataset.del){ db.history = db.history.filter(x => x.id !== e.target.dataset.del); save(); return renderHistory(); }
+    const x = db.history.find(y => y.id === el.dataset.h);
+    if (db.spreads.some(s => s.id === x.spread)){ $("#dr-spread").value = x.spread; current = { ...x.nums }; renderDraw(); window.scrollTo(0, 0); }
+  });
+}
+
+/* ---------------- Caméra ---------------- */
+async function startCam(sel){
+  const v = $(sel);
+  if (v.srcObject) return;
+  try {
+    v.srcObject = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 } }, audio: false });
+    await v.play();
+  } catch (e) { toast("Caméra indisponible : autorise l'accès (site en https requis)"); }
+}
+function stopCam(sel){ const v = $(sel); if (v.srcObject){ v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; } }
+function sampleCenter(sel){
+  const v = $(sel); if (!v.videoWidth) return null;
+  const c = $("#sc-canvas"), W = v.videoWidth, H = v.videoHeight;
+  // Le carré visé fait 34 % de la largeur affichée (vidéo en object-fit: cover)
+  const scale = Math.max(v.clientWidth / W, v.clientHeight / H);
+  const side = Math.round(v.clientWidth * 0.34 / scale * 0.6); // zone intérieure (60 %) pour éviter les bords
+  const x0 = Math.round(W / 2 - side / 2), y0 = Math.round(H / 2 - side / 2);
+  c.width = side; c.height = side;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(v, x0, y0, side, side, 0, 0, side, side);
+  const d = ctx.getImageData(0, 0, side, side).data;
+  // Médiane par canal : résiste aux reflets et aux chiffres imprimés
+  const R = [], G = [], B = [];
+  for (let i = 0; i < d.length; i += 16){ R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]); }
+  const med = a => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
+  return [med(R), med(G), med(B)];
+}
+
+/* ---------------- Scanner ---------------- */
+let scanTarget = null;
+$("#sc-start").onclick = () => startCam("#sc-video");
+$("#sc-shot").onclick = async () => {
+  await startCam("#sc-video");
+  const rgb = sampleCenter("#sc-video");
+  if (!rgb) return toast("Caméra pas encore prête");
+  const cands = db.cards.filter(c => c.ref || c.hex).map(c => ({ c, d: dE(rgb, c.ref || hexToRgb(c.hex)) })).sort((a, b) => a.d - b.d).slice(0, 3);
+  if (!cands.length){ $("#sc-result").innerHTML = `<div class="card empty">Aucune carte avec couleur enregistrée.</div>`; return; }
+  const sp = scanTarget && db.spreads.find(s => s.id === scanTarget.spread);
+  $("#sc-result").innerHTML = `<div class="card"><div class="row"><div class="swatch" style="background:${rgbToHex(rgb)}"></div><div class="muted">Couleur captée</div></div>
+    <h3>Cartes les plus proches</h3>
+    ${cands.map((x, k) => `<div class="list"><div class="item" data-pick="${esc(x.c.num)}"><div class="swatch" style="background:${esc(x.c.hex)}"></div>
+      <div class="t">N° ${esc(x.c.num)} ${esc(x.c.name || "")}<small>${x.c.ref ? "calibrée" : "non calibrée"} · écart ${x.d.toFixed(1)}${k === 0 && x.d < 8 ? " · très probable" : ""}</small></div>
+      <span class="pill">${sp ? "Placer en " + (scanTarget.i + 1) : "Voir"}</span></div></div>`).join("")}
+  </div><div id="sc-detail">${cardHtml(cands[0].c)}</div>`;
+  $("#sc-result").querySelectorAll("[data-pick]").forEach(el => el.onclick = () => {
+    const n = el.dataset.pick;
+    if (sp){ current[scanTarget.i] = n; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
+    else $("#sc-detail").innerHTML = cardHtml(byNum(n));
+  });
+};
+
+/* ---------------- Mes cartes ---------------- */
+function renderCards(){
+  sortCards();
+  const f = $("#cd-filter").value.trim().toLowerCase();
+  const list = db.cards.filter(c => !f || [c.num, c.name, c.notes, ...Object.values(c.values || {})].join(" ").toLowerCase().includes(f));
+  $("#cd-list").innerHTML = list.length ? list.map(c => {
+    const filled = db.fields.filter(k => (c.values || {})[k]).length;
+    return `<div class="item" onclick="openCard('${esc(c.num)}')"><div class="swatch" style="background:${esc(c.hex || "#888")}"></div>
+      <div class="t"><b>N° ${esc(c.num)}</b> ${esc(c.name || "")}<small>${esc(Object.values(c.values || {}).find(v => v) || "vide")}</small></div>
+      <span class="pill">${filled}/${db.fields.length}${c.ref ? " · 📷" : ""}</span></div>`;
+  }).join("") : `<div class="empty">Aucune carte. Utilise « + Ajouter » ou « Créer les cartes d'un coup » dans Réglages.</div>`;
+}
+$("#cd-filter").oninput = renderCards;
+$("#cd-add").onclick = () => openCard(null);
+
+let editing = null, pendingRef = null;
+window.openCard = (num, preset) => {
+  stopCam("#sc-video");
+  editing = num != null ? byNum(num) : null;
+  pendingRef = editing ? editing.ref || null : null;
+  const c = editing || { num: preset || "", name: "", hex: "#888888", values: {}, notes: "" };
+  $("#ce-title").textContent = editing ? "Carte n° " + c.num : "Nouvelle carte";
+  $("#ce-num").value = c.num; $("#ce-name").value = c.name || ""; $("#ce-hex").value = c.hex || "#888888"; $("#ce-notes").value = c.notes || "";
+  $("#ce-calib-state").textContent = pendingRef ? "✓ calibrée" : "non calibrée";
+  $("#ce-fields").innerHTML = db.fields.map((f, i) => `<label for="ce-f${i}">${esc(f)}</label><textarea id="ce-f${i}" data-f="${esc(f)}">${esc((c.values || {})[f] || "")}</textarea>`).join("");
+  $("#ce-ocr-text").hidden = $("#ce-ocr-help").hidden = $("#ce-ocr-prog").hidden = true; $("#ce-ocr-btns").innerHTML = "";
+  $("#ce-del").hidden = !editing;
+  $("#dlg-card").showModal();
+};
+$("#ce-save").onclick = () => {
+  const num = $("#ce-num").value.trim();
+  if (!num) return toast("Numéro obligatoire");
+  const other = byNum(num);
+  if (other && other !== editing) return toast("Ce numéro existe déjà");
+  const values = {}; $("#ce-fields").querySelectorAll("textarea").forEach(t => values[t.dataset.f] = t.value.trim());
+  const data = { num, name: $("#ce-name").value.trim(), hex: $("#ce-hex").value, values, notes: $("#ce-notes").value.trim(), ref: pendingRef };
+  if (editing) Object.assign(editing, data); else db.cards.push(data);
+  save(); $("#dlg-card").close(); renderCards(); showLookup(); toast("Carte enregistrée");
+};
+$("#ce-del").onclick = () => {
+  if (!editing || !confirm("Supprimer la carte n° " + editing.num + " ?")) return;
+  db.cards = db.cards.filter(c => c !== editing); save(); $("#dlg-card").close(); renderCards();
+};
+// Calibration
+$("#ce-calib").onclick = () => { $("#dlg-calib").showModal(); startCam("#cb-video"); };
+$("#dlg-calib").addEventListener("close", () => stopCam("#cb-video"));
+$("#cb-shot").onclick = () => {
+  const rgb = sampleCenter("#cb-video"); if (!rgb) return toast("Caméra pas encore prête");
+  pendingRef = rgb; $("#ce-hex").value = rgbToHex(rgb); $("#ce-calib-state").textContent = "✓ calibrée (pense à enregistrer)";
+  $("#dlg-calib").close();
+};
+// OCR d'une page du livre (traitement local via Tesseract.js)
+let tessLoading = null;
+function loadTesseract(){
+  if (window.Tesseract) return Promise.resolve();
+  return tessLoading ||= new Promise((ok, ko) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+    s.onload = ok; s.onerror = () => { tessLoading = null; ko(); }; document.head.appendChild(s);
+  });
+}
+$("#ce-ocr").onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  const prog = $("#ce-ocr-prog"), bar = prog.firstElementChild; prog.hidden = false; bar.style.width = "3%";
+  try {
+    await loadTesseract();
+    const { data } = await Tesseract.recognize(file, "fra", { logger: m => { if (m.status === "recognizing text") bar.style.width = Math.round(m.progress * 100) + "%"; } });
+    const ta = $("#ce-ocr-text"); ta.hidden = false; $("#ce-ocr-help").hidden = false;
+    ta.value = data.text.replace(/-\n(\p{L})/gu, "$1").replace(/([^\n])\n(?!\n)/g, "$1 ").trim();
+    $("#ce-ocr-btns").innerHTML = db.fields.map((f, i) => `<button class="btn sec sm" data-to="${i}">→ ${esc(f)}</button>`).join("") + `<button class="btn sec sm" data-to="notes">→ Notes</button>`;
+    $("#ce-ocr-btns").querySelectorAll("[data-to]").forEach(b => b.onclick = () => {
+      const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd) || ta.value;
+      const dest = b.dataset.to === "notes" ? $("#ce-notes") : $("#ce-f" + b.dataset.to);
+      dest.value = (dest.value ? dest.value + "\n" : "") + sel.trim(); toast("Ajouté");
+    });
+  } catch { toast("Lecture impossible (connexion requise la première fois)"); }
+  prog.hidden = true;
+};
+
+/* ---------------- Réglages ---------------- */
+function renderSettings(){
+  $("#st-fields").value = db.fields.join("\n");
+  $("#st-theme").value = db.theme || "";
+  $("#st-spreads").innerHTML = db.spreads.map(s => `<div class="item" data-s="${s.id}"><div class="t"><b>${esc(s.name)}</b><small>${s.positions.length} position(s) · ${s.positions.map(p => esc(p.label)).join(", ")}</small></div><span class="pill">Modifier</span></div>`).join("") || `<div class="empty">Aucun tirage.</div>`;
+  $("#st-spreads").querySelectorAll("[data-s]").forEach(el => el.onclick = () => openSpread(el.dataset.s));
+}
+$("#st-fields-save").onclick = () => {
+  const nf = $("#st-fields").value.split("\n").map(s => s.trim()).filter(Boolean);
+  if (!nf.length) return toast("Au moins une rubrique");
+  db.fields = [...new Set(nf)]; save(); renderLookup(); toast("Rubriques enregistrées");
+};
+$("#st-gen").onclick = () => {
+  const a = parseInt($("#st-gen-from").value), b = parseInt($("#st-gen-to").value);
+  if (!(a <= b) || b - a > 500) return toast("Plage invalide");
+  let n = 0; for (let i = a; i <= b; i++) if (!byNum(i)){ db.cards.push({ num: String(i), name: "", hex: "#888888", values: {}, notes: "", ref: null }); n++; }
+  save(); toast(n + " carte(s) créée(s)");
+};
+$("#st-export").onclick = () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = "tirage-couleurs-" + new Date().toISOString().slice(0, 10) + ".json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+$("#st-import").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (!Array.isArray(d.cards) || !Array.isArray(d.fields)) throw 0;
+    if (!confirm("Remplacer toutes les données actuelles par ce fichier ?")) return;
+    db = d; const def = defaults(); for (const k of Object.keys(def)) if (db[k] === undefined) db[k] = def[k];
+    save(); applyTheme(); renderSettings(); renderLookup(); toast("Import réussi");
+  } catch { toast("Fichier invalide"); }
+};
+$("#st-reset").onclick = () => { if (confirm("Effacer toutes les cartes, tirages et l'historique ?")){ db = defaults(); save(); renderSettings(); renderLookup(); toast("Données effacées"); } };
+$("#st-theme").onchange = () => { db.theme = $("#st-theme").value; save(); applyTheme(); };
+function applyTheme(){ if (db.theme) document.documentElement.dataset.theme = db.theme; else delete document.documentElement.dataset.theme; }
+
+// Éditeur de tirage
+let editSpread = null;
+function openSpread(id){
+  editSpread = id ? db.spreads.find(s => s.id === id) : null;
+  const s = editSpread || { name: "", desc: "", positions: [{ label: "Carte 1", field: ALL }] };
+  $("#se-name").value = s.name; $("#se-desc").value = s.desc || "";
+  $("#se-positions").innerHTML = ""; s.positions.forEach(addPosRow);
+  $("#se-del").hidden = !editSpread;
+  $("#dlg-spread").showModal();
+}
+function addPosRow(p){
+  const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "8px";
+  div.innerHTML = `<input placeholder="Nom de la position" value="${esc(p.label)}">
+    <select>${[`<option value="${ALL}">Toutes les rubriques</option>`, ...db.fields.map(f => `<option${f === p.field ? " selected" : ""}>${esc(f)}</option>`)].join("")}</select>
+    <button class="btn sec sm" style="flex:none">✕</button>`;
+  div.querySelector("button").onclick = () => div.remove();
+  $("#se-positions").appendChild(div);
+}
+$("#st-spread-add").onclick = () => openSpread(null);
+$("#se-addpos").onclick = () => addPosRow({ label: "Carte " + ($("#se-positions").children.length + 1), field: ALL });
+$("#se-save").onclick = () => {
+  const name = $("#se-name").value.trim(); if (!name) return toast("Nom obligatoire");
+  const positions = [...$("#se-positions").children].map(r => ({ label: r.querySelector("input").value.trim() || "Carte", field: r.querySelector("select").value }));
+  if (!positions.length) return toast("Au moins une position");
+  const data = { name, desc: $("#se-desc").value.trim(), positions };
+  if (editSpread) Object.assign(editSpread, data); else db.spreads.push({ id: uid(), ...data });
+  save(); $("#dlg-spread").close(); renderSettings(); renderLookup();
+};
+$("#se-del").onclick = () => {
+  if (!editSpread || !confirm("Supprimer ce tirage ?")) return;
+  db.spreads = db.spreads.filter(s => s !== editSpread); save(); $("#dlg-spread").close(); renderSettings(); renderLookup();
+};
+
+/* ---------------- Démarrage ---------------- */
+applyTheme(); renderLookup();
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
