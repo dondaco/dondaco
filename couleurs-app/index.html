@@ -151,10 +151,15 @@ dialog .dbody{padding:16px;overflow:auto}
     <div id="st-spreads" class="list"></div>
   </div>
   <div class="card">
+    <h2>Les 48 couleurs</h2>
+    <p class="muted">Recharge les numéros, noms et familles des 48 couleurs (tes textes et calibrations sont conservés).</p>
+    <button class="btn sm" id="st-cat">Recharger les 48 couleurs</button>
+  </div>
+  <div class="card">
     <h2>Créer les cartes d'un coup</h2>
     <div class="row">
       <input id="st-gen-from" type="number" value="1" aria-label="De">
-      <input id="st-gen-to" type="number" value="50" aria-label="À">
+      <input id="st-gen-to" type="number" value="48" aria-label="À">
       <button class="btn sm" id="st-gen" style="flex:none">Créer</button>
     </div>
     <p class="muted">Crée les cartes vides numérotées (les numéros existants sont conservés).</p>
@@ -240,10 +245,43 @@ dialog .dbody{padding:16px;overflow:auto}
 /* ---------------- Stockage ---------------- */
 const KEY = "tirage-couleurs-v1";
 const ALL = "__all__";
+// Liste des 48 couleurs (numéros, noms, familles) d'après le lexique public de l'auteur.
+// Les couleurs d'affichage (hex) sont approximatives : calibre avec tes cartes pour plus de précision.
+const LEXIQUE_URL = "https://williamberton.com/le-lexique-des-couleurs/";
+const G1 = "Arc-en-ciel (relationnelles)", G2 = "Transformation", G3 = "Paix", G4 = "Éveil";
+const CATALOGUE = [
+  ["1","Rouge clair / naissant",G1,"#f28b82"],["2","Rouge franc",G1,"#d62828"],["3","Rouge foncé / mature",G1,"#7f1d1d"],
+  ["4","Orange clair / naissant",G1,"#ffc58f"],["5","Orange franc",G1,"#f77f00"],["6","Orange foncé / mature",G1,"#a84c00"],
+  ["7","Jaune clair / naissant",G1,"#fff3a3"],["8","Jaune franc",G1,"#ffd60a"],["9","Jaune foncé / mature",G1,"#b8930b"],
+  ["10","Vert clair / naissant",G1,"#b7e4a7"],["11","Vert franc",G1,"#2e9e44"],["12","Vert foncé / mature",G1,"#1b4d2a"],
+  ["13","Bleu clair / naissant",G1,"#a9d6f5"],["14","Bleu franc",G1,"#1e6fd9"],["15","Bleu foncé / mature",G1,"#0d2f6b"],
+  ["16","Indigo clair / naissant",G1,"#8f9be0"],["17","Indigo franc",G1,"#3f37c9"],["18","Indigo foncé / mature",G1,"#221b6e"],
+  ["19","Violet clair / naissant",G1,"#d4b5f0"],["20","Violet franc",G1,"#8e44ad"],["21","Violet foncé / mature",G1,"#4a1f63"],
+  ["22","Blanc",G2,"#fafafa"],["23","Gris clair",G2,"#c8c8c8"],["24","Gris souris",G2,"#8a8a8a"],["25","Noir",G2,"#151515"],
+  ["26","Pourpre nuit",G2,"#3d0f3a"],["27","Marron",G2,"#6b4226"],["28","Vert caca d'oie",G2,"#9a9a3a"],["29","Rose",G2,"#f7b6c8"],
+  ["30","Fuchsia",G2,"#e0218a"],["31","Grenat",G2,"#6e0f22"],["32","Turquoise",G2,"#30c5c0"],
+  ["33","Sable",G3,"#e3cfa3"],["34","Cuivre",G3,"#b8733a"],["35","Argent",G3,"#c0c4c8"],["36","Or",G3,"#d4af37"],
+  ["37","Irisé",G3,"#e6e0f5"],["38","Transparent",G3,"#f2f6f8"],["39","Lilas",G3,"#c8a2c8"],
+  ["40","Nacre",G4,"#f3ece2"],["41","Ocre",G4,"#c9862b"],["42","Safran",G4,"#f4a300"],["43","Caramel",G4,"#a8632a"],
+  ["44","Vert vif argent",G4,"#7fd1a8"],["45","Crème lait",G4,"#f6efd9"],["46","Cacao",G4,"#5a3a29"],["47","Café frappé",G4,"#a58a6e"],
+  ["48","Spirale",G4,"#9b7fd1"]
+];
+const catalogueCards = () => CATALOGUE.map(([num, name, group, hex]) => ({ num, name, group, hex, values: {}, notes: "", ref: null }));
+function mergeCatalogue(){
+  let added = 0;
+  for (const c of catalogueCards()){
+    const e = byNum(c.num);
+    if (!e){ db.cards.push(c); added++; }
+    else { if (!e.name) e.name = c.name; if (!e.group) e.group = c.group; if (!e.ref && (!e.hex || e.hex === "#888888")) e.hex = c.hex; }
+  }
+  return added;
+}
 const defaults = () => ({
   fields: ["Lumière", "Matière"],
-  cards: [],
+  cards: catalogueCards(),
   spreads: [
+    { id: uid(), name: "Couleurs du jour", desc: "Deux cartes : ce qui se passe maintenant, puis l'opportunité à saisir (la carte la plus importante).",
+      positions: [{ label: "Ce qui se passe maintenant", field: ALL }, { label: "Votre opportunité", field: ALL }] },
     { id: uid(), name: "Une carte", desc: "Tirage simple : une seule couleur.", positions: [{ label: "La couleur du moment", field: ALL }] },
     { id: uid(), name: "Lumière / Matière", desc: "Deux cartes : la première se lit en Lumière, la seconde en Matière. (À adapter selon le livre.)",
       positions: [{ label: "Carte 1", field: "Lumière" }, { label: "Carte 2", field: "Matière" }] }
@@ -291,12 +329,14 @@ function cardHtml(c, field){
   }).join("");
   const others = field && field !== ALL && db.fields.length > 1
     ? `<details style="margin-top:10px"><summary class="muted">Voir les autres rubriques</summary>${db.fields.filter(f => f !== field).map(f => `<div class="field"><b>${esc(f)}</b><p>${esc((c.values || {})[f] || "—")}</p></div>`).join("")}</details>` : "";
+  const empty = !db.fields.some(f => (c.values || {})[f]);
+  const quick = empty ? `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="openCard('${esc(c.num)}', null, true)">📄 Remplir depuis la page du livre</button></div>` : "";
   const notes = c.notes ? `<div class="field"><b>Mes notes</b><p>${esc(c.notes)}</p></div>` : "";
   return `<div class="card result">
     <div class="row" style="flex-wrap:nowrap"><div class="swatch lg" style="background:${esc(c.hex || "#888")}"></div>
-      <div><div style="font-size:1.4rem;font-weight:700">N° ${esc(c.num)}</div><div>${esc(c.name || "")}</div></div>
+      <div><div style="font-size:1.4rem;font-weight:700">N° ${esc(c.num)}</div><div>${esc(c.name || "")}</div>${c.group ? `<div class="muted">${esc(c.group)}</div>` : ""}</div>
       <button class="btn sec sm" style="flex:none" onclick="openCard('${esc(c.num)}')">Modifier</button></div>
-    ${body}${others}${notes}</div>`;
+    ${body}${others}${notes}${quick}<p class="muted" style="margin:10px 0 0"><a href="${LEXIQUE_URL}" target="_blank" rel="noopener" style="color:var(--accent)">Lexique des couleurs sur le site de l'auteur ↗</a></p></div>`;
 }
 
 /* ---------------- Navigation ---------------- */
@@ -449,7 +489,7 @@ $("#cd-filter").oninput = renderCards;
 $("#cd-add").onclick = () => openCard(null);
 
 let editing = null, pendingRef = null;
-window.openCard = (num, preset) => {
+window.openCard = (num, preset, autoOcr) => {
   stopCam("#sc-video");
   editing = num != null ? byNum(num) : null;
   pendingRef = editing ? editing.ref || null : null;
@@ -461,6 +501,7 @@ window.openCard = (num, preset) => {
   $("#ce-ocr-text").hidden = $("#ce-ocr-help").hidden = $("#ce-ocr-prog").hidden = true; $("#ce-ocr-btns").innerHTML = "";
   $("#ce-del").hidden = !editing;
   $("#dlg-card").showModal();
+  if (autoOcr) $("#ce-ocr").click();
 };
 $("#ce-save").onclick = () => {
   const num = $("#ce-num").value.trim();
@@ -468,7 +509,7 @@ $("#ce-save").onclick = () => {
   const other = byNum(num);
   if (other && other !== editing) return toast("Ce numéro existe déjà");
   const values = {}; $("#ce-fields").querySelectorAll("textarea").forEach(t => values[t.dataset.f] = t.value.trim());
-  const data = { num, name: $("#ce-name").value.trim(), hex: $("#ce-hex").value, values, notes: $("#ce-notes").value.trim(), ref: pendingRef };
+  const data = { num, group: editing ? editing.group || "" : "", name: $("#ce-name").value.trim(), hex: $("#ce-hex").value, values, notes: $("#ce-notes").value.trim(), ref: pendingRef };
   if (editing) Object.assign(editing, data); else db.cards.push(data);
   save(); $("#dlg-card").close(); renderCards(); showLookup(); toast("Carte enregistrée");
 };
@@ -524,6 +565,7 @@ $("#st-fields-save").onclick = () => {
   if (!nf.length) return toast("Au moins une rubrique");
   db.fields = [...new Set(nf)]; save(); renderLookup(); toast("Rubriques enregistrées");
 };
+$("#st-cat").onclick = () => { const n = mergeCatalogue(); save(); toast(n ? n + " couleur(s) ajoutée(s)" : "Liste à jour"); };
 $("#st-gen").onclick = () => {
   const a = parseInt($("#st-gen-from").value), b = parseInt($("#st-gen-to").value);
   if (!(a <= b) || b - a > 500) return toast("Plage invalide");

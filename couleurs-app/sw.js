@@ -1,5 +1,5 @@
 // Cache hors-ligne simple : l'app fonctionne sans connexion après la première visite.
-const CACHE = "tirage-couleurs-v1";
+const CACHE = "tirage-couleurs-v2";
 const FILES = ["./", "index.html", "manifest.json", "icon.svg"];
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))));
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))));
