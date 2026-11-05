@@ -344,6 +344,12 @@ dialog .dbody{padding:16px;overflow:auto}
     <p class="muted">Crée les cartes vides numérotées (les numéros existants sont conservés).</p>
   </div>
   <div class="card">
+    <h2>Journal des erreurs</h2>
+    <p class="muted">Si l'app plante, les erreurs sont notées ici (et sur ton compte) pour qu'on puisse comprendre ce qui s'est passé.</p>
+    <div id="st-errors" class="muted" style="font-size:.82rem;white-space:pre-wrap"></div>
+    <button class="btn sec sm" id="st-errors-clear" style="margin-top:8px">Vider le journal</button>
+  </div>
+  <div class="card">
     <h2>Sauvegarde</h2>
     <p class="muted">Tes données restent sur cet appareil. Exporte régulièrement un fichier de sauvegarde.</p>
     <div class="row">
@@ -432,6 +438,27 @@ dialog .dbody{padding:16px;overflow:auto}
 
 <script>
 "use strict";
+/* ---------------- Journal des erreurs (pour comprendre un plantage) ---------------- */
+const ERR_KEY = "tirage-couleurs-errors";
+function readErrors(){ try { return JSON.parse(localStorage.getItem(ERR_KEY)) || []; } catch { return []; } }
+function logError(msg){
+  try {
+    const nav = document.querySelector("nav button.on"), where = (nav ? nav.dataset.tab : "démarrage") + (window.__tcStep ? " · étape " + window.__tcStep : "");
+    const list = readErrors(); list.unshift({ t: new Date().toISOString(), msg: String(msg).slice(0, 400), where, ua: navigator.userAgent.slice(0, 140), mem: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1e6) + " Mo" : "" });
+    const keep = list.slice(0, 20);
+    try { localStorage.setItem(ERR_KEY, JSON.stringify(keep)); } catch {}
+    if (window.__tcRemote) window.__tcRemote.doc("log").set({ errors: keep }).catch(() => {});
+  } catch {}
+}
+window.addEventListener("error", e => logError((e.message || "erreur") + (e.lineno ? " (ligne " + e.lineno + ":" + e.colno + ")" : "")));
+window.addEventListener("unhandledrejection", e => logError("promesse : " + ((e.reason && (e.reason.message || e.reason.code)) || e.reason)));
+// Marque une session en cours : si la page est tuée (mémoire), on le saura au prochain lancement
+try {
+  const prev = sessionStorage.getItem("tc-busy");
+  if (prev) logError("La page s'est rechargée pendant : " + prev + " (probable manque de mémoire)");
+  sessionStorage.removeItem("tc-busy");
+} catch {}
+function busy(what){ try { what ? sessionStorage.setItem("tc-busy", what) : sessionStorage.removeItem("tc-busy"); } catch {} }
 /* ---------------- Stockage ---------------- */
 const KEY = "tirage-couleurs-v1";
 const ALL = "__all__";
@@ -540,7 +567,8 @@ async function connectRemote(){
     const col = store.collection("data/users/" + await user.id());
     const snap = await Promise.race([col.get(), timer]);
     if (!snap) return;
-    remote = col;
+    remote = window.__tcRemote = col;
+    const pending = readErrors(); if (pending.length) col.doc("log").set({ errors: pending }).catch(() => {});
     if (snap.empty){ pushRemote(); return; }   // première fois : envoie les données locales
     const docs = {}; snap.docs.forEach(d => { if (d.exists) docs[d.id] = d.data(); });
     const next = defaults();
@@ -739,6 +767,10 @@ $("#dv-back").onclick = () => { drawOpen = false; renderDraw(); window.scrollTo(
 $("#rd-back").onclick = () => { step = 1; renderDraw(); window.scrollTo(0, 0); };
 document.querySelectorAll("#dv-steps [data-step]").forEach(b => b.onclick = () => { step = +b.dataset.step; renderDraw(); window.scrollTo(0, 0); });
 function renderDraw(){
+  try { renderDrawInner(); } catch (e) { logError("affichage du tirage : " + e.message); toast("Un souci d'affichage a été noté, réessaie"); }
+}
+function renderDrawInner(){
+  window.__tcStep = drawOpen ? step : 0;
   fillSpreadSelect($("#dr-spread"), $("#dr-spread").value);
   const sp = drawOpen ? curSpread() : null;
   $("#draw-home").hidden = !!sp; $("#draw-view").hidden = !sp;
@@ -808,7 +840,9 @@ $("#pk-photo").onchange = async e => {
   const sp = curSpread(), sample = await askClaude(); if (!sp || !sample) return;
   const prog = $("#pk-photo-prog"); prog.hidden = false; prog.firstElementChild.style.width = "30%";
   try {
-    const img = await shrink(file, 1600, 0.85);
+    busy("photo du tirage");
+    const cv = await toCanvas(file, 1600);
+    const img = await canvasBlob(cv, 0.85);
     const names = db.cards.map(c => c.num + " = " + (c.name || "")).join(" ; ");
     const r = await sample.json("Photo de cartes d'un jeu de 48 couleurs numérotées, posées pour un tirage de " + sp.positions.length + " carte(s) (\"" + sp.name + "\"). " +
       "Liste des couleurs : " + names + ". Repère chaque carte visible, lis son numéro (ou à défaut reconnais sa couleur dans la liste), " +
@@ -819,7 +853,7 @@ $("#pk-photo").onchange = async e => {
     prog.firstElementChild.style.width = "80%";
     const found = ((r && r.cartes) || []).filter(c => byNum(String(c.numero || "").replace(/\D/g, "")));
     if (!found.length){ toast("Aucune carte reconnue : reprends la photo de plus près, bien éclairée"); prog.hidden = true; return; }
-    let bmp = null; try { bmp = await createImageBitmap(file); } catch {}
+    const bmp = cv;
     needDeck = {}; let learned = 0;
     found.slice(0, sp.positions.length).forEach((c, i) => {
       const n = String(c.numero).replace(/\D/g, "");
@@ -832,8 +866,8 @@ $("#pk-photo").onchange = async e => {
     activeSlot = Math.max(0, sp.positions.findIndex((_, k) => !current[k]));
     toast(Math.min(found.length, sp.positions.length) + " carte(s) reconnue(s)" + (miss ? ", il en manque " + miss : "") + (found.length > sp.positions.length ? " (cartes en trop ignorées)" : ""));
     renderPicker(sp);
-  } catch (err) { toast(err && err.code === "not_granted" ? "Autorise l'envoi de la photo à Claude" : "Reconnaissance impossible, réessaie"); }
-  prog.hidden = true;
+  } catch (err) { logError("photo du tirage : " + ((err && (err.code || err.message)) || err)); toast(err && err.code === "not_granted" ? "Autorise l'envoi de la photo à Claude" : "Reconnaissance impossible, réessaie"); }
+  busy(""); prog.hidden = true;
 };
 // Couleur médiane au centre d'un cadre (fractions de l'image)
 function sampleBox(bmp, b){
@@ -1093,13 +1127,15 @@ $("#sc-shot").onclick = async () => {
 };
 $("#sc-photo").onchange = async e => {
   const f = e.target.files[0]; e.target.value = ""; if (!f) return;
-  const rgb = await sampleFile(f); if (!rgb) return toast("Photo illisible");
-  showMatches(rgb, f);
+  busy("photo d'une carte");
+  const rgb = await sampleFile(f); if (!rgb){ busy(""); return toast("Photo illisible"); }
+  let small = f; try { small = await shrink(f, 1200, 0.85); } catch {}
+  busy(""); showMatches(rgb, small);
 };
 // Couleur médiane du centre d'une photo (30 % central)
 async function sampleFile(file){
   try {
-    const img = await createImageBitmap(file);
+    const img = await toCanvas(file, 800);
     const side = Math.round(Math.min(img.width, img.height) * 0.3);
     const c = $("#sc-canvas"); c.width = c.height = 120;
     const ctx = c.getContext("2d", { willReadFrequently: true });
@@ -1230,7 +1266,7 @@ $("#ce-ocr").onchange = async e => {
     bar.style.width = "40%";
     try {
       const list = db.fields.map(f => JSON.stringify(f)).join(", ");
-      const r = await sample.json("Voici la photo d'une page de mon exemplaire d'un livre sur les couleurs (usage personnel). Transcris fidèlement le texte de la page en français, puis range-le dans ces rubriques : " + list + ". Dans chaque rubrique, mets une phrase-clé par ligne, dans l'ordre du livre (la première, en gras dans le livre, donne le sens général). Mets dans \"autre\" ce qui ne va dans aucune rubrique. Réponds en JSON : {\"rubriques\": {<rubrique>: <texte>}, \"autre\": <texte>, \"numero\": <numéro de la couleur s'il est visible, sinon vide>}.", { images: [file], modelTier: "default" });
+      const r = await sample.json("Voici la photo d'une page de mon exemplaire d'un livre sur les couleurs (usage personnel). Transcris fidèlement le texte de la page en français, puis range-le dans ces rubriques : " + list + ". Dans chaque rubrique, mets une phrase-clé par ligne, dans l'ordre du livre (la première, en gras dans le livre, donne le sens général). Mets dans \"autre\" ce qui ne va dans aucune rubrique. Réponds en JSON : {\"rubriques\": {<rubrique>: <texte>}, \"autre\": <texte>, \"numero\": <numéro de la couleur s'il est visible, sinon vide>}.", { images: [await shrink(file, 1600, 0.85)], modelTier: "default" });
       const rub = (r && r.rubriques) || {};
       db.fields.forEach((f, i) => { const v = (rub[f] || "").trim(); if (v){ const t = $("#ce-f" + i); t.value = (t.value ? t.value + "\n" : "") + v; } });
       if (r && r.autre){ const ta = $("#ce-ocr-text"); ta.hidden = false; ta.value = r.autre; }
@@ -1255,7 +1291,13 @@ $("#ce-ocr").onchange = async e => {
 };
 
 /* ---------------- Réglages ---------------- */
+function renderErrors(){
+  const e = readErrors();
+  $("#st-errors").textContent = e.length ? e.map(x => new Date(x.t).toLocaleString("fr-FR") + " · " + (x.where || "") + "\n" + x.msg).join("\n\n") : "Aucune erreur notée.";
+}
+$("#st-errors-clear").onclick = () => { try { localStorage.removeItem(ERR_KEY); } catch {} if (remote) remote.doc("log").delete().catch(() => {}); renderErrors(); };
 function renderSettings(){
+  renderErrors();
   $("#st-fields").value = db.fields.join("\n");
   $("#st-theme").value = db.theme || "";
   const cats = [...new Set([...CATS, ...db.spreads.map(catOf)])];
@@ -1424,12 +1466,26 @@ $("#bk-files").onchange = async e => {
 
 /* ---------------- Tirages depuis des photos du livre ---------------- */
 // Réduit une photo (JPEG) pour l'envoi et le stockage
+// Décode une photo directement à taille réduite (une photo de téléphone en pleine taille pèse ~50 Mo en mémoire)
+async function toCanvas(file, max){
+  let src = null, w, h;
+  try {
+    const url = URL.createObjectURL(file);
+    src = await new Promise((ok, ko) => { const im = new Image(); im.decoding = "async"; im.onload = () => ok(im); im.onerror = ko; im.src = url; });
+    w = src.naturalWidth; h = src.naturalHeight;
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  } catch {
+    src = await createImageBitmap(file); w = src.width; h = src.height;
+  }
+  const k = Math.min(1, max / Math.max(w, h));
+  const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  if (src.close) src.close(); else src.src = "";
+  return c;
+}
+const canvasBlob = (c, q) => new Promise(r => c.toBlob(r, "image/jpeg", q));
 async function shrink(file, max, q){
-  const img = await createImageBitmap(file);
-  const k = Math.min(1, max / Math.max(img.width, img.height));
-  const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  return new Promise(r => c.toBlob(r, "image/jpeg", q));
+  const c = await toCanvas(file, max); const b = await canvasBlob(c, q); c.width = c.height = 0; return b;
 }
 const blobToDataUrl = b => new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); });
 document.querySelectorAll(".spread-photos").forEach(inp => inp.onchange = async e => {
