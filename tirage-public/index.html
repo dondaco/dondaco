@@ -48,24 +48,33 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .tips button{text-align:left;border:1px dashed var(--line);background:none;color:var(--ink);border-radius:10px;padding:8px 10px;font:inherit;font-size:.9rem;cursor:pointer}
 .muted{color:var(--muted)}
 .table{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 0}
-/* Dos des cartes : fond pastel, taches de couleur floues et formes abstraites ; chaque carte varie via des variables */
+/* Dos des cartes : feuille holographique.
+   Couches : base nacrée irisée, fines lignes de la feuille, trait de lumière qui glisse, halos diffus,
+   grain de matière, cadre fin et logo en filigrane. Chaque carte a son angle et son décalage. */
 .fd{aspect-ratio:2/3;border-radius:12px;border:0;cursor:pointer;position:relative;padding:0;overflow:hidden;isolation:isolate;
   background:
-    radial-gradient(circle at var(--x1,25%) var(--y1,25%), #f9c6c9 0 18%, transparent 46%),
-    radial-gradient(circle at var(--x2,80%) var(--y2,40%), #c9d7f8 0 16%, transparent 44%),
-    radial-gradient(circle at var(--x3,35%) var(--y3,82%), #c5ecd9 0 18%, transparent 48%),
-    radial-gradient(circle at var(--x4,85%) var(--y4,88%), #fbe5b6 0 14%, transparent 40%),
-    linear-gradient(160deg,#f6f0fb,#eef3fb);
-  box-shadow:0 2px 8px rgba(60,40,90,.14);transition:transform .2s,box-shadow .2s;animation:deal .4s both}
-.fd::before{content:"";position:absolute;width:62%;aspect-ratio:1;left:var(--cx,40%);top:var(--cy,22%);transform:translate(-50%,-50%) rotate(var(--r,20deg));
-  border-radius:58% 42% 63% 37% / 45% 55% 45% 55%;border:1.5px solid rgba(110,90,160,.35);z-index:-1}
-.fd::after{content:"";position:absolute;width:40%;aspect-ratio:1;left:var(--dx,62%);top:var(--dy,68%);transform:translate(-50%,-50%) rotate(calc(var(--r,20deg) * -2));
-  border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.85),rgba(255,255,255,0) 70%);
-  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9);z-index:-1}
-.fd i.arc{position:absolute;inset:auto 10% 12% 10%;height:18%;border-bottom:1.5px solid rgba(110,90,160,.28);border-radius:0 0 50% 50%;z-index:-1}
-.fd i.dot{position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(110,90,160,.4);left:var(--ex,20%);top:var(--ey,55%)}
+    linear-gradient(var(--ha,120deg), transparent 34%, rgba(255,255,255,.95) 44%, rgba(255,255,255,.35) 49%, transparent 58%),
+    repeating-linear-gradient(calc(var(--ha,120deg) + 32deg), rgba(255,255,255,0) 0 7px, rgba(255,255,255,.09) 7px 8px),
+    linear-gradient(calc(var(--ha,120deg) - 25deg), #ffc3e1 0%, #ffe6b5 17%, #fdf6c9 25%, #c2f2dc 38%, #b3e1ff 52%, #cdbcff 66%, #f6bde9 80%, #ffc3e1 100%);
+  background-size:260% 260%, auto, 240% 240%;
+  box-shadow:0 3px 10px rgba(60,40,90,.18), inset 0 0 0 1px rgba(255,255,255,.7);
+  transition:transform .2s,box-shadow .2s;
+  animation:deal .4s both, foil 9s ease-in-out infinite alternate;
+  animation-delay:var(--dd,0ms), var(--fd,0s)}
+@keyframes foil{
+  from{background-position:0% 0%, 0 0, 0% 50%}
+  to{background-position:100% 100%, 0 0, 100% 50%}
+}
+/* halos de couleur diffus, comme la lumière qui se reflète en profondeur */
+.fd::before{content:"";position:absolute;inset:-20%;z-index:-1;mix-blend-mode:soft-light;opacity:.9;filter:blur(10px);
+  background:radial-gradient(circle at var(--x1,30%) var(--y1,30%), #ff9ccf 0 14%, transparent 42%),
+             radial-gradient(circle at var(--x2,75%) var(--y2,70%), #7fc8ff 0 14%, transparent 42%)}
+/* grain fin de la feuille */
+.fd::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.28;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .9 0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");background-size:140px}
+.fd .fr{position:absolute;inset:7px;border-radius:8px;border:1px solid rgba(255,255,255,.75);z-index:1;pointer-events:none}
+.fd .mk{position:absolute;left:50%;top:50%;width:42%;height:auto;transform:translate(-50%,-50%);color:#fff;opacity:.6;z-index:1;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(80,60,140,.25))}
 .fd.on{transform:translateY(-8px) scale(1.03);box-shadow:0 0 0 3px var(--accent),0 8px 18px rgba(0,0,0,.2)}
-.fd span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;display:grid;place-items:center;z-index:1}
+.fd span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;display:grid;place-items:center;z-index:3}
 @keyframes deal{from{opacity:0;transform:translateY(10px) rotate(-3deg)}to{opacity:1;transform:none}}
 .reading{display:flex;flex-direction:column;gap:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;animation:flip .55s both}
@@ -166,7 +175,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .c-hint{margin:14px 0 2px;color:var(--muted);font-size:.85rem}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
-@media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
+@media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none;background-position:40% 40%, 0 0, 40% 50%}}
 </style>
 </head>
 <body>
@@ -446,7 +455,8 @@ let tableBuilt = false;
 function renderTable(){
   if (!tableBuilt){
     const pc = (a, b) => (a + rand(b - a)) + "%";
-    $("#table").innerHTML = table.map((t, k) => `<button type="button" class="fd" data-k="${k}" aria-label="Carte face cachée" style="animation-delay:${k * 35}ms;--x1:${pc(10, 45)};--y1:${pc(10, 40)};--x2:${pc(55, 90)};--y2:${pc(20, 55)};--x3:${pc(15, 55)};--y3:${pc(65, 95)};--x4:${pc(60, 95)};--y4:${pc(70, 95)};--cx:${pc(30, 70)};--cy:${pc(20, 45)};--dx:${pc(35, 75)};--dy:${pc(55, 80)};--ex:${pc(15, 85)};--ey:${pc(40, 60)};--r:${rand(90)}deg"><i class="arc"></i><i class="dot"></i></button>`).join("");
+    const BACK = '<i class="fr"></i>' + '<svg class="mk" aria-hidden="true" viewBox="0 0 100 100"><defs><mask id="iris-hole"><rect width="100" height="100" fill="#fff"/><circle cx="54.5" cy="45.5" r="3.4" fill="#000"/></mask></defs><g stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><line x1="69.00" y1="50.00" x2="84.00" y2="50.00"/><line x1="68.52" y1="54.23" x2="89.00" y2="58.90"/><line x1="67.12" y1="58.24" x2="80.63" y2="64.75"/><line x1="64.85" y1="61.85" x2="81.27" y2="74.94"/><line x1="61.85" y1="64.85" x2="71.20" y2="76.58"/><line x1="58.24" y1="67.12" x2="67.36" y2="86.04"/><line x1="54.23" y1="68.52" x2="57.57" y2="83.15"/><line x1="50.00" y1="69.00" x2="50.00" y2="90.00"/><line x1="45.77" y1="68.52" x2="42.43" y2="83.15"/><line x1="41.76" y1="67.12" x2="32.64" y2="86.04"/><line x1="38.15" y1="64.85" x2="28.80" y2="76.58"/><line x1="35.15" y1="61.85" x2="18.73" y2="74.94"/><line x1="32.88" y1="58.24" x2="19.37" y2="64.75"/><line x1="31.48" y1="54.23" x2="11.00" y2="58.90"/><line x1="31.00" y1="50.00" x2="16.00" y2="50.00"/><line x1="31.48" y1="45.77" x2="11.00" y2="41.10"/><line x1="32.88" y1="41.76" x2="19.37" y2="35.25"/><line x1="35.15" y1="38.15" x2="18.73" y2="25.06"/><line x1="38.15" y1="35.15" x2="28.80" y2="23.42"/><line x1="41.76" y1="32.88" x2="32.64" y2="13.96"/><line x1="45.77" y1="31.48" x2="42.43" y2="16.85"/><line x1="50.00" y1="31.00" x2="50.00" y2="10.00"/><line x1="54.23" y1="31.48" x2="57.57" y2="16.85"/><line x1="58.24" y1="32.88" x2="67.36" y2="13.96"/><line x1="61.85" y1="35.15" x2="71.20" y2="23.42"/><line x1="64.85" y1="38.15" x2="81.27" y2="25.06"/><line x1="67.12" y1="41.76" x2="80.63" y2="35.25"/><line x1="68.52" y1="45.77" x2="89.00" y2="41.10"/></g><circle cx="50" cy="50" r="12" fill="currentColor" mask="url(#iris-hole)"/></svg>';
+    $("#table").innerHTML = table.map((t, k) => `<button type="button" class="fd" data-k="${k}" aria-label="Carte face cachée" style="--dd:${k * 35}ms;--fd:-${rand(90) / 10}s;--ha:${100 + rand(50)}deg;--x1:${pc(10, 50)};--y1:${pc(10, 45)};--x2:${pc(50, 90)};--y2:${pc(55, 90)}">${BACK}</button>`).join("");
     $("#table").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
       const k = +b.dataset.k, p = picked.indexOf(k);
       if (p >= 0) picked.splice(p, 1); else if (picked.length < sp.pos.length) picked.push(k);
@@ -458,7 +468,8 @@ function renderTable(){
   $("#table").querySelectorAll("[data-k]").forEach(b => {
     const p = picked.indexOf(+b.dataset.k);
     b.classList.toggle("on", p >= 0);
-    b.innerHTML = '<i class="arc"></i><i class="dot"></i>' + (p >= 0 ? `<span>${p + 1}</span>` : "");
+    const sp0 = b.querySelector("span"); if (sp0) sp0.remove();
+    if (p >= 0){ const n = document.createElement("span"); n.textContent = p + 1; b.appendChild(n); }
     b.setAttribute("aria-label", "Carte face cachée" + (p >= 0 ? ", choisie en position " + (p + 1) : ""));
   });
   const left = sp.pos.length - picked.length;
