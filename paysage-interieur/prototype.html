@@ -77,8 +77,8 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
     <section class="panel stage" aria-label="Tapis">
       <div class="views">
         <div class="chips" role="group" aria-label="Vue">
-          <button type="button" class="chip" data-k="view" data-v="laine">Rendu laine</button>
-          <button type="button" class="chip" data-k="view" data-v="plan">Plan atelier</button>
+          <button type="button" class="chip" data-k="view" data-v="client">Vue client</button>
+          <button type="button" class="chip" data-k="view" data-v="atelier">Vue atelier</button>
         </div>
         <span class="note" id="dims">Dessiné pour 70 × 100 cm</span>
       </div>
@@ -107,6 +107,7 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
           <li>Cut 1,5 cm pour le sol et l’eau, loop 3 cm, cut 4 cm pour la mousse, cut 4 cm brossé pour les zones feutrées, pompons.</li>
           <li>Aucun élément de moins de 1 cm ; rivage de 1 cm minimum entre l’eau et le reste.</li>
           <li>Seulement les laines du nuancier Tufting Shop ; les petites baies font au moins 2 cm et restent à 1 cm les unes des autres.</li>
+          <li>Vue client : rendu réaliste. Vue atelier : zones à plat, courbes de niveau tous les 0,5 cm (en gras tous les 1 cm), hauteurs en cm.</li>
           <li>Dessin vu de face, pas encore inversé pour le tuftage.</li>
         </ul>
       </div>
@@ -153,9 +154,9 @@ const TH={cut15:1.5,loop3:3,cut4:4,brush4:4,pompon:4};
 const lum=ref=>{const c=Y[ref].rgb;return .2126*c[0]+.7152*c[1]+.0722*c[2];};
 const fam=a=>a.filter(r=>Y[r]).sort((x,y)=>lum(y)-lum(x));
 Object.values(PALS).forEach(P=>{P.dom=fam(P.dom);P.ana=P.ana.map(fam);P.pop=P.pop.map(fam);P.accent=P.accent.filter(r=>Y[r]);});
-let ST={seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",view:"laine"};
-try{const s=JSON.parse(localStorage.getItem("proto-mousse-v2"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
-const save=()=>{try{localStorage.setItem("proto-mousse-v2",JSON.stringify(ST))}catch(e){}};
+let ST={seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",view:"client"};
+try{const s=JSON.parse(localStorage.getItem("proto-mousse-v3"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
+const save=()=>{try{localStorage.setItem("proto-mousse-v3",JSON.stringify(ST))}catch(e){}};
 
 /* ---------- Hasard reproductible et bruit ---------- */
 function rng(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
@@ -269,16 +270,16 @@ function generate(p,G){
       const o=y*w+x;if(lake[o]||dOutP[o]/G<1.3)continue;if(!organic&&!inRug[o])continue;
       const dx=x/G-m.x,dy=y/G-m.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),rad=m.r*(1+.06*Math.sin(2*a+m.p1)+.05*Math.sin(5*a+m.p2))+(fbm(n3,x/G/2.2,y/G/2.2)-.5)*2.2;
       if(d>=rad)continue;const ins=rad-d,u=Math.min(1,d/rad);
-      zone[o]=zc&&ins>Math.max(1.8,rad*.45)+(fbm(n1,x/G/2+m.p2,y/G/2)-.5)*1.4?zc:z;if(m.tech==="loop3"){H[o]=1.5+(top-1.5)*sstep(0,.9,ins)+.4*(1-u*u);}
-      else{const dome=Math.sqrt(Math.max(0,1-u*u*u)),lump=(fbm(n2,x/G/1.6+m.p1,y/G/1.6)-.5)*(m.tech==="brush4"?.5:1.3);
-        H[o]=1.5+(top-1.5)*sstep(0,1.2,ins)+dome*Math.min(2.4,m.r*.32)+lump*sstep(0,2,ins);}
+      zone[o]=zc&&ins>Math.max(1.8,rad*.45)+(fbm(n1,x/G/2+m.p2,y/G/2)-.5)*1.4?zc:z;if(m.tech==="loop3"){H[o]=1.5+1.5*sstep(0,.7,ins);}
+      else{const dome=Math.sqrt(Math.max(0,1-u*u*u)),lump=fbm(n2,x/G/1.6+m.p1,y/G/1.6)*(m.tech==="brush4"?.25:.55);
+        H[o]=Math.max(1.5,1.5+2.5*sstep(0,Math.min(m.r*.7,4.5),ins)*(.78+.22*dome)-lump*sstep(0,2,ins));}
       inRug[o]=1;}
     for(const B of m.berries){const zb=zoneFor(B.ref,"loop3","baie"),bb=Math.ceil(B.r*G)+1,bi=B.x*G,bj=B.y*G;
       for(let y=Math.max(0,Math.floor(bj-bb));y<Math.min(h,bj+bb);y++)for(let x=Math.max(0,Math.floor(bi-bb));x<Math.min(w,bi+bb);x++){
-        const o=y*w+x;if(Math.hypot(x/G-B.x,y/G-B.y)<B.r&&zone[o]&&zones[zone[o]].kind==="mousse"){zone[o]=zb;H[o]=Math.max(1.5,H[o]-.8);}}}}
+        const o=y*w+x;if(Math.hypot(x/G-B.x,y/G-B.y)<B.r&&zone[o]&&zones[zone[o]].kind==="mousse"){zone[o]=zb;H[o]=3;}}}}
   for(const q of poms){const z=zoneFor(q.ref,"pompon","pompon"),b=Math.ceil(q.r*G)+1,ci=q.x*G,cj=q.y*G;
     for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){
-      const o=y*w+x,d=Math.hypot(x/G-q.x,y/G-q.y);if(d>=q.r)continue;zone[o]=z;H[o]=Math.max(H[o],3.2+Math.sqrt(q.r*q.r-d*d)*1.1);inRug[o]=1;}}
+      const o=y*w+x,d=Math.hypot(x/G-q.x,y/G-q.y);if(d>=q.r)continue;zone[o]=z;H[o]=Math.max(H[o],q.r*.9+Math.sqrt(q.r*q.r-d*d));inRug[o]=1;}}
   for(let o=0;o<N;o++)if(!inRug[o])zone[o]=0;
   return {w,h,G,zone,H,zones,counts:{mounds:mounds.length,poms:poms.length,rings}};
 }
@@ -289,11 +290,24 @@ function hexRgb(h){h=h.replace("#","");if(h.length===3)h=h.split("").map(c=>c+c)
 function render(cv,g,view){
   const {w,h,G,zone,H,zones}=g;cv.width=w;cv.height=h;const x=cv.getContext("2d"),img=x.createImageData(w,h),D=img.data;
   const floor=hexRgb(css("--floor")||"#E4DED3");
-  if(view==="plan"){
-    for(let o=0;o<w*h;o++){const z=zone[o],k=o*4;let c=z?Y[zones[z].ref].rgb:floor;
-      const i=o%w;const edge=z&&((i<w-1&&zone[o+1]!==z)||(o+w<w*h&&zone[o+w]!==z));
-      if(edge)c=[40,40,40];D[k]=c[0];D[k+1]=c[1];D[k+2]=c[2];D[k+3]=255;}
-    x.putImageData(img,0,0);return;}
+  if(view==="atelier"){
+    const Hin=H.map((v,o)=>zone[o]?v:1.5),Hc=blur(Hin,w,h,Math.max(1,Math.round(.45*G))),step=.5,lv=v=>Math.floor((v-1.5)/step+1e-6),major=v=>Math.floor(v+1e-6);
+    const cand=[],labels=[];
+    for(let o=0;o<w*h;o++){const z=zone[o],k=o*4,i=o%w;let c=z?Y[zones[z].ref].rgb:floor;
+      if(z){const r1=i<w-1?o+1:o,d1=o+w<w*h?o+w:o;
+        const edge=(zone[r1]!==z&&zone[r1])||(zone[d1]!==z&&zone[d1]);
+        const iso=zone[r1]&&zone[d1]&&(lv(Hc[o])!==lv(Hc[r1])||lv(Hc[o])!==lv(Hc[d1]));
+        const maj=iso&&(major(Hc[o])!==major(Hc[r1])||major(Hc[o])!==major(Hc[d1]));
+        if(edge)c=[30,30,30];
+        else if(iso){const a=maj?.85:.5,ink=[92,52,24];c=c.map((v,q)=>v*(1-a)+ink[q]*a);
+          if(maj&&G>=4&&!(i%3)&&!(Math.floor(o/w)%3))cand.push([i,Math.floor(o/w),Math.max(major(Hc[o]),major(Hc[r1]),major(Hc[d1]))]);}}
+      D[k]=c[0];D[k+1]=c[1];D[k+2]=c[2];D[k+3]=255;}
+    x.putImageData(img,0,0);
+    cand.sort((A,B)=>B[2]-A[2]||hash(A[0],A[1])-hash(B[0],B[1]));
+    for(const c of cand){if(labels.length>=45)break;if(labels.every(([a,b])=>Math.hypot(a-c[0],b-c[1])>8*G))labels.push(c);}
+    if(G>=4){x.font=`600 ${Math.round(G*1.35)}px Figtree, system-ui, sans-serif`;x.textAlign="center";x.textBaseline="middle";x.lineJoin="round";
+      for(const[lx,ly,v]of labels){const t=String(v).replace(".",",");x.lineWidth=Math.max(2,G*.45);x.strokeStyle="rgba(255,255,255,.9)";x.strokeText(t+" cm",lx,ly);x.fillStyle="#5C3418";x.fillText(t+" cm",lx,ly);}}
+    return;}
   const mask=new Float32Array(w*h);for(let o=0;o<w*h;o++)mask[o]=zone[o]?1:0;
   const sh=blur(mask,w,h,Math.round(1.4*G)),Hb=blur(H,w,h,Math.max(1,Math.round(.35*G))),Hb2=blur(H,w,h,Math.round(2*G));
   const L=[-.5,-.68,.53],Lz=L[2],offX=Math.round(.6*G),offY=Math.round(1*G);
@@ -306,20 +320,28 @@ function render(cv,g,view){
       D[k]=floor[0]*f*n;D[k+1]=floor[1]*f*n;D[k+2]=floor[2]*f*n;D[k+3]=255;continue;}
     const Zo=zones[zi],c=Y[Zo.ref].rgb,t=Zo.tech;
     const ii=Math.min(w-2,Math.max(1,i)),jj=Math.min(h-2,Math.max(1,j)),q=jj*w+ii;
-    const dx=(Hb[q+1]-Hb[q-1])*G/2*.7,dy=(Hb[q+w]-Hb[q-w])*G/2*.7,nl=Math.hypot(dx,dy,1);
+    const dx=(Hb[q+1]-Hb[q-1])*G/2*1.15,dy=(Hb[q+w]-Hb[q-w])*G/2*1.15,nl=Math.hypot(dx,dy,1);
     const diff=(-dx*L[0]-dy*L[1]+Lz)/nl;let shade=1+1.05*(diff-Lz);shade=Math.min(1.32,Math.max(.42,shade));
     const ao=1-Math.min(.38,Math.max(0,(Hb2[o]-Hb[o])*.2));
     const X=i/G,Yc=j/G,hs=hash(i,j);let tx;
     if(t==="loop3"&&G<4)tx=.95+(hs-.5)*.1+(fineN(X/.5,Yc/.5)-.5)*.1;
     else if(t==="loop3"){const pch=.42,u0=X/pch,v=Yc/pch,row=Math.floor(v),u=u0+(row&1)*.5,fu=u-Math.floor(u)-.5,fv=v-row-.5,rr=Math.sqrt(fu*fu+fv*fv);
       tx=.84+.3*Math.max(0,1-Math.abs(rr-.3)*5)+(hs-.5)*.08;}
-    else if(t==="brush4")tx=1.07+(fineN(X/.9,Yc/.9)-.5)*.26+(hs-.5)*.06;
-    else if(t==="pompon")tx=1+(hs-.5)*.26+(fineN(X/.2,Yc/.2)-.5)*.12;
-    else tx=1+(hs-.5)*.17+(fineN(X/.28,Yc/.28)-.5)*.14+(Zo.kind==="sol"?(fineN(X/6+40,Yc/6)-.5)*.1:0);
-    const f=shade*ao*tx;D[k]=Math.min(255,c[0]*f);D[k+1]=Math.min(255,c[1]*f);D[k+2]=Math.min(255,c[2]*f);D[k+3]=255;}
+    else if(t==="brush4")tx=1.06+(fineN(X/.9,Yc/.9)-.5)*.22+(fineN(X/.12,Yc/.12)-.5)*.1+(hs-.5)*.05;
+    else if(t==="pompon")tx=G<4?1+(hs-.5)*.2:.9+.2*tuft(X,Yc,.22,5)+(hs-.5)*.12;
+    else if(G<4)tx=1+(hs-.5)*.14+(fineN(X/.5,Yc/.5)-.5)*.1;
+    else tx=.9+.17*tuft(X,Yc,t==="cut4"?.42:.3,t==="cut4"?1:2)+(hs-.5)*.1+(Zo.kind==="sol"?(fineN(X/6+40,Yc/6)-.5)*.08:0);
+    // laine chinée : chaque canal varie un peu, touffe par touffe
+    const hv=G<4?0:(fineN(X/.35+90,Yc/.35)-.5)*.07,f=shade*ao*tx;
+    D[k]=Math.min(255,c[0]*f*(1+hv));D[k+1]=Math.min(255,c[1]*f);D[k+2]=Math.min(255,c[2]*f*(1-hv));D[k+3]=255;}
   x.putImageData(img,0,0);
 }
 const fineN=makeNoise(rng("fibres"));
+/* une touffe de velours coupé : clair au centre, ombré entre les touffes */
+function tuft(X,Yc,p,salt){const gx=X/p,gy=Yc/p,ix=Math.floor(gx),iy=Math.floor(gy);let d1=9,d2=9;
+  for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++){const cx=ix+a,cy=iy+b,px=cx+hash(cx*7+salt,cy*13)*.9,py=cy+hash(cy*5+salt,cx*11+3)*.9,d=(gx-px)*(gx-px)+(gy-py)*(gy-py);
+    if(d<d1){d2=d1;d1=d;}else if(d<d2)d2=d;}
+  return Math.min(1,Math.max(0,(Math.sqrt(d2)-Math.sqrt(d1))*1.6));}
 
 /* ---------- Légende atelier ---------- */
 function legend(g){
@@ -327,7 +349,9 @@ function legend(g){
   for(let o=0;o<g.zone.length;o++){const z=g.zone[o];if(!z)continue;tot++;const Zo=g.zones[z],key=Zo.ref+"|"+Zo.tech;cnt.set(key,(cnt.get(key)||0)+1);}
   const rows=[...cnt.entries()].sort((a,b)=>b[1]-a[1]);
   const refs=new Set(rows.map(([k])=>k.split("|")[0]));
-  document.getElementById("legtitle").textContent=`Laines et points · ${refs.size} couleurs`;
+  if(ST.view==="client"){document.getElementById("legtitle").textContent=`Les ${refs.size} laines de ton tapis`;
+    document.getElementById("legend").innerHTML=`<tr><td colspan="4"><div class="row">${[...refs].map(r=>`<span class="row" style="gap:6px"><span class="sw" style="background:${Y[r].hex}"></span>${Y[r].nom}</span>`).join("")}</div></td></tr>`;return;}
+  document.getElementById("legtitle").textContent=`Laines et points · ${refs.size} couleurs · courbes tous les 0,5 cm, en gras tous les 1 cm`;
   document.getElementById("legend").innerHTML=rows.map(([k,n])=>{const[ref,tech]=k.split("|"),y=Y[ref];
     return `<tr><td><span class="sw" style="background:${y.hex}"></span></td><td>${y.nom} <span class="tech">· ${ref}</span></td><td class="tech">${TECH[tech]}</td><td class="n">${(n/tot*100).toFixed(n/tot<.01?1:0)} %</td></tr>`;}).join("");
 }
@@ -345,7 +369,7 @@ function draw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
   drawVars();save();});}
 function drawVars(){const box=document.getElementById("vars"),base=Math.floor(ST.v/6)*6;
   box.innerHTML=Array.from({length:6},(_,i)=>`<button type="button" class="var" data-var="${base+i}" aria-pressed="${base+i===ST.v}"><canvas></canvas>Variante ${base+i+1}</button>`).join("");
-  box.querySelectorAll(".var").forEach((b,i)=>{const g=generate(Object.assign({},ST,{v:base+i}),2.6);render(b.querySelector("canvas"),g,"laine");});}
+  box.querySelectorAll(".var").forEach((b,i)=>{const g=generate(Object.assign({},ST,{v:base+i}),2.6);render(b.querySelector("canvas"),g,"client");});}
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   if(b.dataset.k){ST[b.dataset.k]=b.dataset.v;draw();return;}
   if(b.dataset.var!==undefined){ST.v=+b.dataset.var;draw();return;}
