@@ -76,6 +76,13 @@ input[type=color]{padding:2px;height:44px}
 .meaning{margin:4px 0 8px;font-size:.92rem;white-space:pre-wrap}
 .spread-photo{width:100%;border-radius:10px;border:1px solid var(--border);margin-top:8px}
 .posedit{border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
+.deck{display:flex;gap:6px;margin-top:6px}
+.deck button{flex:1;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:10px;padding:7px 6px;font:inherit;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.deck button i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.deck button.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset;font-weight:600}
+.key{font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chips button{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:99px;padding:6px 10px;font:inherit;font-size:.85rem;cursor:pointer;text-align:left}
 .empty{text-align:center;color:var(--muted);padding:24px 8px}
 dialog{border:0;border-radius:16px;padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--surface);color:var(--text)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -95,6 +102,8 @@ dialog .dbody{padding:16px;overflow:auto}
   <div class="card">
     <h2>Numéro de la couleur</h2>
     <input id="lk-num" class="bignum" inputmode="numeric" placeholder="ex. 12" autocomplete="off">
+    <label>Paquet de la carte</label>
+    <div id="lk-deck"></div>
     <label for="lk-spread">Lire pour le tirage</label>
     <select id="lk-spread"></select>
     <label for="lk-pos">Position dans le tirage</label>
@@ -116,8 +125,21 @@ dialog .dbody{padding:16px;overflow:auto}
     <div class="row"><h2 style="margin:0" id="dr-title"></h2><span class="count" id="dr-count" style="flex:none"></span></div>
     <p class="meaning" id="dr-desc"></p>
     <details id="dr-photo-wrap" hidden><summary class="muted">Voir la photo du tirage</summary><img id="dr-photo" class="spread-photo" alt="Photo du tirage"></details>
-    <h3>2. Tire les cartes et entre leur numéro</h3>
+    <h3>2. Ta question</h3>
+    <textarea id="dr-q" style="min-height:70px" placeholder="Pose ta question en t'adressant à toi-même…"></textarea>
+    <details id="dr-q-help" style="margin-top:6px"><summary class="muted">Aide pour inventer une question</summary>
+      <p class="meaning">Le jeu éclaire ce dont tu n'as pas forcément conscience. Pose la question sur toi, sur ta part dans la situation, plutôt que sur les autres.</p>
+      <div class="chips" id="dr-q-chips"></div>
+      <div id="dr-q-ai" hidden style="margin-top:10px">
+        <label for="dr-q-sit">Décris ta situation en quelques mots</label>
+        <textarea id="dr-q-sit" style="min-height:60px" placeholder="ex. Je me dispute souvent avec mon associé"></textarea>
+        <button class="btn sm" id="dr-q-gen" style="margin-top:6px">✨ Proposer des questions</button>
+        <div class="chips" id="dr-q-props"></div>
+      </div>
+    </details>
+    <h3>3. Tire les cartes et entre leur numéro</h3>
     <div id="dr-positions"></div>
+    <p class="muted" style="margin:12px 0 0">Les réponses sont des suggestions personnelles, à passer au crible de ton discernement. Elles ne remplacent jamais l'avis d'un médecin ou d'un thérapeute.</p>
     <div class="row" style="margin-top:10px">
       <button class="btn sec" id="dr-clear">Effacer</button>
       <button class="btn" id="dr-save">Garder dans l'historique</button>
@@ -276,6 +298,12 @@ const KEY = "tirage-couleurs-v1";
 const ALL = "__all__";
 // Liste des 48 couleurs (numéros, noms, familles) d'après le lexique public de l'auteur.
 // Les couleurs d'affichage (hex) sont approximatives : calibre avec tes cartes pour plus de précision.
+// Les deux paquets : dos Rouge = versions Matière, dos Or = versions Lumière
+const DECKS = { rouge: { label: "Rouge", field: "Matière", color: "#c62828" }, or: { label: "Or", field: "Lumière", color: "#d4af37" } };
+const deckField = d => d && DECKS[d] && db.fields.includes(DECKS[d].field) ? DECKS[d].field : null;
+function deckHtml(sel, attr){
+  return `<div class="deck">${Object.entries(DECKS).map(([k, d]) => `<button type="button" ${attr}="${k}" class="${sel === k ? "on" : ""}"><i style="background:${d.color}"></i>${d.label} · ${d.field}</button>`).join("")}</div>`;
+}
 const LEXIQUE_URL = "https://williamberton.com/le-lexique-des-couleurs/";
 const G1 = "Arc-en-ciel (relationnelles)", G2 = "Transformation", G3 = "Paix", G4 = "Éveil";
 const CATALOGUE = [
@@ -403,12 +431,17 @@ function rgbToLab([r, g, b]){
 }
 function dE(a, b){ const A = rgbToLab(a), B = rgbToLab(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); }
 
+// La première phrase-clé (en gras dans le livre) donne le sens général
+function keyHtml(v){
+  const lines = String(v).split("\n");
+  return `<span class="key">${esc(lines[0])}</span>` + (lines.length > 1 ? "\n" + esc(lines.slice(1).join("\n")) : "");
+}
 function cardHtml(c, field){
   if (!c) return `<div class="card empty">Aucune carte avec ce numéro.<br><button class="btn sm" style="margin-top:10px" onclick="openCard(null,'${esc($("#lk-num").value)}')">Créer cette carte</button></div>`;
   const fields = field && field !== ALL ? [field] : db.fields;
   const body = fields.map(f => {
     const v = (c.values || {})[f];
-    return `<div class="field"><b>${esc(f)}</b><p>${v ? esc(v) : '<span class="muted">— pas encore rempli —</span>'}</p></div>`;
+    return `<div class="field"><b>${esc(f)}</b><p>${v ? keyHtml(v) : '<span class="muted">— pas encore rempli —</span>'}</p></div>`;
   }).join("");
   const others = field && field !== ALL && db.fields.length > 1
     ? `<details style="margin-top:10px"><summary class="muted">Voir les autres rubriques</summary>${db.fields.filter(f => f !== field).map(f => `<div class="field"><b>${esc(f)}</b><p>${esc((c.values || {})[f] || "—")}</p></div>`).join("")}</details>` : "";
@@ -450,24 +483,29 @@ function renderLookup(){
   if (sp && keepP && sp.positions[keepP]) $("#lk-pos").value = keepP;
   showLookup();
 }
+let lkDeck = "";
+function renderLkDeck(){
+  $("#lk-deck").innerHTML = deckHtml(lkDeck, "data-lkd");
+  $("#lk-deck").querySelectorAll("[data-lkd]").forEach(b => b.onclick = () => { lkDeck = lkDeck === b.dataset.lkd ? "" : b.dataset.lkd; renderLkDeck(); showLookup(); });
+}
 function showLookup(){
   const n = $("#lk-num").value.trim();
   if (!n){ $("#lk-result").innerHTML = db.cards.length ? "" : `<div class="card empty">Commence par créer tes cartes dans <b>Réglages</b> puis remplis-les depuis ton livre dans <b>Cartes</b>.</div>`; return; }
   const sp = db.spreads.find(s => s.id === $("#lk-spread").value);
   const pos = sp ? sp.positions[$("#lk-pos").value] : null;
-  $("#lk-result").innerHTML = (pos ? `<p class="muted">${esc(sp.name)} — position « ${esc(pos.label)} »${pos.meaning ? " : " + esc(pos.meaning) : ""}</p>` : "") + cardHtml(byNum(n), pos ? pos.field : ALL);
+  $("#lk-result").innerHTML = (pos ? `<p class="muted">${esc(sp.name)} — position « ${esc(pos.label)} »${pos.meaning ? " : " + esc(pos.meaning) : ""}</p>` : "") + cardHtml(byNum(n), deckField(lkDeck) || (pos ? pos.field : ALL));
 }
 $("#lk-num").oninput = showLookup;
 $("#lk-spread").onchange = renderLookup;
 $("#lk-pos").onchange = showLookup;
 
 /* ---------------- Tirage ---------------- */
-let current = {};
+let current = {}, currentDeck = {};
 function renderDraw(){
   fillSpreadSelect($("#dr-spread"), $("#dr-spread").value);
   const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
   $("#dr-picker").innerHTML = db.spreads.map(s => `<button type="button" data-sp="${s.id}" class="${sp && s.id === sp.id ? "on" : ""}"><b>${esc(s.name)}</b><span>${s.positions.length} carte${s.positions.length > 1 ? "s" : ""}</span></button>`).join("") || `<p class="muted">Aucun tirage : ajoute-les depuis tes photos.</p>`;
-  $("#dr-picker").querySelectorAll("[data-sp]").forEach(b => b.onclick = () => { $("#dr-spread").value = b.dataset.sp; current = {}; renderDraw(); });
+  $("#dr-picker").querySelectorAll("[data-sp]").forEach(b => b.onclick = () => { $("#dr-spread").value = b.dataset.sp; current = {}; currentDeck = {}; renderDraw(); });
   $("#dr-main").hidden = !sp;
   if (sp){
     $("#dr-title").textContent = sp.name;
@@ -482,36 +520,59 @@ function renderDraw(){
         <input style="flex:1" inputmode="numeric" placeholder="N°" data-i="${i}" value="${esc(current[i] || "")}">
         <button class="btn sec sm" style="flex:none" data-scan="${i}" title="Scanner">📷</button></div>
       ${p.meaning ? `<p class="meaning muted">${esc(p.meaning)}</p>` : ""}
+      ${deckHtml(currentDeck[i], "data-dk" + i)}
       <div id="dr-res-${i}"></div>
     </div>`).join("") : "";
   $("#dr-positions").querySelectorAll("input").forEach(inp => inp.oninput = () => { current[inp.dataset.i] = inp.value; drawRes(sp, +inp.dataset.i); });
   $("#dr-positions").querySelectorAll("[data-scan]").forEach(b => b.onclick = () => { scanTarget = { spread: sp.id, i: +b.dataset.scan }; showTab("scan"); startCam("#sc-video"); });
-  if (sp) sp.positions.forEach((_, i) => drawRes(sp, i));
+  if (sp) sp.positions.forEach((_, i) => {
+    $("#dr-positions").querySelectorAll(`[data-dk${i}]`).forEach(b => b.onclick = () => {
+      const k = b.getAttribute("data-dk" + i); currentDeck[i] = currentDeck[i] === k ? "" : k;
+      b.parentElement.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b && currentDeck[i] === k));
+      drawRes(sp, i);
+    });
+    drawRes(sp, i);
+  });
+  renderQuestionHelp();
   renderHistory();
+}
+// Pistes pour formuler une question tournée vers soi
+const QUESTION_STARTERS = [
+  "Qu'ai-je fait, ou pas fait, pour me retrouver dans cette situation ?",
+  "Qu'ai-je vu à la place de ce qu'il y avait à voir ?",
+  "Autour de quel axe tournent mes préoccupations actuelles ?",
+  "Qu'est-ce que cette situation me demande de comprendre sur moi ?",
+  "Quelle est ma part dans ce qui se passe avec … ?"
+];
+function renderQuestionHelp(){
+  const box = $("#dr-q-chips"); if (box.childElementCount) return;
+  box.innerHTML = QUESTION_STARTERS.map((q, i) => `<button type="button" data-qs="${i}">${esc(q)}</button>`).join("");
+  box.querySelectorAll("[data-qs]").forEach(b => b.onclick = () => { $("#dr-q").value = QUESTION_STARTERS[b.dataset.qs]; $("#dr-q").focus(); });
+  askClaude().then(sample => { if (sample) $("#dr-q-ai").hidden = false; });
 }
 function drawRes(sp, i){
   const n = (current[i] || "").trim(), el = $("#dr-res-" + i);
-  if (el) el.innerHTML = n ? cardHtml(byNum(n), sp.positions[i].field) : "";
+  if (el) el.innerHTML = n ? cardHtml(byNum(n), deckField(currentDeck[i]) || sp.positions[i].field) : "";
 }
-$("#dr-spread").onchange = () => { current = {}; renderDraw(); };
-$("#dr-clear").onclick = () => { current = {}; renderDraw(); };
+$("#dr-spread").onchange = () => { current = {}; currentDeck = {}; renderDraw(); };
+$("#dr-clear").onclick = () => { current = {}; currentDeck = {}; $("#dr-q").value = ""; renderDraw(); };
 $("#dr-save").onclick = async () => {
   const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
   if (!sp || !Object.values(current).some(v => v)) return toast("Tirage vide");
-  const q = await ask("Question ou intention du tirage (facultatif) :", true); if (q === null) return;
-  db.history.unshift({ id: uid(), date: new Date().toISOString(), spread: sp.id, spreadName: sp.name, nums: sp.positions.map((_, i) => current[i] || ""), q });
+  const q = $("#dr-q").value.trim();
+  db.history.unshift({ id: uid(), date: new Date().toISOString(), spread: sp.id, spreadName: sp.name, nums: sp.positions.map((_, i) => current[i] || ""), decks: sp.positions.map((_, i) => currentDeck[i] || ""), q });
   db.history = db.history.slice(0, 200); save(); renderHistory(); toast("Tirage enregistré");
 };
 function renderHistory(){
   const h = db.history;
   $("#dr-history").innerHTML = h.length ? h.map(x => `<div class="item" data-h="${x.id}">
     <div class="row" style="flex:none;gap:4px">${x.nums.map(n => `<div class="swatch" style="width:22px;height:22px;background:${esc((byNum(n) || {}).hex || "transparent")}"></div>`).join("")}</div>
-    <div class="t">${esc(x.spreadName)} — ${x.nums.map(esc).join(", ")}<small>${new Date(x.date).toLocaleString("fr-FR")}${x.q ? " · " + esc(x.q) : ""}</small></div>
+    <div class="t">${esc(x.spreadName)} — ${x.nums.map((n, k) => esc(n) + (x.decks && x.decks[k] ? " " + DECKS[x.decks[k]].label : "")).join(", ")}<small>${new Date(x.date).toLocaleString("fr-FR")}${x.q ? " · " + esc(x.q) : ""}</small></div>
     <button class="btn sec sm" style="flex:none" data-del="${x.id}">✕</button></div>`).join("") : `<div class="empty">Aucun tirage enregistré.</div>`;
   $("#dr-history").querySelectorAll("[data-h]").forEach(el => el.onclick = e => {
     if (e.target.dataset.del){ db.history = db.history.filter(x => x.id !== e.target.dataset.del); save(); return renderHistory(); }
     const x = db.history.find(y => y.id === el.dataset.h);
-    if (db.spreads.some(s => s.id === x.spread)){ $("#dr-spread").value = x.spread; current = { ...x.nums }; renderDraw(); window.scrollTo(0, 0); }
+    if (db.spreads.some(s => s.id === x.spread)){ $("#dr-spread").value = x.spread; current = { ...x.nums }; currentDeck = { ...(x.decks || []) }; $("#dr-q").value = x.q || ""; renderDraw(); window.scrollTo(0, 0); }
   });
 }
 
@@ -589,11 +650,12 @@ async function showMatches(rgb, photo){
       b.onclick = async () => {
         b.disabled = true; b.textContent = "Lecture…";
         try {
-          const r = await sample.json("Photo d'une carte d'un jeu de couleurs numérotées de 1 à 96. Lis le numéro imprimé sur la carte. Réponds en JSON {\"num\": \"<numéro ou vide si illisible>\"}.", { images: [photo], modelTier: "quick" });
+          const r = await sample.json("Photo d'une carte d'un jeu de couleurs numérotées de 1 à 48, en deux paquets : dos rouge ou dos or. Lis le numéro imprimé sur la carte et, si on le voit, la couleur du dos ou du cadre (rouge ou or). Réponds en JSON {\"num\": \"<numéro ou vide si illisible>\", \"paquet\": \"rouge\" | \"or\" | \"\"}.", { images: [photo], modelTier: "quick" });
           const n = String((r && r.num) || "").trim();
           if (!n){ b.textContent = "Numéro illisible"; return; }
-          b.textContent = "Carte n° " + n;
-          if (sp){ current[scanTarget.i] = n; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
+          const pq = DECKS[r.paquet] ? r.paquet : "";
+          b.textContent = "Carte n° " + n + (pq ? " · " + DECKS[pq].label : "");
+          if (sp){ current[scanTarget.i] = n; if (pq) currentDeck[scanTarget.i] = pq; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
           else $("#sc-detail").innerHTML = cardHtml(byNum(n));
         } catch { b.textContent = "Lecture impossible"; }
       };
@@ -677,7 +739,7 @@ $("#ce-ocr").onchange = async e => {
     bar.style.width = "40%";
     try {
       const list = db.fields.map(f => JSON.stringify(f)).join(", ");
-      const r = await sample.json("Voici la photo d'une page de mon exemplaire d'un livre sur les couleurs (usage personnel). Transcris fidèlement le texte de la page en français, puis range-le dans ces rubriques : " + list + ". Mets dans \"autre\" ce qui ne va dans aucune rubrique. Réponds en JSON : {\"rubriques\": {<rubrique>: <texte>}, \"autre\": <texte>, \"numero\": <numéro de la couleur s'il est visible, sinon vide>}.", { images: [file], modelTier: "default" });
+      const r = await sample.json("Voici la photo d'une page de mon exemplaire d'un livre sur les couleurs (usage personnel). Transcris fidèlement le texte de la page en français, puis range-le dans ces rubriques : " + list + ". Dans chaque rubrique, mets une phrase-clé par ligne, dans l'ordre du livre (la première, en gras dans le livre, donne le sens général). Mets dans \"autre\" ce qui ne va dans aucune rubrique. Réponds en JSON : {\"rubriques\": {<rubrique>: <texte>}, \"autre\": <texte>, \"numero\": <numéro de la couleur s'il est visible, sinon vide>}.", { images: [file], modelTier: "default" });
       const rub = (r && r.rubriques) || {};
       db.fields.forEach((f, i) => { const v = (rub[f] || "").trim(); if (v){ const t = $("#ce-f" + i); t.value = (t.value ? t.value + "\n" : "") + v; } });
       if (r && r.autre){ const ta = $("#ce-ocr-text"); ta.hidden = false; ta.value = r.autre; }
@@ -783,6 +845,19 @@ $("#se-del").onclick = async () => {
   if (db.spreadImages) delete db.spreadImages[editSpread.id]; remoteDelete("img-" + editSpread.id); save(); $("#dlg-spread").close(); renderSettings(); renderLookup();
 };
 
+$("#dr-q-gen").onclick = async () => {
+  const sit = $("#dr-q-sit").value.trim(); if (!sit) return toast("Décris d'abord ta situation");
+  const sample = await askClaude(); if (!sample) return;
+  const b = $("#dr-q-gen"); b.disabled = true; b.textContent = "Réflexion…";
+  try {
+    const r = await sample.json("Je prépare un tirage de cartes de couleurs pour mieux me comprendre. Règle : la question doit s'adresser à moi-même (ma part, mon regard, mes choix), jamais chercher à prédire ou à juger les autres. Exemples de bonnes questions : « Qu'ai-je fait pour me retrouver dans cette situation ou que n'ai-je pas fait ? », « Qu'ai-je vu à la place de ce qu'il y avait à voir ? ». Ma situation : " + JSON.stringify(sit) + ". Propose 4 questions courtes, en français, tutoiement exclu (je parle de moi à la première personne). Réponds en JSON {\"questions\": [\"...\"]}.", { modelTier: "quick" });
+    const qs = (r && r.questions) || [];
+    $("#dr-q-props").innerHTML = qs.map((q, i) => `<button type="button" data-qp="${i}">${esc(q)}</button>`).join("");
+    $("#dr-q-props").querySelectorAll("[data-qp]").forEach(x => x.onclick = () => { $("#dr-q").value = qs[x.dataset.qp]; $("#dr-q").focus(); });
+  } catch { toast("Pas de proposition pour l'instant, réessaie"); }
+  b.disabled = false; b.textContent = "✨ Proposer des questions";
+};
+
 /* ---------------- Tirages depuis des photos du livre ---------------- */
 // Réduit une photo (JPEG) pour l'envoi et le stockage
 async function shrink(file, max, q){
@@ -813,7 +888,7 @@ document.querySelectorAll(".spread-photos").forEach(inp => inp.onchange = async 
         "Ces " + imgs.length + " photos (numérotées de 0 à " + (imgs.length - 1) + " dans l'ordre) viennent de mon exemplaire d'un livre sur les couleurs (usage personnel). " +
         "Elles décrivent un ou plusieurs tirages de cartes de couleurs ; un tirage peut s'étendre sur plusieurs photos. Pour chaque tirage, relève fidèlement : son nom, la consigne ou l'explication générale, " +
         "le nombre de cartes à tirer, et pour chaque position dans l'ordre : son nom et ce qu'elle signifie dans le contexte du tirage. " +
-        "Pour chaque position, indique aussi la rubrique de la carte à lire parmi " + fields + ", ou \"toutes\" si le livre ne précise pas. " +
+        "Pour chaque position, indique aussi la rubrique de la carte à lire parmi " + fields + " (le paquet Rouge correspond à Matière, le paquet Or à Lumière), ou \"toutes\" si le livre ne précise pas. " +
         "Réponds en JSON : {\"tirages\": [{\"nom\": \"\", \"description\": \"\", \"photos\": [indices des photos], \"positions\": [{\"nom\": \"\", \"sens\": \"\", \"rubrique\": \"\"}]}]}. " +
         "Si une photo ne montre aucun tirage, ignore-la.",
         { images: imgs, modelTier: "complex" });
@@ -833,12 +908,12 @@ document.querySelectorAll(".spread-photos").forEach(inp => inp.onchange = async 
   setProg(null);
   if (!added.length) return toast("Aucun tirage trouvé sur ces photos");
   save(); renderSettings(); renderLookup();
-  fillSpreadSelect($("#dr-spread")); $("#dr-spread").value = added[0].id; current = {}; renderDraw(); showTab("draw");
+  fillSpreadSelect($("#dr-spread")); $("#dr-spread").value = added[0].id; current = {}; currentDeck = {}; renderDraw(); showTab("draw");
   toast(added.length + " tirage(s) ajouté(s) : vérifie-les dans Réglages");
 });
 
 /* ---------------- Démarrage ---------------- */
-applyTheme(); renderLookup(); connectRemote();
+applyTheme(); renderLkDeck(); renderLookup(); connectRemote();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
