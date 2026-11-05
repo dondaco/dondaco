@@ -228,27 +228,27 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       <label for="avis" style="margin-top:12px">Mon avis, avec mes mots</label>
       <textarea id="avis" placeholder="Qu'est-ce que ces phrases me disent par rapport à ma question ?"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <button class="btn" id="b-share">Partager ce tirage</button>
-        <button class="btn ghost" id="b-copy">Copier mon tirage</button>
-        <button class="btn ghost" id="b-new">Faire un autre tirage</button>
+        <button class="btn" id="b-share" style="flex:1 1 100%">Sauver ce tirage</button>
+        <button class="btn ghost" id="b-new" style="flex:1 1 100%">Faire un autre tirage</button>
       </div>
       <p class="note">Textes originaux écrits pour ce site d'après le symbolisme courant des couleurs.</p>
     </div>
   </section>
 </div>
-<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Partager ce tirage">
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Sauver ce tirage">
   <div class="sheet-in">
-    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:1.15rem;margin:0">Partager ce tirage</h2><button class="back" id="sh-close" style="margin:0">Fermer</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:1.15rem;margin:0">Sauver ce tirage</h2><button class="back" id="sh-close" style="margin:0">Fermer</button></div>
     <img id="sh-img" alt="Image du tirage à partager" class="sh-img">
-    <label class="consent" style="margin:6px 0 10px"><input type="checkbox" id="sh-q"> Afficher ma question sur l'image</label>
+    <label class="consent" style="margin:6px 0 12px"><input type="checkbox" id="sh-q"> Avec ma question</label>
+    <button class="btn" id="sh-save" style="width:100%">Enregistrer dans mes photos</button>
+    <p class="muted" style="font-size:.8rem;margin:14px 0 6px">Ou l'envoyer :</p>
     <div class="sh-grid">
-      <button class="btn" id="sh-native" hidden>Partager…</button>
+      <button class="btn ghost" id="sh-native" hidden>Envoyer…</button>
       <a class="btn ghost" id="sh-wa" target="_blank" rel="noopener">WhatsApp</a>
       <a class="btn ghost" id="sh-mail" target="_blank" rel="noopener">E-mail</a>
       <button class="btn ghost" id="sh-link">Copier le lien</button>
-      <button class="btn ghost" id="sh-save">Enregistrer l'image</button>
     </div>
-    <p class="muted" style="font-size:.8rem;margin:10px 0 0">Pour joindre l'image à un message, enregistre-la puis ajoute-la depuis tes photos. Le lien permet à la personne qui le reçoit de faire son propre tirage.</p>
+    <p class="muted" style="font-size:.78rem;margin:10px 0 0">Le lien permet à la personne qui le reçoit de faire son propre tirage.</p>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
@@ -477,15 +477,6 @@ function renderKept(){
   const html = sp.pos.map((p, i) => (kept[i] || []).length ? `<p class="muted" style="font-family:var(--sans);font-size:.85rem;margin-top:8px">${esc(p.l)} · ${esc(DECK[table[picked[i]].i].n)}</p>` + kept[i].map(x => `<p>♥ ${esc(x)}</p>`).join("") : "").join("");
   $("#kept").innerHTML = html || `<p class="muted" style="font-family:var(--sans)">Touche les phrases qui te parlent, elles se rassemblent ici.</p>`;
 }
-$("#b-copy").onclick = async () => {
-  const lines = ["Tirage « " + sp.name + " »", "Question : " + ($("#q").value.trim() || "—"), ""];
-  sp.pos.forEach((p, i) => { const t = table[picked[i]], c = DECK[t.i]; lines.push(p.l + " : " + c.n + " (" + (t.side === "l" ? "lumière" : "défi") + ")"); (kept[i] || []).forEach(x => lines.push("  ♥ " + x)); });
-  if (aiResult && aiResult.synthese) lines.push("", "Conclusion de Claude : " + aiResult.synthese);
-  if ($("#avis").value.trim()) lines.push("", "Mon avis : " + $("#avis").value.trim());
-  const text = lines.join("\n");
-  try { await navigator.clipboard.writeText(text); toast("Tirage copié"); }
-  catch { const ta = $("#avis"); const old = ta.value; ta.value = text; ta.select(); toast("Sélectionne et copie le texte"); setTimeout(() => { ta.value = old; }, 8000); }
-};
 /* Conclusion de Claude : avec le compte de la personne qui consulte la page, sinon une demande à copier */
 function drawData(){
   return sp.pos.map((p, i) => { const t = table[picked[i]], c = DECK[t.i], ph = t.side === "l" ? c.l : c.d;
