@@ -140,22 +140,25 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .ess .ess-r{font-family:var(--sans);font-size:.84rem;color:var(--muted);margin-top:6px}
 .ess .ess-r b{color:var(--ink);font-weight:600}
 .trend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:.9rem;color:var(--muted)}
-/* tendance : même reflet irisé que les dos de cartes */
-.tr-chip{font-weight:600;border-radius:99px;padding:5px 14px;color:#2a2445;border:1px solid rgba(255,255,255,.7);
-  background:linear-gradient(110deg,#ffc3e1,#ffe6b5 22%,#c2f2dc 45%,#b3e1ff 65%,#cdbcff 85%,#ffc3e1);background-size:200% 100%;animation:sheenChip 8s ease-in-out infinite alternate}
-@keyframes sheenChip{to{background-position:100% 0}}
-/* teinte de la tendance : vert pour l'élan, doré pour l'équilibre, rouge rosé pour la prudence */
-.tr-elan{background-image:linear-gradient(110deg,#b8f0d2,#d9f7b8 25%,#9fe6c6 50%,#c7f2e6 72%,#a8e8cf)}
-.tr-equilibre{background-image:linear-gradient(110deg,#ffe3a6,#fff1c2 25%,#ffd49a 50%,#fbe9b3 72%,#ffdca8)}
-.tr-prudence{background-image:linear-gradient(110deg,#ffb8c2,#ffd3cf 25%,#ff9fae 50%,#ffc7d2 72%,#ffadb9)}
-.verdict.v-elan::before{background:linear-gradient(180deg,#9fe6c6,#d9f7b8,#7fdcb2)}
-.verdict.v-equilibre::before{background:linear-gradient(180deg,#ffd49a,#fff1c2,#f5c36b)}
-.verdict.v-prudence::before{background:linear-gradient(180deg,#ff9fae,#ffd3cf,#f47f93)}
-.verdict{border-radius:16px;padding:14px 16px;margin:0 0 14px;background:var(--soft);border-left:5px solid var(--accent)}
+/* tendance : pastille nacrée, à peine teintée, traversée par un reflet de lumière (comme les dos de cartes) */
+.tr-chip{position:relative;overflow:hidden;font-weight:600;border-radius:99px;padding:5px 14px 5px 26px;color:#2a2445;
+  border:1px solid rgba(255,255,255,.85);box-shadow:0 1px 5px rgba(60,40,90,.14), inset 0 0 0 1px rgba(255,255,255,.4);
+  background:linear-gradient(115deg, transparent 32%, rgba(255,255,255,.9) 46%, transparent 60%),
+             linear-gradient(115deg, var(--t1,#efe9fb), #faf8ff 38%, var(--t2,#eef2ff) 70%, #fbfaff);
+  background-size:260% 100%, 100% 100%;animation:sheenChip 6s ease-in-out infinite alternate}
+.tr-chip::before{content:"";position:absolute;left:11px;top:50%;width:8px;height:8px;margin-top:-4px;border-radius:50%;background:var(--td,#a88bf0);box-shadow:0 0 8px 2px color-mix(in srgb,var(--td,#a88bf0) 55%,transparent)}
+@keyframes sheenChip{from{background-position:0% 0, 0 0}to{background-position:100% 0, 0 0}}
+.tr-elan{--t1:#e2f6ea;--t2:#edf8e2;--td:#5fcf9b}
+.tr-equilibre{--t1:#fbf0d6;--t2:#fdf5e2;--td:#e6b14f}
+.tr-prudence{--t1:#fbe2e6;--t2:#fdeef0;--td:#e97f92}
+.verdict{border-left:0;position:relative;padding-left:20px}
+.verdict::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:4px;
+  background:linear-gradient(180deg, var(--td,#a88bf0), color-mix(in srgb,var(--td,#a88bf0) 35%,#fff) 50%, var(--td,#a88bf0));opacity:.85}
+.verdict.v-elan{--td:#5fcf9b}.verdict.v-equilibre{--td:#e6b14f}.verdict.v-prudence{--td:#e97f92}
+.verdict{border-radius:16px;padding:14px 16px 14px 20px;margin:0 0 14px;background:var(--soft);position:relative}
 .verdict b{display:block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
 .verdict p{margin:0;font-family:var(--serif);font-size:1.12rem;line-height:1.5}
-.verdict{border-left:0;position:relative;padding-left:20px}
-.verdict::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:5px;background:linear-gradient(180deg,#ffc3e1,#ffe6b5,#c2f2dc,#b3e1ff,#cdbcff)}
+
 .rate-top{margin-top:6px;padding:12px;border-radius:12px;background:var(--soft)}
 .sheet{position:fixed;inset:0;background:rgba(20,16,35,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:12px max(12px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px))}
 .sheet-in{background:var(--surface);border-radius:20px;padding:16px;width:100%;max-width:520px;max-height:92vh;overflow:auto}
