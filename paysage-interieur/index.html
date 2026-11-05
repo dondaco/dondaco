@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Ton paysage intérieur</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout : carnet d'atelier en une colonne, une étape à la fois ; le paysage est esquissé vu du dessus, comme le tapis posé au sol */
+:root{
+  --bg:#ECEEE8; --surface:#F7F8F4; --line:#D3D8CF; --ink:#22302A; --muted:#5D6B63;
+  --accent:#3F6B5C; --accent-soft:#DCE8E2; --gold:#C8902E;
+  --display:"Gloock", Georgia, "Times New Roman", serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161B19; --surface:#1E2522; --line:#34403A; --ink:#E6ECE6; --muted:#9CA9A1;
+  --accent:#8CC4AE; --accent-soft:#25352F; --gold:#E2B456; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161B19; --surface:#1E2522; --line:#34403A; --ink:#E6ECE6; --muted:#9CA9A1;
+  --accent:#8CC4AE; --accent-soft:#25352F; --gold:#E2B456; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;
+  background-image:radial-gradient(circle, color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1.4px);background-size:10px 10px}
+.wrap{max-width:780px;margin:0 auto;padding-block:28px 64px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:flex;flex-direction:column;gap:22px}
+header.top{display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,7vw,52px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(26px,5vw,34px);line-height:1.1;margin:0;text-wrap:balance}
+h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.lede{color:var(--muted);max-width:62ch;margin:0}
+.note{font-size:14px;color:var(--muted);margin:0}
+
+nav.steps{display:flex;flex-wrap:wrap;gap:6px}
+nav.steps button{font:inherit;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 12px;cursor:pointer;display:flex;gap:6px;align-items:center}
+nav.steps button .n{font-variant-numeric:tabular-nums;opacity:.7}
+nav.steps button.done{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+nav.steps button.cur{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:clamp(18px,4vw,32px);display:flex;flex-direction:column;gap:26px}
+.panel-head{display:flex;flex-direction:column;gap:8px}
+.q{display:flex;flex-direction:column;gap:10px;border:0;margin:0;padding:0;min-width:0}
+.q legend,.q label.qt{font-weight:600;font-size:17px;padding:0;margin-bottom:10px}
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.opt{font:inherit;text-align:left;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:11px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.opt:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+input[type=text],textarea{font:inherit;width:100%;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:11px 14px}
+textarea{min-height:90px;resize:vertical}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.scape{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:28px;align-items:start}
+@media (max-width:640px){.scape{grid-template-columns:1fr}}
+.canvas-wrap{display:flex;flex-direction:column;gap:8px;align-items:center}
+canvas{width:100%;max-width:300px;aspect-ratio:1;height:auto}
+.layers{display:flex;flex-direction:column;gap:16px;min-width:0}
+.layer{display:flex;flex-direction:column;gap:6px;border-bottom:1px dashed var(--line);padding-bottom:14px}
+.layer:last-child{border-bottom:0}
+.layer .head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.layer .val{font-family:var(--display);font-size:20px}
+.layer .why{font-size:14px;color:var(--muted);margin:0}
+details summary{cursor:pointer;font-size:13px;color:var(--accent);font-weight:600}
+details .chips{margin-top:8px}
+
+.sw{display:flex;height:30px;border-radius:8px;overflow:hidden;max-width:340px;margin-top:4px}
+.sw span{flex:1}
+.palres{display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--line);padding-top:22px}
+.palres .val{font-family:var(--display);font-size:24px}
+.palres .why{font-size:14px;color:var(--muted);margin:0;max-width:60ch}
+.portrait{display:flex;flex-direction:column;gap:22px;border-top:1px solid var(--line);padding-top:26px}
+.portrait .ptitle{font-size:clamp(24px,4.5vw,30px)}
+.portrait section{display:flex;flex-direction:column;gap:8px;background:var(--accent-soft);border-radius:14px;padding:18px 20px}
+.portrait section h3{font-size:21px;line-height:1.25;text-wrap:balance}
+.portrait p{margin:0;max-width:64ch}
+.portrait section.plain{background:transparent;padding:0}
+.portrait ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:64ch}
+.portrait .soft{color:var(--muted);font-size:15px}
+.nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;border-radius:999px;padding:11px 22px;cursor:pointer;border:1.5px solid var(--ink);background:transparent;color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn:disabled{opacity:.35;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toast{font-size:14px;color:var(--accent);font-weight:600}
+.poem{font-family:var(--display);font-size:clamp(19px,3.4vw,23px);line-height:1.4;margin:0;max-width:56ch;text-wrap:pretty}
+.prompt-box textarea{min-height:190px;font-size:14.5px;line-height:1.5}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Atelier de tuftage · questionnaire</span>
+    <h1>Ton paysage intérieur</h1>
+    <p class="lede">Des questions sur qui tu es, pour dessiner le paysage de ton tapis : son relief, son eau, ses arbres, ses pierres, son ciel et ses couleurs. À la fin, tu peux tout ajuster et ajouter ce qui te tient à cœur.</p>
+  </header>
+  <nav class="steps" id="steps" aria-label="Étapes"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ---------- Couches du paysage ---------- */
+const LAYERS = {
+  relief:{label:"Le relief",items:{
+    plat:{fr:"Une plaine",why:"Tu as besoin d’espace et de calme, d’un sol où tout est à portée.",en:"a wide gentle plain"},
+    doux:{fr:"Des collines douces",why:"Tu avances par élans et par pauses, en rondeur.",en:"soft rolling hills"},
+    marque:{fr:"Des montagnes",why:"Tu as de l’énergie, de la force, et tu aimes les sommets.",en:"mountains with strong peaks"},
+    volcan:{fr:"Un volcan",why:"Une chaleur intense couve à l’intérieur, protégée.",en:"a dormant volcano with a crater"},
+    dunes:{fr:"Des dunes",why:"Tu vis par vagues, tu changes de forme avec le vent.",en:"wind-shaped dunes"},
+    vallee:{fr:"Une vallée",why:"Tu as besoin d’un creux protégé, entouré de hauteurs.",en:"a sheltered valley between hills"}}},
+  eau:{label:"L’eau",items:{
+    source:{fr:"Une source",why:"Tes émotions sont précieuses et un peu cachées, on les découvre en s’approchant.",en:"a small hidden spring"},
+    riviere:{fr:"Un fleuve qui serpente",why:"Tu relies, tu fais circuler, tu contournes les obstacles.",en:"a river meandering across"},
+    lac:{fr:"Un lac",why:"Calme en surface, profond en dessous.",en:"a calm lake"},
+    cascade:{fr:"Une cascade",why:"Tu fonces, tu as de l’élan, ça déborde parfois.",en:"a waterfall falling into a pool"},
+    mer:{fr:"La mer",why:"Tu vis avec des marées, des hauts et des bas.",en:"the sea with waves along one edge"},
+    ile:{fr:"Une île",why:"Tu as besoin d’être entouré·e d’eau pour te sentir protégé·e.",en:"an island surrounded by water"},
+    aucune:{fr:"Pas d’eau",why:"",en:""}}},
+  vegetation:{label:"La végétation",items:{
+    arbre:{fr:"Un grand arbre",why:"Tes racines sont profondes, tu es un repère.",en:"one large solitary tree"},
+    foret:{fr:"Une forêt",why:"Tu te sens bien entouré·e, dans le sauvage.",en:"a dense forest"},
+    clairiere:{fr:"Une clairière",why:"Un coin à toi, protégé, qu’il faut savoir trouver.",en:"a clearing surrounded by trees"},
+    prairie:{fr:"Une prairie",why:"Tu es ouvert·e, simple, avec plein de petites racines.",en:"a meadow of tall grass"},
+    fleurs:{fr:"Des fleurs sauvages",why:"Tu sèmes, tu fais pousser, tu es libre.",en:"scattered wildflowers"},
+    mousse:{fr:"De la mousse",why:"Tu es douceur, lenteur, tu adoucis ce qui est dur.",en:"soft patches of moss"},
+    aucune:{fr:"Pas de végétation",why:"",en:""}}},
+  mineral:{label:"La pierre",items:{
+    galets:{fr:"Des galets",why:"Tu ramasses les petits souvenirs, les traces.",en:"smooth pebbles"},
+    rochers:{fr:"Des rochers",why:"Tu es solide, un abri pour les autres.",en:"large boulders"},
+    falaise:{fr:"Une falaise",why:"Tu as une force verticale, une limite claire.",en:"a rocky cliff along one side"},
+    aucune:{fr:"Pas de pierre",why:"",en:""}}},
+  ciel:{label:"Le ciel",items:{
+    soleil:{fr:"Un soleil levant",why:"Tu es tourné·e vers les débuts, la lumière.",en:"a rising sun"},
+    lune:{fr:"La lune",why:"Tu es intuitif·ve, tu aimes la nuit et ses cycles.",en:"a crescent moon"},
+    etoiles:{fr:"Des étoiles",why:"Tu rêves loin, tu cherches des repères dans le noir.",en:"a scattering of stars"},
+    brume:{fr:"La brume",why:"Tu aimes le flou, le mystère, l’entre-deux.",en:"drifting mist"},
+    nuages:{fr:"Des nuages",why:"Tu es léger·ère, toujours en mouvement.",en:"soft clouds"},
+    aucune:{fr:"Pas de ciel",why:"",en:""}}},
+  chemin:{label:"Le chemin",items:{
+    sentier:{fr:"Un sentier",why:"Tu cherches ton chemin, ou tu en traces un pour les autres.",en:"a winding footpath"},
+    aucune:{fr:"Pas de chemin",why:"",en:""}}}
+};
+/* ---------- Palettes (4 saisons) ---------- */
+const PALS={
+  automne:{fr:"Automne chaleureux",c:["#E39A2E","#E8452C","#D6202A","#4A2220","#E57C78","#5E7A2B","#6A1F35","#2B2F45"],
+    desc:"Des tons chauds et profonds : ocre, rouges, prune, vert olive. Réconfortants, avec un petit côté audacieux.",
+    en:"warm deep autumn tones: ochre, tomato red, crimson, chocolate brown, coral pink, olive green, plum and midnight navy",
+    frl:"tons chauds d’automne : ocre, rouge tomate, cramoisi, brun chocolat, rose corail, vert olive, prune et bleu nuit",
+    scene:{ground:"#E7C79A",groundD:"#C9A06A",line:"#8A5A3A",water:"#5C6F8A",waterL:"#8EA0B8",waterD:"#2B2F45",green:"#5E7A2B",greenD:"#3F5520",stone:"#9A6B5A",stoneD:"#4A2220"},
+    tufts:["#E39A2E","#E8452C","#E57C78","#6A1F35","#5E7A2B"]},
+  ete:{fr:"Été doux",c:["#6E4A75","#C8284A","#C48BA7","#EBA7B4","#6E6656","#7D86A5","#3E4A7A"],
+    desc:"Des tons froids et subtils : mauves, roses poudrés, bleus brumeux. Rien de criard, tout en nuance.",
+    en:"soft cool summer tones: dusty violet, raspberry, mauve, powder pink, taupe, misty blue-grey and denim navy",
+    frl:"tons doux et froids d’été : violet poudré, framboise, mauve, rose poudré, taupe, bleu-gris brumeux et bleu jean",
+    scene:{ground:"#E6D3DD",groundD:"#C9A9BA",line:"#6E4A75",water:"#7D86A5",waterL:"#B3BBD4",waterD:"#3E4A7A",green:"#8E8A70",greenD:"#6E6656",stone:"#A79AA0",stoneD:"#6E6656"},
+    tufts:["#C48BA7","#EBA7B4","#6E4A75","#7D86A5","#C8284A"]},
+  printemps:{fr:"Printemps lumineux",c:["#F9C23C","#C9DB6E","#E9714E","#E3262E","#2AA6D6","#E9A3A6","#D3A9CF"],
+    desc:"Des tons clairs et pleins de vie : jaune soleil, vert tendre, corail, bleu ciel. Légers et joyeux.",
+    en:"bright clear spring tones: sunny yellow, lime green, coral, poppy red, sky blue, light pink and lilac",
+    frl:"tons clairs de printemps : jaune soleil, vert tendre, corail, rouge coquelicot, bleu ciel, rose clair et lilas",
+    scene:{ground:"#F6E7B8",groundD:"#E7CF85",line:"#C49A3A",water:"#2AA6D6",waterL:"#8FD3EC",waterD:"#1C7FA8",green:"#9DBF3E",greenD:"#6E9128",stone:"#E9A3A6",stoneD:"#C77C80"},
+    tufts:["#F9C23C","#C9DB6E","#E9714E","#E9A3A6","#D3A9CF"]},
+  hiver:{fr:"Hiver contrasté",c:["#DDE7EA","#C9D7DE","#F5C6CE","#F4C726","#E3194C","#D2262B","#2A1C3F","#4A1E5E","#1F1F1F"],
+    desc:"Des couleurs franches, sans demi-mesure : blancs glacés, noir, violet profond, et quelques éclats vifs.",
+    en:"high-contrast winter tones: icy white-blue, frost grey, ice pink, lemon yellow, fuchsia red, true red, ink navy, deep purple and black",
+    frl:"tons contrastés d’hiver : blanc glacé, gris givre, rose glace, jaune citron, rouge fuchsia, rouge vif, bleu encre, violet profond et noir",
+    scene:{ground:"#E9EEF0",groundD:"#C9D7DE",line:"#2A1C3F",water:"#9FB3C8",waterL:"#FFFFFF",waterD:"#2A1C3F",green:"#4A1E5E",greenD:"#1F1F1F",stone:"#9AA3AA",stoneD:"#2A1C3F"},
+    tufts:["#F5C6CE","#E3194C","#4A1E5E","#F4C726","#2A1C3F"]}
+};
+function curPal(){
+  if(S.palOv)return S.palOv;
+  const n={};["c1","c2","c3","c4","c5","c6","c7","c8"].forEach(k=>{const o=opt(k);if(o)n[o.p]=(n[o.p]||0)+1;});
+  const b=Object.entries(n).sort((x,y)=>y[1]-x[1])[0];return b?b[0]:null;
+}
+function sceneC(){const k=curPal();return Object.assign({},C0,k?PALS[k].scene:{});}
+const itemLayer={};Object.entries(LAYERS).forEach(([L,o])=>Object.keys(o.items).forEach(k=>{if(k!=="aucune")itemLayer[k]=L;}));
+
+/* ---------- Questions ---------- */
+const STEPS=[
+ {id:"toi",label:"Toi",title:"Pour commencer",intro:"Réponds au feeling. Il n’y a pas de bonne réponse, seulement la tienne.",qs:[
+   {id:"prenom",type:"text",q:"Comment tu t’appelles ?",ph:"Ton prénom"}]},
+ {id:"perso",label:"Qui tu es",title:"Qui tu es",intro:"Ta façon d’être avec les autres et avec toi-même.",qs:[
+   {id:"p1",q:"Dans un groupe d’ami·es, tu es souvent…",opts:[
+     {fr:"celle ou celui qui écoute, un peu en retrait",w:{rochers:2,clairiere:1,lac:1}},
+     {fr:"le lien entre tout le monde",w:{riviere:3,sentier:1}},
+     {fr:"celle ou celui qui entraîne les autres",w:{marque:2,soleil:1,cascade:1}},
+     {fr:"la présence qui apaise",w:{lac:2,prairie:1,plat:1}},
+     {fr:"l’électron libre",w:{fleurs:2,dunes:1,nuages:1}}]},
+   {id:"p2",q:"Face à un obstacle, tu…",opts:[
+     {fr:"le contournes en douceur",w:{riviere:2,doux:1}},
+     {fr:"fonces",w:{cascade:2,marque:1}},
+     {fr:"restes solide et attends que ça passe",w:{rochers:2,falaise:1,arbre:1}},
+     {fr:"cherches un autre chemin",w:{sentier:3}}]},
+   {id:"p3",q:"Ton rythme idéal",opts:[
+     {fr:"lent et régulier",w:{plat:2,lac:1,mousse:1}},
+     {fr:"par vagues, avec des hauts et des bas",w:{dunes:2,mer:2}},
+     {fr:"des élans, puis des pauses",w:{doux:2,cascade:1,clairiere:1}},
+     {fr:"intense, plein d’énergie",w:{marque:2,volcan:2}}]},
+   {id:"p4",q:"Tes émotions ressemblent plutôt à…",opts:[
+     {fr:"une source cachée, qu’on découvre en s’approchant",w:{source:3}},
+     {fr:"un fleuve qui coule sans s’arrêter",w:{riviere:3}},
+     {fr:"un lac calme en surface, profond en dessous",w:{lac:3}},
+     {fr:"un volcan qui dort",w:{volcan:3}},
+     {fr:"la mer, avec ses marées",w:{mer:3}}]},
+   {id:"p5",q:"Quand tout va trop vite, tu as besoin de…",opts:[
+     {fr:"te retirer dans un coin à toi",w:{clairiere:2,foret:1,vallee:1}},
+     {fr:"t’allonger et regarder le ciel",w:{prairie:2,plat:1,nuages:1}},
+     {fr:"marcher, bouger",w:{sentier:2,doux:1}},
+     {fr:"te plonger dans l’eau",w:{lac:1,mer:1,source:1}}]},
+   {id:"p6",q:"Ce qui te fait te sentir protégé·e",opts:[
+     {fr:"une montagne dans ton dos",w:{marque:1,vallee:3}},
+     {fr:"un rocher solide sur lequel t’appuyer",w:{rochers:3}},
+     {fr:"des arbres tout autour",w:{foret:3}},
+     {fr:"de l’eau tout autour de toi",w:{ile:4}}]}
+ ]},
+ {id:"racines",label:"Tes racines",title:"Tes racines",intro:"Ce qui te nourrit, d’où tu viens, ce que tu laisses derrière toi.",qs:[
+   {id:"r1",q:"Tes racines, c’est plutôt…",opts:[
+     {fr:"un lieu, une famille, quelque chose de très ancré",w:{arbre:3}},
+     {fr:"un peu partout, plein de petites racines",w:{prairie:2,fleurs:1}},
+     {fr:"tu les cherches encore",w:{sentier:2,source:1}},
+     {fr:"la nature sauvage",w:{foret:3}}]},
+   {id:"r2",q:"Un souvenir de nature qui t’est resté",opts:[
+     {fr:"le bord de mer",w:{mer:2,galets:2}},
+     {fr:"une forêt",w:{foret:2,mousse:1}},
+     {fr:"la montagne",w:{marque:2,falaise:1}},
+     {fr:"un jardin",w:{fleurs:2,arbre:1}},
+     {fr:"les champs, la campagne",w:{prairie:2,plat:1}},
+     {fr:"le désert, le sable",w:{dunes:3}}]},
+   {id:"r3",q:"Si tu étais une plante, tu serais…",opts:[
+     {fr:"un grand arbre seul",w:{arbre:3}},
+     {fr:"une forêt entière",w:{foret:3}},
+     {fr:"une herbe de prairie",w:{prairie:3}},
+     {fr:"une fleur sauvage",w:{fleurs:3}},
+     {fr:"de la mousse sur un rocher",w:{mousse:2,rochers:1}}]},
+   {id:"r4",q:"Ce que tu laisses derrière toi",opts:[
+     {fr:"des petites traces, des souvenirs ramassés",w:{galets:3}},
+     {fr:"des graines qui poussent après ton passage",w:{fleurs:2,prairie:1}},
+     {fr:"un chemin que d’autres peuvent suivre",w:{sentier:2}},
+     {fr:"rien, tu passes sur la pointe des pieds",w:{nuages:2,plat:1}}]},
+   {id:"r5",q:"Ton moment entre ciel et terre",opts:[
+     {fr:"le soleil qui se lève",w:{soleil:3}},
+     {fr:"la pleine lune",w:{lune:3}},
+     {fr:"une nuit étoilée",w:{etoiles:3}},
+     {fr:"la brume du matin",w:{brume:3}},
+     {fr:"un ciel plein de gros nuages",w:{nuages:3}}]},
+   {id:"r6",q:"Ton monde intérieur, il est…",opts:[
+     {fr:"grand ouvert",w:{plat:2,prairie:1}},
+     {fr:"entrouvert, il faut trouver l’entrée",w:{clairiere:2,vallee:1}},
+     {fr:"bien protégé, mais chaleureux quand on y entre",w:{vallee:2,volcan:1}}]}
+ ]},
+ {id:"toucher",label:"Le toucher",title:"Le toucher",intro:"Ton tapis se lit aussi avec les mains. En tuftage, le relief vient des différentes hauteurs de laine.",qs:[
+   {id:"t1",q:"Si tu parcourais ton paysage les yeux fermés, du bout des doigts, tu voudrais sentir…",opts:[
+     {fr:"une surface lisse, sans bosses",w:{plat:4},tuft:"flat, even pile",tuftfr:"surface lisse, une seule hauteur"},
+     {fr:"des courbes douces",w:{doux:4},tuft:"gentle relief with two pile heights",tuftfr:"léger relief, deux hauteurs"},
+     {fr:"de vrais reliefs, des creux et des sommets, des touffes comme de la mousse",w:{marque:4},tuft:"sculptural high-pile mounds and moss-like clusters of many different heights, strong 3D relief",tuftfr:"relief sculpté, touffes de mousse de plusieurs hauteurs"}]},
+   {id:"t4",q:"La forme de ton tapis",opts:[
+     {fr:"organique, avec des petits îlots détachés autour",shape:"organic",sat:true,en:"irregular organic silhouette with small detached satellite pieces scattered around it",frs:"forme organique irrégulière, avec des petits îlots détachés autour"},
+     {fr:"organique, d’un seul tenant",shape:"organic",en:"irregular organic silhouette",frs:"forme organique irrégulière"},
+     {fr:"ronde",shape:"round",en:"round shape",frs:"forme ronde"},
+     {fr:"rectangulaire, comme un morceau de paysage découpé",shape:"rect",en:"rectangular shape",frs:"forme rectangulaire"}]},
+   {id:"taille",q:"La taille de ton tapis",hint:"Dimensions approximatives, la forme peut varier un peu. Le prix dépend de la taille : je te l’enverrai avec le visuel de ton tapis.",opts:[
+     {fr:"Petit · environ 60 × 40 cm",en:"small, about 60 x 40 cm",frs:"petit, environ 60 × 40 cm"},
+     {fr:"Moyen · environ 75 × 55 cm",en:"medium, about 75 x 55 cm",frs:"moyen, environ 75 × 55 cm"},
+     {fr:"Grand · environ 100 × 80 cm",en:"large, about 100 x 80 cm",frs:"grand, environ 100 × 80 cm"}]},
+   {id:"t2",q:"La matière que tu aimes toucher",opts:[
+     {fr:"la mousse",w:{mousse:2},tex:"soft cut pile",texfr:"velours coupé tout doux"},
+     {fr:"un galet poli",w:{galets:2},tex:"smooth tight loop pile",texfr:"bouclé serré et lisse"},
+     {fr:"l’écorce d’un arbre",w:{arbre:1,foret:1},tex:"rugged textured loop pile",texfr:"bouclé nervuré"},
+     {fr:"le sable",w:{dunes:2},tex:"fine low cut pile",texfr:"velours ras"},
+     {fr:"l’eau",w:{lac:1,riviere:1},tex:"silky shiny cut pile",texfr:"velours soyeux"}]},
+   {id:"t3",q:"Ton paysage serait plutôt…",opts:[
+     {fr:"rempli de petits détails à découvrir",d:1.5,en:"rich with many small details",frd:"plein de petits détails"},
+     {fr:"épuré, quelques éléments seulement",d:1,en:"minimal, with only a few elements",frd:"épuré"},
+     {fr:"un seul élément fort, et beaucoup de vide",d:.55,en:"one strong element and lots of empty space",frd:"un élément fort et beaucoup de vide"}]}
+ ]},
+ {id:"couleurs",label:"Tes couleurs",title:"Tes couleurs",colors:true,intro:"Ta façon de vivre dit beaucoup des couleurs dans lesquelles tu te sens bien. Tes réponses désignent une palette parmi quatre saisons.",qs:[
+   {id:"c1",q:"Ton dimanche idéal",opts:[
+     {fr:"cuisiner une grosse marmite et recevoir des ami·es",p:"automne"},
+     {fr:"une expo ou un concert, puis un thé au calme",p:"ete"},
+     {fr:"un pique-nique au parc, des jeux, des rires",p:"printemps"},
+     {fr:"un vernissage, un lieu nouveau et pointu",p:"hiver"}]},
+   {id:"c2",q:"La couleur vers laquelle ta main va spontanément",opts:[
+     {fr:"un vert olive ou une terre cuite",p:"automne"},
+     {fr:"un bleu doux ou un rose poudré",p:"ete"},
+     {fr:"un jaune soleil ou un corail",p:"printemps"},
+     {fr:"un noir profond ou un blanc pur",p:"hiver"}]},
+   {id:"c3",q:"L’objet ou le bijou que tu gardes près de toi",opts:[
+     {fr:"une pièce ancienne, en bois, en cuivre ou en ambre",p:"automne"},
+     {fr:"de l’argent mat, une perle, un quartz rose",p:"ete"},
+     {fr:"quelque chose de léger, qui brille et qui bouge",p:"printemps"},
+     {fr:"une pièce forte et graphique, qui se remarque",p:"hiver"}]},
+   {id:"c4",q:"Les autres te décrivent souvent comme…",opts:[
+     {fr:"chaleureux·se et curieux·se des autres",p:"automne"},
+     {fr:"calme et posé·e",p:"ete"},
+     {fr:"pétillant·e et spontané·e",p:"printemps"},
+     {fr:"déterminé·e et direct·e",p:"hiver"}]},
+   {id:"c5",q:"Chez toi, ce qui compte le plus",opts:[
+     {fr:"le confort, les matières naturelles, des objets qui racontent une histoire",p:"automne"},
+     {fr:"l’harmonie, des choses assorties, rien de trop",p:"ete"},
+     {fr:"la lumière, des plantes, les fenêtres ouvertes",p:"printemps"},
+     {fr:"l’épure : peu d’objets, mais forts",p:"hiver"}]},
+   {id:"c6",q:"La musique qui t’accompagne",opts:[
+     {fr:"folk, chanson à texte",p:"automne"},
+     {fr:"classique, piano",p:"ete"},
+     {fr:"pop, comédies musicales",p:"printemps"},
+     {fr:"jazz, électro, expérimental",p:"hiver"}]},
+   {id:"c7",q:"Une amie ne va pas bien, tu…",opts:[
+     {fr:"restes avec elle aussi longtemps qu’il le faut",p:"automne"},
+     {fr:"l’écoutes calmement et cherches avec elle",p:"ete"},
+     {fr:"essaies de la faire rire",p:"printemps"},
+     {fr:"l’aides à trouver une solution concrète",p:"hiver"}]},
+   {id:"c8",q:"La lumière que tu préfères",opts:[
+     {fr:"dorée, une fin d’après-midi d’automne",p:"automne"},
+     {fr:"douce et voilée, un matin d’été",p:"ete"},
+     {fr:"claire et vive, un jour de printemps",p:"printemps"},
+     {fr:"nette et froide, un matin d’hiver",p:"hiver"}]},
+   {id:"eviter",type:"text",q:"Une couleur que tu ne veux surtout pas sur ton tapis ?",ph:"Facultatif"}
+ ]},
+ {id:"paysage",label:"Ton paysage",title:"Ton paysage",scape:true},
+ {id:"touche",label:"Ta touche",title:"Ta touche à toi",intro:"Cet espace est à toi. Tout est facultatif.",qs:[
+   {id:"ajout",type:"textarea",q:"Y a-t-il un élément que tu aimerais ajouter en plus sur ton tapis ?",ph:"Un animal, un symbole, un objet, un lieu, un souvenir…"}]},
+ {id:"fiche",label:"Ton portrait",title:"Ton portrait",final:true}
+];
+const Q={};STEPS.forEach(s=>(s.qs||[]).forEach(q=>Q[q.id]=q));
+
+/* ---------- État ---------- */
+const KEY="paysage-interieur-v1";
+let S={step:0,a:{},ov:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.a)S={ov:{},...s};}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const opt=id=>{const q=Q[id];return q&&q.opts&&S.a[id]!=null?q.opts[S.a[id]]:null;};
+
+function scores(){
+  const n={};
+  Object.keys(Q).forEach(id=>{const o=opt(id);if(o&&o.w)for(const[k,v]of Object.entries(o.w))n[k]=(n[k]||0)+v;});
+  return n;
+}
+const MIN={relief:1,eau:2,vegetation:2,mineral:2,ciel:2,chemin:3};
+function compose(){
+  const n=scores(),res={};
+  for(const L of Object.keys(LAYERS)){
+    if(S.ov[L]){res[L]=S.ov[L];continue;}
+    let best=null,bv=0;
+    for(const k of Object.keys(LAYERS[L].items)){if(k==="aucune")continue;const v=n[k]||0;if(v>bv){bv=v;best=k;}}
+    res[L]=bv>=MIN[L]?best:(L==="relief"?"doux":"aucune");
+  }
+  return res;
+}
+function answeredCount(){return Object.keys(S.a).filter(k=>Q[k]&&Q[k].opts).length;}
+
+/* ---------- Dessin du paysage vu du dessus ---------- */
+function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+const C0={ground:"#DCCFB3",groundD:"#C7B898",line:"#A8956F",water:"#8FB5BF",waterL:"#B9D3D8",waterD:"#6E98A4",green:"#7E9468",greenD:"#5F7550",stone:"#A29C90",stoneD:"#7F7A70",path:"#F2EADA",sun:"#E8C16A",moon:"#EFE8D2",lava:"#B5523A",white:"#FFFFFF"};
+
+function drawScape(cv,comp){
+  const C=sceneC();
+  const dpr=window.devicePixelRatio||1,S0=600;cv.width=S0*dpr;cv.height=S0*dpr;
+  const x=cv.getContext("2d");x.scale(dpr,dpr);
+  const r=rng(JSON.stringify(comp)+(window.__name||"")),R=(a,b)=>a+r()*(b-a);
+  const d=(opt("t3")&&opt("t3").d)||1, N=k=>Math.max(1,Math.round(k*d));
+  const sh=opt("t4")||{shape:"organic"},sat=!!sh.sat;
+  const cx=300,cy=300,rad=sh.shape==="organic"?(sat?212:250):276;
+  const ph1=R(0,6),ph2=R(0,6);
+  const outline=(dy=0)=>{x.beginPath();
+    if(sh.shape==="round")x.arc(cx,cy+dy,rad,0,7);
+    else if(sh.shape==="rect")x.rect(cx-rad,cy-rad*.72+dy,rad*2,rad*1.44);
+    else{for(let a=0;a<=Math.PI*2+.01;a+=.05){const rr=rad*(1+.09*Math.sin(a*3+ph1)+.06*Math.sin(a*5+ph2)+.03*Math.sin(a*9+ph1));x.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)*.86+dy);}x.closePath();}};
+  // touffe de laine en relief (style mousse)
+  const tuft=(px,py,s,col)=>{x.beginPath();x.arc(px,py,s,0,7);x.fillStyle=col;x.fill();
+    for(let k=0;k<s*2.2;k++){const a=R(0,7),q=Math.sqrt(r())*s;x.beginPath();x.arc(px+q*Math.cos(a),py+q*Math.sin(a),R(1.2,2.6),0,7);x.fillStyle=r()<.5?"rgba(255,255,255,.22)":"rgba(0,0,0,.12)";x.fill();}
+    x.strokeStyle="rgba(0,0,0,.14)";x.lineWidth=1.5;x.beginPath();x.arc(px,py,s,0,7);x.stroke();};
+  const tcol=(curPal()&&PALS[curPal()].tufts)||["#CDBE9C","#BFAF8C","#D6C9A9","#B5A27E"];
+  x.clearRect(0,0,S0,S0);
+  // ombre + bord du tapis
+  x.save();outline(6);x.fillStyle="rgba(0,0,0,.14)";x.filter="blur(8px)";x.fill();x.restore();
+  x.save();outline(0);x.clip();
+  const isle=comp.eau==="ile";
+  x.fillStyle=isle?C.water:C.ground;x.fillRect(0,0,S0,S0);
+  if(isle){ // vagues + île
+    x.strokeStyle=C.waterL;x.lineWidth=2;for(let i=0;i<5;i++){x.beginPath();x.arc(cx,cy,250-i*14,0,7);x.setLineDash([10,14]);x.stroke();}x.setLineDash([]);
+    x.beginPath();for(let a=0;a<=Math.PI*2+.01;a+=.1){const rr=175+18*Math.sin(a*3+1)+10*Math.sin(a*5);x.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));}x.closePath();x.fillStyle=C.ground;x.fill();x.save();x.clip();
+  }
+  // mer sur un bord
+  if(comp.eau==="mer"){x.beginPath();x.moveTo(0,600);for(let X=0;X<=600;X+=10)x.lineTo(X,430+18*Math.sin(X/45));x.lineTo(600,600);x.fillStyle=C.water;x.fill();
+    x.strokeStyle=C.waterL;x.lineWidth=2.5;for(let i=1;i<5;i++){x.beginPath();for(let X=0;X<=600;X+=10)x.lineTo(X,430+i*26+14*Math.sin(X/40+i));x.stroke();}}
+  // relief
+  const rings=(px,py,n,step,col,w,wob)=>{x.strokeStyle=col;x.lineWidth=w;const ph=R(0,6);for(let i=1;i<=n;i++){x.beginPath();for(let a=0;a<=Math.PI*2+.05;a+=.08){const rr=i*step*(1+wob*Math.sin(a*3+ph)+wob*.6*Math.sin(a*5+ph*2));x.lineTo(px+rr*Math.cos(a),py+rr*Math.sin(a));}x.stroke();}};
+  if(comp.relief==="plat"){x.strokeStyle=C.groundD;x.lineWidth=1.5;for(let i=0;i<4;i++){x.beginPath();const y=140+i*95;for(let X=0;X<=600;X+=20)x.lineTo(X,y+6*Math.sin(X/90+i));x.stroke();}}
+  if(comp.relief==="doux"){rings(200,210,6,16,C.groundD,2,.12);rings(400,330,5,17,C.groundD,2,.14);}
+  if(comp.relief==="marque"){rings(220,200,11,10,C.line,1.6,.18);rings(390,260,9,10,C.line,1.6,.2);}
+  if(comp.relief==="volcan"){rings(300,260,10,12,C.line,1.8,.1);x.beginPath();x.arc(300,260,22,0,7);x.fillStyle=C.lava;x.fill();x.beginPath();x.arc(300,260,10,0,7);x.fillStyle="#E08A52";x.fill();}
+  if(comp.relief==="dunes"){x.strokeStyle=C.groundD;x.lineWidth=2.2;for(let i=0;i<14;i++){x.beginPath();for(let X=0;X<=600;X+=8)x.lineTo(X,40+i*40+16*Math.sin(X/60+i*.7));x.stroke();}}
+  if(comp.relief==="vallee"){rings(110,260,9,14,C.line,1.6,.15);rings(500,330,9,14,C.line,1.6,.15);}
+  // touffes en relief, plus nombreuses quand le relief est marqué
+  const reliefK={plat:3,doux:9,marque:16,volcan:10,dunes:6,vallee:12}[comp.relief]||8;
+  for(let i=0;i<N(reliefK);i++){const a=R(0,7),q=Math.sqrt(r())*rad*.85;tuft(cx+q*Math.cos(a),cy+q*Math.sin(a)*.86,R(14,34),tcol[i%tcol.length]);}
+  // eau
+  const river=()=>{const p=[[40,170],[200,240],[300,330],[440,330],[560,470]];x.lineCap="round";
+    [[24,C.waterD],[18,C.water],[4,C.waterL]].forEach(([w,c])=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(...p[0]);x.bezierCurveTo(130,150,180,330,300,330);x.bezierCurveTo(400,330,470,300,560,470);x.stroke();});};
+  if(comp.eau==="riviere")river();
+  if(comp.eau==="lac"){x.beginPath();for(let a=0;a<=Math.PI*2+.01;a+=.1){const rr=78+12*Math.sin(a*2+1)+8*Math.sin(a*3);x.lineTo(320+rr*1.2*Math.cos(a),340+rr*Math.sin(a));}x.closePath();x.fillStyle=C.water;x.fill();x.strokeStyle=C.waterD;x.lineWidth=3;x.stroke();
+    x.strokeStyle=C.waterL;x.lineWidth=2;[40,22].forEach(q=>{x.beginPath();x.ellipse(330,335,q*1.4,q,0,0,7);x.stroke();});}
+  if(comp.eau==="source"){x.beginPath();x.arc(330,330,20,0,7);x.fillStyle=C.water;x.fill();x.strokeStyle=C.waterD;x.lineWidth=1.6;[32,44,56].forEach(q=>{x.beginPath();x.arc(330,330,q,0,7);x.stroke();});}
+  if(comp.eau==="cascade"){x.lineCap="round";[[18,C.waterD],[13,C.water]].forEach(([w,c])=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(180,40);x.bezierCurveTo(200,120,250,180,290,250);x.stroke();});
+    x.beginPath();x.ellipse(310,320,70,52,0,0,7);x.fillStyle=C.water;x.fill();x.strokeStyle=C.white;x.lineWidth=3;for(let i=0;i<7;i++){x.beginPath();x.moveTo(275+i*9,252);x.lineTo(278+i*9,285);x.stroke();}
+    x.strokeStyle=C.waterL;x.lineWidth=2;x.beginPath();x.ellipse(315,330,40,28,0,0,7);x.stroke();}
+  // pierre
+  if(comp.mineral==="galets"){for(let i=0;i<N(16);i++){const px=R(330,520),py=R(380,520),w=R(7,15);x.beginPath();x.ellipse(px,py,w,w*.7,R(0,3),0,7);x.fillStyle=C.stone;x.fill();x.beginPath();x.ellipse(px-w*.25,py-w*.2,w*.35,w*.2,0,0,7);x.fillStyle="rgba(255,255,255,.35)";x.fill();}}
+  if(comp.mineral==="rochers"){for(let i=0;i<N(5);i++){const px=R(360,500),py=R(390,500),s=R(20,36);x.beginPath();for(let k=0;k<7;k++){const a=k/7*Math.PI*2,rr=s*R(.75,1.1);x.lineTo(px+rr*Math.cos(a),py+rr*Math.sin(a));}x.closePath();x.fillStyle=C.stone;x.fill();x.strokeStyle=C.stoneD;x.lineWidth=2;x.stroke();}}
+  if(comp.mineral==="falaise"){x.beginPath();x.moveTo(600,0);for(let y=0;y<=600;y+=18)x.lineTo(500+R(-18,18)+20*Math.sin(y/80),y);x.lineTo(600,600);x.fillStyle=C.stone;x.fill();x.strokeStyle=C.stoneD;x.lineWidth=2;for(let i=0;i<8;i++){x.beginPath();const y=R(40,560);x.moveTo(520,y);x.lineTo(590,y+R(-10,10));x.stroke();}}
+  // végétation
+  const tree=(px,py,s)=>{x.beginPath();x.arc(px,py,s,0,7);x.fillStyle=C.green;x.fill();x.beginPath();x.arc(px-s*.25,py-s*.25,s*.45,0,7);x.fillStyle="rgba(255,255,255,.12)";x.fill();x.strokeStyle=C.greenD;x.lineWidth=1.5;x.beginPath();x.arc(px,py,s,0,7);x.stroke();};
+  if(comp.vegetation==="arbre"){x.beginPath();x.arc(175,330,64,0,7);x.fillStyle="rgba(0,0,0,.08)";x.fill();tree(170,320,56);x.strokeStyle=C.greenD;x.lineWidth=2;[38,22].forEach(q=>{x.beginPath();x.arc(170,320,q,0,7);x.stroke();});}
+  if(comp.vegetation==="foret"){for(let i=0;i<N(46);i++){const a=R(0,7),rr=Math.sqrt(r())*110;tree(170+rr*Math.cos(a)*1.1,190+rr*Math.sin(a)*.9,R(9,16));}}
+  if(comp.vegetation==="clairiere"){for(let i=0;i<N(34);i++){const a=i/N(34)*Math.PI*2+R(-.1,.1),rr=R(70,100);tree(200+rr*Math.cos(a),220+rr*Math.sin(a),R(10,15));}}
+  if(comp.vegetation==="prairie"){x.strokeStyle=C.green;x.lineWidth=1.8;x.lineCap="round";for(let i=0;i<N(260);i++){const px=R(40,560),py=R(60,560),a=R(-.5,.5);x.beginPath();x.moveTo(px,py);x.lineTo(px+7*Math.sin(a),py-9*Math.cos(a));x.stroke();}}
+  if(comp.vegetation==="fleurs"){const fc=["#E3A6B5","#F0D27A","#FFFFFF","#C7A3D9","#E58E6B"];for(let i=0;i<N(70);i++){const px=R(50,330),py=R(80,560);x.beginPath();x.arc(px,py,R(3,6),0,7);x.fillStyle=fc[Math.floor(r()*fc.length)];x.fill();}}
+  if(comp.vegetation==="mousse"){for(let i=0;i<N(9);i++){const px=R(80,320),py=R(120,480);for(let k=0;k<6;k++){x.beginPath();x.arc(px+R(-20,20),py+R(-14,14),R(10,20),0,7);x.fillStyle="rgba(126,148,104,.35)";x.fill();}}}
+  // chemin
+  if(comp.chemin==="sentier"){x.strokeStyle=C.path;x.lineWidth=5;x.lineCap="round";x.setLineDash([2,12]);x.beginPath();x.moveTo(300,590);x.bezierCurveTo(240,470,380,420,300,330);x.bezierCurveTo(240,260,320,170,290,60);x.stroke();x.setLineDash([]);}
+  // ciel (posé en haut du tapis)
+  if(comp.ciel==="soleil"){x.beginPath();x.arc(385,175,30,0,7);x.fillStyle=C.sun;x.fill();x.strokeStyle=C.sun;x.lineWidth=2;[44,56].forEach(q=>{x.beginPath();x.arc(385,175,q,0,7);x.stroke();});}
+  if(comp.ciel==="lune"){x.beginPath();x.arc(385,175,30,0,7);x.fillStyle=C.moon;x.fill();x.beginPath();x.arc(399,165,26,0,7);x.fillStyle=isle?C.water:C.ground;x.fill();}
+  if(comp.ciel==="etoiles"){x.fillStyle=C.white;for(let i=0;i<N(26);i++){const px=R(300,540),py=R(40,190),s=R(3,7);x.beginPath();x.moveTo(px,py-s);x.lineTo(px+s*.3,py);x.lineTo(px,py+s);x.lineTo(px-s*.3,py);x.closePath();x.fill();x.beginPath();x.moveTo(px-s,py);x.lineTo(px,py+s*.3);x.lineTo(px+s,py);x.lineTo(px,py-s*.3);x.closePath();x.fill();}}
+  if(comp.ciel==="brume"){x.strokeStyle="rgba(255,255,255,.55)";x.lineCap="round";for(let i=0;i<N(6);i++){x.lineWidth=R(10,20);x.beginPath();const y=R(70,230),x0=R(60,250);x.moveTo(x0,y);x.lineTo(x0+R(140,260),y+R(-8,8));x.stroke();}}
+  if(comp.ciel==="nuages"){for(let i=0;i<N(3);i++){const px=R(330,500),py=R(70,170);for(let k=0;k<5;k++){x.beginPath();x.arc(px+k*13-26,py+R(-6,6),R(12,20),0,7);x.fillStyle="rgba(255,255,255,.85)";x.fill();}}}
+  if(isle)x.restore();
+  x.restore();
+  // bordure tuftée
+  outline(0);x.strokeStyle="rgba(0,0,0,.14)";x.lineWidth=6;x.stroke();
+  // îlots détachés autour
+  if(sat){for(let i=0;i<N(6);i++){const a=R(0,7),q=R(266,290);const px=Math.min(578,Math.max(22,cx+q*Math.cos(a))),py=Math.min(578,Math.max(22,cy+q*Math.sin(a)*.95));tuft(px,py,R(11,20),tcol[i%tcol.length]);}}
+}
+
+/* ---------- Textes ---------- */
+function promptText(lang){
+  const c=compose(),name=(S.a.prenom||"").trim();
+  const parts=Object.keys(LAYERS).map(L=>c[L]!=="aucune"?LAYERS[L].items[c[L]][lang==="en"?"en":"fr"]:null).filter(Boolean);
+  const t1=opt("t1"),t2=opt("t2"),t3=opt("t3");
+  const ajout=(S.a.ajout||"").trim(),ret=(S.a.retirer||"").trim(),pk=curPal(),P=pk?PALS[pk]:null,av=(S.a.eviter||"").trim(),tl=opt("taille");
+  if(lang==="en"){
+    const t4=opt("t4");
+    const p=[`Top-down photograph of a handmade tufted wool meditation rug in the style of a sculptural moss landscape, ${t4?t4.en:"irregular organic silhouette"}, depicting a landscape seen from above: ${parts.join(", ")}.`];
+    p.push("Made of moss-like and lichen-like tufted clusters of different pile heights and textures (cut pile, loop pile, shaggy mounds), each element of the landscape a distinct textured patch.");
+    if(t3)p.push(`Composition ${t3.en}.`);
+    if(t1)p.push(`Relief: ${t1.tuft}.`);
+    if(t2)p.push(`Texture: ${t2.tex}.`);
+    p.push(`Color palette: ${P?P.en:"harmonious natural colors"}${av?`, no ${av}`:""}.`);
+    if(tl)p.push(`Size: ${tl.en}.`);
+    if(ajout)p.push(`Also include: ${ajout}.`);
+    if(ret)p.push(`Avoid: ${ret}.`);
+    p.push("Visible wool fibers, high-low tufting, soft natural light, rug lying on a light wooden floor, serene and meditative atmosphere, highly detailed.");
+    return p.join(" ");
+  }
+  const t4=opt("t4");
+  const p=[`Photo vue du dessus d’un tapis de méditation en laine tuftée à la main, style paysage de mousse sculpté, ${t4?t4.frs:"forme organique irrégulière"}, qui représente un paysage vu du ciel : ${parts.join(", ").toLowerCase()}.`];
+  p.push("Fait de touffes de laine comme de la mousse et du lichen, de différentes hauteurs et textures (velours coupé, bouclé, touffes hirsutes), chaque élément du paysage formant une zone de matière distincte.");
+  if(t3)p.push(`Composition : ${t3.frd}.`);
+  if(t1)p.push(`Relief : ${t1.tuftfr}.`);
+  if(t2)p.push(`Texture : ${t2.texfr}.`);
+  p.push(`Palette : ${P?P.frl:"couleurs naturelles et harmonieuses"}${av?`, sans ${av}`:""}.`);
+  if(tl)p.push(`Taille : ${tl.frs}.`);
+  if(ajout)p.push(`À ajouter : ${ajout}.`);
+  if(ret)p.push(`À éviter : ${ret}.`);
+  p.push("Fibres de laine visibles, différentes hauteurs de laine, lumière naturelle douce, tapis posé sur un parquet clair, atmosphère sereine et méditative, très détaillé.");
+  return p.join(" ");
+}
+function poem(){
+  const c=compose(),bits=[];
+  const L=(k)=>c[k]!=="aucune"?LAYERS[k].items[c[k]].fr.toLowerCase():null;
+  if(L("relief"))bits.push(L("relief"));
+  if(L("eau"))bits.push(L("eau"));
+  if(L("vegetation"))bits.push(L("vegetation"));
+  if(L("mineral"))bits.push(L("mineral"));
+  let s="Ton paysage, c’est "+bits.slice(0,-1).join(", ")+(bits.length>1?" et "+bits[bits.length-1]:bits[0]||"un espace encore à inventer");
+  if(L("ciel"))s+=", sous "+L("ciel").replace(/^(un|une|des|la|le) /,m=>({"un ":"un ","une ":"une ","des ":"des ","la ":"la ","le ":"le "}[m]));
+  if(L("chemin"))s+=", traversé par un sentier";
+  return s+".";
+}
+function summary(){
+  const c=compose(),out=["Questionnaire · Ton paysage intérieur"];
+  if(S.a.prenom)out.push("Prénom : "+S.a.prenom);out.push("");
+  STEPS.forEach(st=>{if(!st.qs)return;const rows=st.qs.filter(q=>S.a[q.id]!=null&&S.a[q.id]!=="").map(q=>q.q+" : "+(q.opts?q.opts[S.a[q.id]].fr:S.a[q.id]));if(rows.length&&st.id!=="toi"){out.push("— "+st.title.toUpperCase(),...rows,"");}});
+  if(curPal())out.push("— PALETTE : "+PALS[curPal()].fr+(S.palOv?" (choisie)":""),"");
+  out.push("— LE PAYSAGE");Object.keys(LAYERS).forEach(L=>out.push(LAYERS[L].label+" : "+LAYERS[L].items[c[L]].fr+(S.ov[L]?" (choisi)":"")));
+  return out.join("\n");
+}
+
+/* ---------- Rendu ---------- */
+function renderSteps(){
+  document.getElementById("steps").innerHTML=STEPS.map((st,i)=>{const done=st.qs&&st.qs.some(q=>S.a[q.id]!=null);
+    return `<button type="button" data-go="${i}" class="${i===S.step?"cur":done?"done":""}" ${i===S.step?'aria-current="step"':""}><span class="n">${i+1}</span>${st.label}</button>`;}).join("");
+}
+function renderQ(q){
+  const v=S.a[q.id];
+  if(q.type==="text")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label><input type="text" id="f-${q.id}" data-text="${q.id}" value="${esc(v)}" placeholder="${esc(q.ph)}"></div>`;
+  if(q.type==="textarea")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label><textarea id="f-${q.id}" data-text="${q.id}" placeholder="${esc(q.ph)}">${esc(v)}</textarea></div>`;
+  return `<fieldset class="q"><legend>${q.q}</legend>${q.hint?`<p class="note">${q.hint}</p>`:""}<div class="opts">${q.opts.map((o,i)=>`<button type="button" class="opt" data-q="${q.id}" data-v="${i}" aria-pressed="${v===i}">${o.fr}</button>`).join("")}</div></fieldset>`;
+}
+function renderScape(final){
+  const c=compose(),few=answeredCount()<5;
+  const layers=Object.keys(LAYERS).map(L=>{const it=LAYERS[L].items[c[L]];
+    return `<div class="layer"><div class="head"><span class="eyebrow">${LAYERS[L].label}</span>${S.ov[L]?'<span class="note">choisi par toi</span>':""}</div>
+      <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
+      ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
+  return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Esquisse du paysage vu du dessus"></canvas><p class="note">${curPal()?"Esquisse vue du dessus, dans les couleurs de ta palette.":"Esquisse vue du dessus. Les couleurs viendront de ta palette."}</p></div>
+    <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
+}
+/* ---------- Portrait : ce que les réponses disent de la personne ---------- */
+const FORCES={
+  ancrage:{name:"l’ancrage",items:["arbre","foret","rochers","falaise","mousse","plat"],
+    txt:"Tu as besoin de te sentir porté·e par quelque chose de solide : des racines, un lieu, des personnes sur qui compter. C’est là que tu reprends des forces.",
+    tapis:"une base dense et stable, des zones pleines où l’on peut poser les mains"},
+  ressenti:{name:"le ressenti",items:["source","riviere","lac","mer","ile"],
+    txt:"Tu vis beaucoup par tes émotions. Elles circulent, parfois en surface, parfois en profondeur, et c’est à travers elles que tu comprends le monde.",
+    tapis:"une eau au cœur du motif, plus lisse et plus brillante, autour de laquelle tout s’organise"},
+  elan:{name:"l’élan",items:["marque","volcan","cascade","soleil"],
+    txt:"Tu as de l’énergie et du feu. Tu avances, tu entraînes les autres, et tu as besoin de hauteur pour respirer.",
+    tapis:"des reliefs marqués, des sommets à explorer du bout des doigts"},
+  douceur:{name:"la douceur",items:["doux","prairie","fleurs","clairiere","mousse"],
+    txt:"Tu prends soin, tu fais pousser les choses autour de toi. Tu as besoin de rondeur, de tendresse et de lien.",
+    tapis:"des courbes tendres, des touffes moelleuses, de petites touches de fleurs"},
+  reve:{name:"le rêve",items:["lune","etoiles","brume","nuages","vallee"],
+    txt:"Tu as une vie intérieure riche. Tu rêves loin, tu aimes le mystère et les moments suspendus, un peu hors du temps.",
+    tapis:"un ciel présent dans le motif, des zones floues, des nuances qui se fondent les unes dans les autres"},
+  chemin:{name:"le chemin",items:["sentier","dunes","riviere"],
+    txt:"Tu es en mouvement. Tu cherches ta route, ou tu en traces une que d’autres peuvent suivre.",
+    tapis:"une ligne qui traverse le tapis, comme une invitation à le parcourir"}
+};
+const SEASON={
+  automne:"Tes réponses parlent de chaleur et de partage. Tu es tourné·e vers les autres et vers la nature, tu aimes le confort, les matières vraies, les objets qui ont une histoire. Sous ta douceur, il y a du feu.",
+  ete:"Tes réponses parlent de calme et d’harmonie. Tu observes avant d’agir, tu aimes l’équilibre et la nuance. Tu es souvent le point calme au milieu de l’agitation.",
+  printemps:"Tes réponses parlent de lumière et de spontanéité. Tu aimes le dehors, les gens, la légèreté. Tu as besoin de clarté et de mouvement pour te sentir pleinement toi.",
+  hiver:"Tes réponses parlent de clarté et de caractère. Tu sais ce que tu veux, tu aimes l’épure et les contrastes : une pièce forte plutôt que beaucoup de choses."
+};
+const T1M=["Tu cherches une surface calme, qui ne te demande rien, juste te poser.","Tu aimes ce qui est rond et enveloppant, un relief qui se devine plus qu’il ne se montre.","Tu as besoin de sentir, d’explorer, que la matière te réponde sous les mains."];
+const T2M=["la douceur absolue de la mousse","le lisse rassurant du galet","le côté brut et vivant de l’écorce","le grain fin et mouvant du sable","le fluide et le soyeux de l’eau"];
+function portrait(){
+  const n=scores();
+  const fs=Object.entries(FORCES).map(([k,f])=>[k,f.items.reduce((s,i)=>s+(n[i]||0),0)]).sort((a,b)=>b[1]-a[1]);
+  if(!fs[0][1])return "";
+  const f1=FORCES[fs[0][0]],f2=fs[1][1]>=3?FORCES[fs[1][0]]:null;
+  const pk=curPal(),name=(S.a.prenom||"").trim();
+  const sec=[];
+  sec.push(`<section><span class="eyebrow">Ce qui te guide</span>
+    <h3>Tu es surtout guidé·e par ${f1.name}${f2?`, et aussi par ${f2.name}`:""}.</h3>
+    <p>${f1.txt}</p>${f2?`<p>${f2.txt}</p>`:""}
+    <p class="soft">Pour ton tapis, ça veut dire ${f1.tapis}${f2?`, avec ${f2.tapis}`:""}.</p></section>`);
+  if(pk)sec.push(`<section><span class="eyebrow">Tes couleurs · ${PALS[pk].fr}</span><p>${SEASON[pk]}</p>
+    <p class="soft">${PALS[pk].desc}</p></section>`);
+  const t1=S.a.t1,t2=S.a.t2;
+  if(t1!=null||t2!=null)sec.push(`<section><span class="eyebrow">Ta matière</span><p>${t1!=null?T1M[t1]:""}${t2!=null?` Sous tes doigts, tu cherches ${T2M[t2]}.`:""}</p></section>`);
+  const it=opt("intention");
+  const mot=(S.a.mot||"").trim(),aj=(S.a.ajout||"").trim();
+  sec.push(`<section><span class="eyebrow">Ton refuge</span><p>Ce tapis est pensé comme un endroit à toi${name?", "+esc(name):""} : un paysage qui te ressemble, où tu peux venir te poser, respirer et te retrouver.${aj?` On y glissera aussi ${esc(aj)}, ta touche personnelle.`:""}</p></section>`);
+  return `<div class="portrait"><h3 class="ptitle">Ton portrait</h3>${sec.join("")}</div>`;
+}
+/* ---------- Fiche finale : portrait + paysage intérieur ---------- */
+const FX={
+  ancrage:{adj:"enracinée",forces:["On peut compter sur toi : tu es fiable et constant·e.","Tu es patient·e, tu construis dans la durée.","Tu apportes de la stabilité à ceux qui t’entourent."],
+    besoin:"Quand tout bouge trop autour de toi, quand tu as l’impression de t’éparpiller ou de perdre pied, tu as besoin de revenir au sol : un endroit connu, du calme, du concret.",
+    rituel:"Assieds-toi, pose tes mains à plat sur la laine et sens le poids de ton corps. Imagine des racines qui partent de toi et s’enfoncent dans la terre, à chaque expiration un peu plus loin."},
+  ressenti:{adj:"sensible",forces:["Tu as une grande sensibilité et une vraie profondeur.","Tu as de l’intuition : tu sens les choses avant qu’on te les dise.","Tu accueilles les émotions des autres avec empathie."],
+    besoin:"Quand tu as trop absorbé les émotions des autres, ou que les tiennes débordent, tu as besoin de solitude et de silence pour laisser décanter, comme une eau qui redevient claire.",
+    rituel:"Suis du bout des doigts la forme de l’eau sur ton tapis, lentement, en accordant ta respiration à ce mouvement. Laisse ce que tu ressens passer, sans le retenir."},
+  elan:{adj:"pleine d’élan",forces:["Tu as de l’énergie et du courage.","Tu sais entraîner les autres et mettre les choses en mouvement.","Tu oses te lancer."],
+    besoin:"Quand tu as beaucoup donné et couru partout, tu peux t’épuiser sans t’en rendre compte. Tu as besoin de moments pour redescendre, poser ton feu et récupérer.",
+    rituel:"Commence en bougeant un peu, étire-toi, puis ralentis jusqu’à l’immobilité. Explore les reliefs de ton tapis et laisse ton souffle s’apaiser, comme on redescend doucement d’un sommet."},
+  douceur:{adj:"tout en douceur",forces:["Tu prends soin des autres naturellement.","Tu crées du lien et de la chaleur autour de toi.","Tu sais faire grandir les choses avec patience."],
+    besoin:"À force de prendre soin des autres, tu peux t’oublier. Tu as besoin de moments rien que pour toi, sans rien à donner, juste à recevoir.",
+    rituel:"Installe-toi confortablement, enfonce tes mains dans les touffes les plus douces et offre-toi la même tendresse que celle que tu donnes aux autres."},
+  reve:{adj:"rêveuse",forces:["Tu as une imagination riche.","Tu vas au-delà des apparences, tu cherches le sens.","Tu es créatif·ve, les idées viennent quand tu leur laisses de la place."],
+    besoin:"Le bruit, l’agitation et le trop-plein de sollicitations t’épuisent vite. Tu as besoin de moments seul·e, hors du temps, pour rêver et laisser venir tes idées.",
+    rituel:"Ferme les yeux, imagine le ciel de ton tapis au-dessus de toi et laisse passer tes pensées comme des nuages, sans t’y accrocher."},
+  chemin:{adj:"en mouvement",forces:["Tu es curieux·se et ouvert·e.","Tu t’adaptes, tu sais avancer même sans tout savoir.","Tu ouvres des chemins que d’autres peuvent suivre."],
+    besoin:"Quand tu ne sais plus où tu vas, ou que tu te sens immobilisé·e, tu as besoin de prendre du recul pour retrouver ta direction.",
+    rituel:"Parcours le chemin de ton tapis du bout des doigts, d’un bout à l’autre, en te posant une seule question : qu’est-ce qui compte pour moi aujourd’hui ?"}
+};
+const SEASON_ADJ={automne:"aux couleurs d’automne",ete:"aux couleurs d’été",printemps:"aux couleurs de printemps",hiver:"aux couleurs d’hiver"};
+function fiche(){
+  const n=scores();
+  const fs=Object.entries(FORCES).map(([k,f])=>[k,f.items.reduce((s,i)=>s+(n[i]||0),0)]).sort((a,b)=>b[1]-a[1]);
+  const pk=curPal(),name=(S.a.prenom||"").trim();
+  const card=(eb,title,body)=>`<section><span class="eyebrow">${eb}</span>${title?`<h3>${title}</h3>`:""}${body}</section>`;
+  const out=[];
+  const has=fs[0][1]>0,k1=fs[0][0],k2=fs[1][1]>=3?fs[1][0]:null;
+  if(has){
+    out.push(card("Qui tu es",`Une personnalité ${FX[k1].adj}${pk?`, ${SEASON_ADJ[pk]}`:""}`,
+      `<p>Tu es surtout guidé·e par ${FORCES[k1].name}${k2?`, et aussi par ${FORCES[k2].name}`:""}. ${FORCES[k1].txt}</p>${k2?`<p>${FORCES[k2].txt}</p>`:""}${pk?`<p>${SEASON[pk]}</p>`:""}`));
+  }
+  out.push(`<section class="plain"><span class="eyebrow">Le paysage où tu te sens bien</span><p>C’est l’endroit qui te ressemble, celui où tu reviens à toi. ${pk?`Ses couleurs : ${PALS[pk].frl.split(" : ")[1]}.`:""}</p>
+    ${pk?`<div class="sw">${PALS[pk].c.map(c=>`<span style="background:${c}"></span>`).join("")}</div>`:""}</section>${renderScape(true)}`);
+  if(has){
+    const list=[...FX[k1].forces,...(k2?FX[k2].forces.slice(0,2):[])];
+    out.push(card("Tes forces","",`<ul>${list.map(x=>`<li>${x}</li>`).join("")}</ul>`));
+    const p5=opt("p5");
+    out.push(card("Quand tu as besoin de te ressourcer","",`<p>${FX[k1].besoin}</p>${k2?`<p>${FX[k2].besoin}</p>`:""}${p5?`<p class="soft">Tu l’as dit toi-même : quand tout va trop vite, tu as besoin de ${p5.fr}.</p>`:""}`));
+    out.push(card("Pour te recentrer","Ton paysage intérieur, à portée de main",
+      `<p>On n’a pas toujours accès à la nature, ni à un lieu à soi, quand on en a besoin. Ton tapis est là pour ça : un morceau de ton paysage intérieur, chez toi, où tu peux venir t’asseoir, respirer et te retrouver.</p>
+       <p>Pour toi, il aura ${FORCES[k1].tapis}${k2?`, avec ${FORCES[k2].tapis}`:""}.</p>
+       <p class="soft"><strong>Un petit rituel pour toi :</strong> ${FX[k1].rituel}</p>`));
+  }
+  const aj=(S.a.ajout||"").trim(),tl=opt("taille"),av=(S.a.eviter||"").trim();
+  if(aj||tl||av)out.push(card("Ta touche et ton format","",`${aj?`<p>En plus sur ton tapis : <strong>${esc(aj)}</strong>.</p>`:""}${tl?`<p>Taille : ${tl.fr}. Le prix te sera communiqué avec le visuel de ton tapis.</p>`:""}${av?`<p class="soft">Sans : ${esc(av)}.</p>`:""}`));
+  return `<div class="portrait">${out.join("")}</div>`;
+}
+function renderPal(){
+  const k=curPal();
+  if(!k)return `<div class="palres"><p class="note">Réponds aux questions pour découvrir ta palette.</p></div>`;
+  const P=PALS[k];
+  return `<div class="palres"><span class="eyebrow">${S.palOv?"Ta palette, choisie par toi":"Ta palette"}</span><span class="val">${P.fr}</span>
+    <div class="sw">${P.c.map(c=>`<span style="background:${c}"></span>`).join("")}</div><p class="why">${P.desc}</p>
+    <div class="chips" role="group" aria-label="Choisir une autre palette"><span class="note" style="align-self:center">Une autre te parle plus ?</span>
+    ${Object.entries(PALS).map(([key,p])=>`<button type="button" class="chip" data-pal="${key}" aria-pressed="${k===key}">${p.fr}</button>`).join("")}</div></div>`;
+}
+let lang="fr";
+function render(){
+  renderSteps();window.__name=S.a.prenom||"";
+  const st=STEPS[S.step],m=document.getElementById("main"),last=S.step===STEPS.length-1;
+  const nav=`<div class="nav"><button type="button" class="btn" data-prev ${S.step===0?"disabled":""}>Retour</button>${last?'<button type="button" class="btn" data-reset>Recommencer</button>':`<button type="button" class="btn primary" data-next>${S.step===STEPS.length-2?"Voir ma fiche":"Continuer"}</button>`}</div>`;
+  if(st.scape){
+    m.innerHTML=`<section class="panel"><div class="panel-head"><span class="eyebrow">Étape ${S.step+1} sur ${STEPS.length}</span><h2>Ton paysage</h2><p class="poem">${poem()}</p><p class="lede">Voilà ce qui ressort de tes réponses. Si un élément ne te parle pas, change-le.</p></div>${renderScape(false)}</section>${nav}`;
+  }else if(st.final){
+    const name=(S.a.prenom||"").trim();
+    m.innerHTML=`<section class="panel"><div class="panel-head"><span class="eyebrow">Ton portrait${name?" · "+esc(name):""}</span><h2>${name?"Le paysage intérieur de "+esc(name):"Ton paysage intérieur"}</h2><p class="poem">${poem()}</p></div>
+      ${fiche()}
+      <div class="prompt-box q"><div class="row" style="justify-content:space-between"><span class="eyebrow">Prompt pour le générateur d’images</span>
+        <div class="chips" role="group" aria-label="Langue du prompt"><button type="button" class="chip" data-lang="fr" aria-pressed="${lang==="fr"}">Français</button><button type="button" class="chip" data-lang="en" aria-pressed="${lang==="en"}">English</button></div></div>
+        <textarea id="prompt" readonly>${esc(promptText(lang))}</textarea>
+        <div class="row"><button type="button" class="btn primary" data-copy="prompt">Copier le prompt</button><button type="button" class="btn" data-copy="summary">Copier mes réponses</button><button type="button" class="btn" data-dl id="dlbtn" hidden>Enregistrer l’esquisse</button><span class="toast" id="toast" aria-live="polite"></span></div>
+        <textarea id="summary" readonly hidden>${esc(summary())}</textarea></div></section>${nav}`;
+  }else{
+    m.innerHTML=`<section class="panel"><div class="panel-head"><span class="eyebrow">Étape ${S.step+1} sur ${STEPS.length}</span><h2>${st.title}</h2><p class="lede">${st.intro}</p></div>${st.qs.map(renderQ).join("")}${st.colors?renderPal():""}</section>${nav}`;
+  }
+  const cv=document.getElementById("cv");if(cv)drawScape(cv,compose());
+  const db=document.getElementById("dlbtn");if(db)db.hidden=!DL;
+}
+function go(i){S.step=Math.max(0,Math.min(STEPS.length-1,i));save();render();window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});}
+const keep=f=>{const y=window.scrollY;const open=[...document.querySelectorAll("details[open] .chip")].map(c=>c.dataset.layer);f();save();render();open.forEach(L=>{const el=document.querySelector(`.chip[data-layer="${L}"]`);if(el)el.closest("details").open=true;});window.scrollTo(0,y);};
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.go!==undefined)return go(+t.dataset.go);
+  if(t.hasAttribute("data-next"))return go(S.step+1);
+  if(t.hasAttribute("data-prev"))return go(S.step-1);
+  if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
+  if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
+  if(t.hasAttribute("data-dl")&&DL){const cv=document.getElementById("cv"),toast=document.getElementById("toast");
+    cv.toBlob(blob=>{DL.save({filename:"esquisse-tapis"+((S.a.prenom||"").trim()?"-"+S.a.prenom.trim():"")+".png",data:blob})
+      .then(()=>{toast.textContent="Esquisse enregistrée";setTimeout(()=>toast.textContent="",2500);})
+      .catch(err=>{if(err&&err.code!=="declined")toast.textContent="Impossible d’enregistrer ici";});},"image/png");return;}
+  if(t.dataset.pal)return keep(()=>{S.palOv=t.dataset.pal;});
+  if(t.dataset.lang){lang=t.dataset.lang;return keep(()=>{});}
+  if(t.dataset.copy){const ta=document.getElementById(t.dataset.copy),toast=document.getElementById("toast");
+    const ok=()=>{toast.textContent=t.dataset.copy==="prompt"?"Prompt copié":"Réponses copiées";setTimeout(()=>toast.textContent="",2500);};
+    const fb=()=>{ta.hidden=false;ta.select();toast.textContent="Texte sélectionné : fais Cmd/Ctrl + C";};
+    try{navigator.clipboard.writeText(ta.value).then(ok,fb);}catch(err){fb();}return;}
+  if(t.hasAttribute("data-reset")){
+    if(t.dataset.confirm){S={step:0,a:{},ov:{}};save();render();}
+    else{t.dataset.confirm="1";t.textContent="Sûr·e ? Tout effacer";setTimeout(()=>{if(t.isConnected){delete t.dataset.confirm;t.textContent="Recommencer";}},3000);}
+  }
+});
+document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.text;if(!k)return;if(e.target.value)S.a[k]=e.target.value;else delete S.a[k];save();});
+let DL=null;
+render();
+const DL_LOCAL={save:({filename,data})=>{const u=URL.createObjectURL(data),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return Promise.resolve();}};
+(async()=>{try{DL=window.claude&&window.claude.use?await window.claude.use("downloads"):null;}catch(e){DL=null;}
+  if(!DL)DL=DL_LOCAL;
+  const b=document.getElementById("dlbtn");if(b)b.hidden=!DL;})();
+</script>
+
+</body>
+</html>
