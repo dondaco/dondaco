@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mousse et lagune</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout : établi d'atelier. Le tapis en grand à gauche, les réglages à droite, les variantes en bande dessous. */
+:root{
+  --bg:#ECEEE8; --surface:#F7F8F4; --line:#D3D8CF; --ink:#22302A; --muted:#5D6B63;
+  --accent:#3F6B5C; --accent-soft:#DCE8E2; --gold:#C8902E; --floor:#E4DED3;
+  --display:"Gloock", Georgia, "Times New Roman", serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161B19; --surface:#1E2522; --line:#34403A; --ink:#E6ECE6; --muted:#9CA9A1;
+  --accent:#8CC4AE; --accent-soft:#25352F; --gold:#E2B456; --floor:#2A2F2C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161B19; --surface:#1E2522; --line:#34403A; --ink:#E6ECE6; --muted:#9CA9A1;
+  --accent:#8CC4AE; --accent-soft:#25352F; --gold:#E2B456; --floor:#2A2F2C; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 64px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));
+  display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(34px,6vw,50px);line-height:1.05;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(22px,4vw,28px);line-height:1.1;margin:0;text-wrap:balance}
+.lede{color:var(--muted);max-width:66ch;margin:0}
+.note{font-size:13.5px;color:var(--muted);margin:0}
+header{display:flex;flex-direction:column;gap:6px}
+.bench{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:22px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:clamp(16px,3vw,24px);display:flex;flex-direction:column;gap:18px;min-width:0}
+.stage{align-items:center}
+.stage canvas{width:100%;max-width:560px;height:auto;aspect-ratio:7/10;display:block}
+.views{display:flex;gap:6px;align-self:stretch;justify-content:space-between;flex-wrap:wrap;align-items:center}
+.group{display:flex;flex-direction:column;gap:8px}
+.group > .lab{font-weight:600;font-size:14.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:9px 12px}
+.btn{font:inherit;font-weight:600;border-radius:999px;padding:9px 18px;cursor:pointer;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg)}
+.legend{width:100%;border-collapse:collapse;font-size:13.5px}
+.legend td{padding:6px 4px;border-top:1px dashed var(--line);vertical-align:middle}
+.legend td.n{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.sw{display:inline-block;width:18px;height:18px;border-radius:5px;border:1px solid rgba(0,0,0,.15);vertical-align:middle}
+.tech{color:var(--muted);white-space:nowrap}
+.legend-wrap{align-self:stretch;display:flex;flex-direction:column;gap:6px;overflow-x:auto}
+.vars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+@media (max-width:820px){.vars{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.var{border:1.5px solid transparent;background:transparent;border-radius:12px;padding:4px;cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:center;color:var(--muted);font:inherit;font-size:12.5px}
+.var canvas{width:100%;height:auto;aspect-ratio:7/10;display:block}
+.var[aria-pressed="true"]{border-color:var(--accent);color:var(--ink)}
+.rules{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted);max-width:70ch}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Paysage intérieur · prototype 1 · biome</span>
+    <h1>Mousse et lagune</h1>
+    <p class="lede">Un étang en courbes de niveau bordé d’un rivage clair, entouré de monticules de mousse et de quelques pompons. Chaque zone est une vraie laine, un vrai point et une vraie hauteur. Change les réglages ou la graine pour voir à quel point les tapis diffèrent.</p>
+  </header>
+
+  <div class="bench">
+    <section class="panel stage" aria-label="Tapis">
+      <div class="views">
+        <div class="chips" role="group" aria-label="Vue">
+          <button type="button" class="chip" data-k="view" data-v="laine">Rendu laine</button>
+          <button type="button" class="chip" data-k="view" data-v="plan">Plan atelier</button>
+        </div>
+        <span class="note" id="dims">Dessiné pour 70 × 100 cm</span>
+      </div>
+      <canvas id="cv" width="560" height="800" role="img" aria-label="Rendu du tapis vu du dessus"></canvas>
+      <div class="legend-wrap">
+        <span class="eyebrow" id="legtitle">Laines et points</span>
+        <table class="legend" id="legend"></table>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Réglages">
+      <div class="group">
+        <label class="lab" for="seed">Graine (le prénom)</label>
+        <div class="row"><input type="text" id="seed" value="Léa"><button type="button" class="btn" id="next">Autre variante</button></div>
+        <p class="note" id="seedinfo"></p>
+      </div>
+      <div class="group"><span class="lab">Palette</span><div class="chips" data-group="pal"></div></div>
+      <div class="group"><span class="lab">Contour</span><div class="chips" data-group="shape"></div></div>
+      <div class="group"><span class="lab">Densité</span><div class="chips" data-group="dens"></div></div>
+      <div class="group"><span class="lab">Relief</span><div class="chips" data-group="relief"></div></div>
+      <div class="group"><span class="lab">L’eau</span><div class="chips" data-group="eau"></div></div>
+      <div class="group">
+        <span class="lab">Règles d’atelier appliquées</span>
+        <ul class="rules">
+          <li>Cut 1,5 cm pour le sol et l’eau, loop 3 cm, cut 4 cm pour la mousse, cut 4 cm brossé pour les zones feutrées, pompons.</li>
+          <li>Aucun élément de moins de 1 cm ; rivage de 1 cm minimum entre l’eau et le reste.</li>
+          <li>Seulement les laines du nuancier Tufting Shop.</li>
+          <li>Dessin vu de face, pas encore inversé pour le tuftage.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" aria-label="Variantes">
+    <div class="row" style="justify-content:space-between"><h2>Six variantes, mêmes réglages</h2><span class="note">Clique sur une variante pour l’agrandir.</span></div>
+    <div class="vars" id="vars"></div>
+  </section>
+</div>
+
+<script>
+/* ---------- Laines (nuancier Tufting Shop) ---------- */
+const LAINES=[["061","Noir","#131314"],["1B07","Anthracite Grey","#36343D"],["000","Blanc","#EBDBC8"],["4N05","Cloud Dancer","#E3CFBE"],["009","Écru","#EADACC"],["3A17","Teal","#236F78"],["205","Forest Green","#446748"],["1I06","Moss Green","#4F7739"],["192","Sacramento","#354E37"],["206","Granite Green","#7E9887"],["209","Vert Frêne","#B3BEA9"],["1J08","Apple Green","#ACB64B"],["802C","Vert néon","#A1CE56"],["153","Mary Jane Green","#839A52"],["803C","Reflecting Green","#BBCC54"],["169","Mojito","#CAC58E"],["366","Château de sable","#CFA37E"],["429","Light Yellow / Butter","#F5DAAC"],["447","Illuminating Yellow","#F5D97C"],["3J01","Jaune","#F8CC4C"],["3H04","Miel","#F2B436"],["423","Mangue","#EFA721"],["313","Orange","#F48820"],["2C13","Pumpkin Orange","#F16D34"],["2024C","Peach Fuzz","#E68F6B"],["325","Abricot clair","#EEAD87"],["368","Ivoire Chaud","#E7CCB4"],["499","Ivoire Pâle","#E8C3BA"],["498","Rose Regina","#EAABAC"],["336","Rose poussiéreux","#C99791"],["459","Rose coquillage","#F2A9B2"],["517","Rose amarante","#DA96A9"],["485","Rose Pink","#D883AB"],["806C","Rose bonbon","#F691AA"],["4E08","Strawberry","#F44E69"],["805C","Saumon cru","#F77164"],["301","Paprika","#DE4617"],["2A11","Burnt Sienna","#BF3718"],["452","Rouge","#E1132A"],["4D05","Indian Red","#E57B79"],["BRB 1530","Pink Doll","#F169A0"],["464","Raspberry","#D23870"],["4A08","Deep Red","#B90526"],["4A13","Rouge Écarlate","#A2102F"],["502","Cassis","#652F50"],["585","Violet","#664BAA"],["597","Lavande","#B498B9"],["278","Jordy Blue","#94A8CE"],["218","Pastel Blue","#B3CBD3"],["300","Aquamarine","#BBD8D0"],["ARS3F15","Bleu clair","#94CFD9"],["274","Cote d'Azur","#3873B3"],["ARS2K12","Bleu","#2756A7"],["3B15","Cobalt Blue","#0A5A9D"],["264","Atlantic Blue","#3F6691"],["561","Navy","#1E1B5D"],["2J10","Royal Indigo","#081D61"],["1I11","Ombre de Fougère","#66600E"],["381","Branche d'olivier","#8D682E"],["403","Green Olive","#90762C"],["4H11","Coffee","#44291C"],["351","Marron","#99622D"],["4L11","Mousse de moka","#A1775A"],["353","Chameau","#C0812B"],["113","Gris ancre","#75787D"],["096","Rhino Grey","#9D9596"],["056","Gris tonnerre","#C1AFA6"],["AD10","Gris soie","#CCBEB2"],["110","Cloud","#CCC8CD"],["","Non teinté clair","#C2B6AC"],["","Moyen non teint","#8C8784"],["","Foncé non teint","#493D38"]];
+const Y={};LAINES.forEach(([ref,nom,hex])=>{if(ref)Y[ref]={ref,nom,hex,rgb:[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16))};});
+
+/* ---------- Palettes du biome (références de laine) ---------- */
+const PALS={
+  printemps:{fr:"Printemps",ground:"153",mounds:["803C","1J08","1I06","802C"],water:["ARS3F15","274","3B15"],shore:"009",accent:["447","806C"]},
+  ete:{fr:"Été",ground:"206",mounds:["209","169","192","1I06"],water:["218","278","264"],shore:"499",accent:["336","597"]},
+  automne:{fr:"Automne",ground:"403",mounds:["1I11","381","205","1I06"],water:["300","3A17","264"],shore:"368",accent:["423","301"]},
+  hiver:{fr:"Hiver",ground:"192",mounds:["205","1B07","206","209"],water:["110","ARS3F15","561"],shore:"000",accent:["000","4A13"]}
+};
+const OPTS={
+  pal:Object.entries(PALS).map(([k,p])=>[k,p.fr]),
+  shape:[["rect","Rectangle"],["organique","Organique"],["ovale","Ovale"]],
+  dens:[["epure","Épuré"],["equilibre","Équilibré"],["foisonnant","Foisonnant"]],
+  relief:[["lisse","Lisse"],["doux","Doux"],["sculpte","Sculpté"]],
+  eau:[["petite","Petit étang"],["moyenne","Étang"],["grande","Grande lagune"]]
+};
+const TECH={cut15:"Cut 1,5 cm",loop3:"Loop 3 cm",cut4:"Cut 4 cm",brush4:"Cut 4 cm brossé",pompon:"Pompons"};
+const TH={cut15:1.5,loop3:3,cut4:4,brush4:4,pompon:4};
+let ST={seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",view:"laine"};
+try{const s=JSON.parse(localStorage.getItem("proto-mousse-v1"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
+const save=()=>{try{localStorage.setItem("proto-mousse-v1",JSON.stringify(ST))}catch(e){}};
+
+/* ---------- Hasard reproductible et bruit ---------- */
+function rng(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
+  let a=h>>>0,b=Math.imul(h,0x9E3779B9)>>>0,c=0x85EBCA6B^a,d=0xC2B2AE35^b;
+  return()=>{a|=0;b|=0;c|=0;d|=0;const t=(a+b|0)+d|0;d=d+1|0;a=b^b>>>9;b=c+(c<<3)|0;c=c<<21|c>>>11;c=c+t|0;return(t>>>0)/4294967296;};}
+function makeNoise(r){const N=64,g=new Float32Array(N*N);for(let i=0;i<N*N;i++)g[i]=r();
+  return(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,X0=xi&63,X1=(xi+1)&63,Y0=(yi&63)*N,Y1=((yi+1)&63)*N;
+    const a=g[Y0+X0],b=g[Y0+X1],c=g[Y1+X0],d=g[Y1+X1],sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;};}
+const fbm=(n,x,y)=>n(x,y)*.6+n(x*2.13+17.1,y*2.13+3.7)*.3+n(x*4.37+5.3,y*4.37+11.9)*.1;
+const hash=(x,y)=>{let h=Math.imul(x,374761393)+Math.imul(y,668265263)|0;h=Math.imul(h^h>>>13,1274126177);return((h^h>>>16)>>>0)/4294967296;};
+const sstep=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
+
+/* distance (chanfrein 3-4) jusqu'au plus proche pixel hors masque, en pixels */
+function distT(mask,w,h){const INF=1e9,d=new Float32Array(w*h);for(let i=0;i<w*h;i++)d[i]=mask[i]?INF:0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(!d[i])continue;let v=d[i];
+    if(x>0)v=Math.min(v,d[i-1]+3);else v=Math.min(v,3);
+    if(y>0){v=Math.min(v,d[i-w]+3);if(x>0)v=Math.min(v,d[i-w-1]+4);if(x<w-1)v=Math.min(v,d[i-w+1]+4);}else v=Math.min(v,3);d[i]=v;}
+  for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){const i=y*w+x;if(!d[i])continue;let v=d[i];
+    if(x<w-1)v=Math.min(v,d[i+1]+3);else v=Math.min(v,3);
+    if(y<h-1){v=Math.min(v,d[i+w]+3);if(x<w-1)v=Math.min(v,d[i+w+1]+4);if(x>0)v=Math.min(v,d[i+w-1]+4);}else v=Math.min(v,3);d[i]=v;}
+  for(let i=0;i<w*h;i++)d[i]/=3;return d;}
+function blur(src,w,h,r){if(r<1)return src.slice();const tmp=new Float32Array(w*h),out=new Float32Array(w*h),k=2*r+1;
+  for(let y=0;y<h;y++){let s=0;const o=y*w;for(let x=-r;x<=r;x++)s+=src[o+Math.min(w-1,Math.max(0,x))];
+    for(let x=0;x<w;x++){tmp[o+x]=s/k;s+=src[o+Math.min(w-1,x+r+1)]-src[o+Math.max(0,x-r)];}}
+  for(let x=0;x<w;x++){let s=0;for(let y=-r;y<=r;y++)s+=tmp[Math.min(h-1,Math.max(0,y))*w+x];
+    for(let y=0;y<h;y++){out[y*w+x]=s/k;s+=tmp[Math.min(h-1,y+r+1)*w+x]-tmp[Math.max(0,y-r)*w+x];}}
+  return out;}
+
+/* ---------- Génération du biome ---------- */
+const RW=70,RH=100; // cm
+function generate(p,G){
+  const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
+  const r=rng(p.seed.trim().toLowerCase()+"|"+p.v),n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r);
+  const P=PALS[p.pal];
+  const zones=[null];const Z=(o)=>(zones.push(o),zones.length-1);
+  const zGround=Z({ref:P.ground,tech:"cut15",kind:"sol"}),zShore=Z({ref:P.shore,tech:"cut15",kind:"rivage"});
+  const zWater=P.water.map((ref,i)=>Z({ref,tech:"cut15",kind:"eau"}));
+  const zRing=Z({ref:P.water[0],tech:"loop3",kind:"ride"});
+  // contour du tapis (distance signée en cm, négative dedans)
+  const organic=p.shape==="organique";
+  const rugSdf=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
+    if(p.shape==="ovale"){const a=RW/2-.6,b=RH/2-.6;return(Math.hypot(cx/a,cy/b)-1)*Math.min(a,b);}
+    const inset=organic?5:.6,rr=organic?16:3,qx=Math.abs(cx)-(RW/2-inset-rr),qy=Math.abs(cy)-(RH/2-inset-rr);
+    let s=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-rr;
+    if(organic)s+=(fbm(n2,x/13,y/13)-.5)*10;return s;};
+  // l'étang : chaîne de 3 à 5 disques fondus
+  const sizeK={petite:.12,moyenne:.165,grande:.215}[p.eau]*(p.dens==="epure"?1.12:1);
+  const R0=RW*sizeK,k=4+Math.floor(r()*3),balls=[];
+  let px=RW/2+(r()-.5)*RW*.22,py=RH/2+(r()-.5)*RH*.24,ang=r()*6.283;
+  for(let i=0;i<k;i++){const rad=R0*(i?(.38+r()*.5):1);
+    const mx=rad+9,my=rad+9;px=Math.min(RW-mx,Math.max(mx,px));py=Math.min(RH-my,Math.max(my,py));
+    balls.push([px,py,rad]);ang+=(r()-.5)*2.4;const st=R0*(.85+r()*.5);px+=Math.cos(ang)*st;py+=Math.sin(ang)*st;}
+  const lake=new Uint8Array(N),inRug=new Uint8Array(N),sdf=new Float32Array(N);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const x=(i+.5)/G,y=(j+.5)/G,o=j*w+i;
+    const s=rugSdf(x,y);sdf[o]=s;inRug[o]=s<0?1:0;
+    let F=0;for(const[bx,by,br]of balls){const dx=x-bx,dy=y-by;F+=br*br/(dx*dx+dy*dy+.01);}
+    F*=1+(fbm(n1,x/8,y/8)-.5)*.9;if(F>1&&s<-6)lake[o]=1;}
+  const dInP=distT(lake,w,h),notLake=new Uint8Array(N);for(let o=0;o<N;o++)notLake[o]=lake[o]?0:1;
+  const dOutP=distT(notLake,w,h);
+  const zone=new Uint16Array(N),H=new Float32Array(N);
+  const t1=2.2,t2=4.8;
+  for(let o=0;o<N;o++){const i=o%w,j=(o-i)/w,x=i/G,y=j/G;
+    if(lake[o]){const d=dInP[o]/G,wob=(n3(x/7,y/7)-.5)*1.1;zone[o]=d<t1+wob*.6?zWater[0]:d<t2+wob?zWater[1]:zWater[2];H[o]=1.5;}
+    else if(inRug[o]){const d=dOutP[o]/G,sw=1.3+n3(x/6+9,y/6)*.7;if(d<sw){zone[o]=zShore;H[o]=1.5;}else{zone[o]=zGround;H[o]=1.5;}}}
+  // rides dans l'eau : anneau en loop + point central
+  const nRing={epure:1,equilibre:2,foisonnant:3}[p.dens];let rings=0;const ringsAt=[];
+  for(let t=0;t<400&&rings<nRing;t++){const i=Math.floor(r()*w),j=Math.floor(r()*h),o=j*w+i;if(!lake[o])continue;
+    const rr=2.6+r()*.8;if(dInP[o]/G<rr+2.4)continue;
+    const cx=i/G,cy=j/G,b=Math.ceil((rr+1)*G);if(ringsAt.some(([qx,qy,qr])=>Math.hypot(qx-cx,qy-cy)<qr+rr+2))continue;ringsAt.push([cx,cy,rr]);
+    for(let y=Math.max(0,j-b);y<Math.min(h,j+b);y++)for(let x=Math.max(0,i-b);x<Math.min(w,i+b);x++){const q=y*w+x;if(!lake[q])continue;
+      const d=Math.hypot(x/G-cx,y/G-cy);if(Math.abs(d-rr)<.6){zone[q]=zRing;H[q]=3;}else if(d<.95){zone[q]=zWater[0];}}
+    rings++;}
+  // monticules de mousse
+  const relief=p.relief,mR={epure:7.5,equilibre:5.6,foisonnant:4.4}[p.dens],cover={epure:.26,equilibre:.46,foisonnant:.62}[p.dens];
+  let rugA=0,lakeA=0;for(let o=0;o<N;o++){rugA+=inRug[o];lakeA+=lake[o];}
+  const target=(rugA-lakeA)/(G*G)*cover;let got=0;const mounds=[];
+  const pickTech=()=>{const u=r();if(relief==="lisse")return u<.8?"loop3":"cut4";if(relief==="doux")return u<.5?"loop3":u<.9?"cut4":"brush4";return u<.25?"loop3":u<.75?"cut4":"brush4";};
+  for(let t=0;t<6000&&got<target;t++){
+    const x=r()*RW,y=r()*RH,i=Math.floor(x*G),j=Math.floor(y*G);if(i<0||j<0||i>=w||j>=h)continue;const o=j*w+i;
+    const rad=Math.max(3,mR*(.45+r()*1.1)),s=sdf[o];
+    if(s>(organic?rad*.35:-1.2))continue;if(lake[o])continue;const dl=dOutP[o]/G;if(dl<rad+1.6)continue;
+    const edge=Math.exp(-Math.max(0,-s)/7),shore=Math.exp(-(dl-rad)/5);if(r()>.18+.82*Math.max(edge,shore))continue;
+    let ok=true,near=null,nd=1e9;for(const m of mounds){const d=Math.hypot(m.x-x,m.y-y);if(d<Math.max(m.r,rad)*.62){ok=false;break;}if(d<m.r+rad+2&&d<nd){nd=d;near=m;}}
+    if(!ok)continue;
+    const opts=P.mounds.filter(c=>!near||c!==near.ref);const ref=opts[Math.floor(r()*opts.length)];
+    mounds.push({x,y,r:rad,ref,tech:pickTech(),p1:r()*6.28,p2:r()*6.28});got+=Math.PI*rad*rad*.8;}
+  // pompons : grappes près de la mousse
+  const nCl=Math.max(0,{epure:0,equilibre:1,foisonnant:3}[p.dens]+(relief==="sculpte"?1:0)-(relief==="lisse"?1:0));
+  const poms=[];
+  for(let c=0,t=0;c<nCl&&t<300;t++){const m=mounds[Math.floor(r()*mounds.length)];if(!m)break;
+    const a=r()*6.28,cx=m.x+Math.cos(a)*(m.r+2),cy=m.y+Math.sin(a)*(m.r+2),i=Math.floor(cx*G),j=Math.floor(cy*G);
+    if(i<0||j<0||i>=w||j>=h)continue;const o=j*w+i;if(lake[o]||dOutP[o]/G<6||sdf[o]>-3)continue;
+    const ref=r()<.75?P.accent[0]:P.accent[1],n=3+Math.floor(r()*5);
+    for(let q=0,tt=0;q<n&&tt<60;tt++){const pr=1.5+r()*.9,qa=r()*6.28,qd=q?r()*5:0,qx=cx+Math.cos(qa)*qd,qy=cy+Math.sin(qa)*qd;
+      if(poms.some(P2=>Math.hypot(P2.x-qx,P2.y-qy)<P2.r+pr+.15))continue;
+      const qi=Math.floor(qx*G),qj=Math.floor(qy*G);if(qi<0||qj<0||qi>=w||qj>=h||lake[qj*w+qi]||dOutP[qj*w+qi]/G<pr+1.2||sdf[qj*w+qi]>-pr-1)continue;
+      poms.push({x:qx,y:qy,r:pr,ref});q++;}
+    c++;}
+  // tamponnage des monticules (ordre = superposition)
+  const zM=new Map();const zoneFor=(ref,tech,kind)=>{const key=ref+"|"+tech;if(!zM.has(key))zM.set(key,Z({ref,tech,kind}));return zM.get(key);};
+  for(const m of mounds){const z=zoneFor(m.ref,m.tech,"mousse"),b=Math.ceil(m.r*1.25*G),ci=m.x*G,cj=m.y*G,top=TH[m.tech];
+    for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){
+      const o=y*w+x;if(lake[o]||dOutP[o]/G<1.3)continue;if(!organic&&!inRug[o])continue;
+      const dx=x/G-m.x,dy=y/G-m.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),rad=m.r*(1+.06*Math.sin(2*a+m.p1)+.05*Math.sin(5*a+m.p2))+(fbm(n3,x/G/2.2,y/G/2.2)-.5)*2.2;
+      if(d>=rad)continue;const ins=rad-d,u=Math.min(1,d/rad);
+      zone[o]=z;if(m.tech==="loop3"){H[o]=1.5+(top-1.5)*sstep(0,.9,ins)+.4*(1-u*u);}
+      else{const dome=Math.sqrt(Math.max(0,1-u*u*u)),lump=(fbm(n2,x/G/1.6+m.p1,y/G/1.6)-.5)*(m.tech==="brush4"?.5:1.3);
+        H[o]=1.5+(top-1.5)*sstep(0,1.2,ins)+dome*Math.min(2.4,m.r*.32)+lump*sstep(0,2,ins);}
+      inRug[o]=1;}}
+  for(const q of poms){const z=zoneFor(q.ref,"pompon","pompon"),b=Math.ceil(q.r*G)+1,ci=q.x*G,cj=q.y*G;
+    for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){
+      const o=y*w+x,d=Math.hypot(x/G-q.x,y/G-q.y);if(d>=q.r)continue;zone[o]=z;H[o]=Math.max(H[o],3.2+Math.sqrt(q.r*q.r-d*d)*1.1);inRug[o]=1;}}
+  for(let o=0;o<N;o++)if(!inRug[o])zone[o]=0;
+  return {w,h,G,zone,H,zones,counts:{mounds:mounds.length,poms:poms.length,rings}};
+}
+
+/* ---------- Rendu ---------- */
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function hexRgb(h){h=h.replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));}
+function render(cv,g,view){
+  const {w,h,G,zone,H,zones}=g;cv.width=w;cv.height=h;const x=cv.getContext("2d"),img=x.createImageData(w,h),D=img.data;
+  const floor=hexRgb(css("--floor")||"#E4DED3");
+  if(view==="plan"){
+    for(let o=0;o<w*h;o++){const z=zone[o],k=o*4;let c=z?Y[zones[z].ref].rgb:floor;
+      const i=o%w;const edge=z&&((i<w-1&&zone[o+1]!==z)||(o+w<w*h&&zone[o+w]!==z));
+      if(edge)c=[40,40,40];D[k]=c[0];D[k+1]=c[1];D[k+2]=c[2];D[k+3]=255;}
+    x.putImageData(img,0,0);return;}
+  const mask=new Float32Array(w*h);for(let o=0;o<w*h;o++)mask[o]=zone[o]?1:0;
+  const sh=blur(mask,w,h,Math.round(1.4*G)),Hb=blur(H,w,h,Math.max(1,Math.round(.35*G))),Hb2=blur(H,w,h,Math.round(2*G));
+  const L=[-.5,-.68,.53],Lz=L[2],offX=Math.round(.6*G),offY=Math.round(1*G);
+  const jit={cut15:.3,loop3:.1,cut4:.35,brush4:.7,pompon:.25};
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const o=j*w+i,k=o*4,z0=zone[o];
+    // bords fibreux : on lit la zone à une position légèrement décalée
+    let zi=z0;if(z0){const a=jit[zones[z0].tech]*G,ii=Math.round(i+(hash(i,j)-.5)*2*a),jj=Math.round(j+(hash(j+77,i+13)-.5)*2*a);
+      if(ii>=0&&jj>=0&&ii<w&&jj<h)zi=zone[jj*w+ii];}
+    if(!zi){const si=i-offX,sj=j-offY,s=si>=0&&sj>=0?sh[sj*w+si]:0,f=1-.3*s,n=1+(hash(i>>1,j>>1)-.5)*.03;
+      D[k]=floor[0]*f*n;D[k+1]=floor[1]*f*n;D[k+2]=floor[2]*f*n;D[k+3]=255;continue;}
+    const Zo=zones[zi],c=Y[Zo.ref].rgb,t=Zo.tech;
+    const ii=Math.min(w-2,Math.max(1,i)),jj=Math.min(h-2,Math.max(1,j)),q=jj*w+ii;
+    const dx=(Hb[q+1]-Hb[q-1])*G/2*.7,dy=(Hb[q+w]-Hb[q-w])*G/2*.7,nl=Math.hypot(dx,dy,1);
+    const diff=(-dx*L[0]-dy*L[1]+Lz)/nl;let shade=1+1.05*(diff-Lz);shade=Math.min(1.32,Math.max(.42,shade));
+    const ao=1-Math.min(.38,Math.max(0,(Hb2[o]-Hb[o])*.2));
+    const X=i/G,Yc=j/G,hs=hash(i,j);let tx;
+    if(t==="loop3"&&G<4)tx=.95+(hs-.5)*.1+(fineN(X/.5,Yc/.5)-.5)*.1;
+    else if(t==="loop3"){const pch=.42,u0=X/pch,v=Yc/pch,row=Math.floor(v),u=u0+(row&1)*.5,fu=u-Math.floor(u)-.5,fv=v-row-.5,rr=Math.sqrt(fu*fu+fv*fv);
+      tx=.84+.3*Math.max(0,1-Math.abs(rr-.3)*5)+(hs-.5)*.08;}
+    else if(t==="brush4")tx=1.07+(fineN(X/.9,Yc/.9)-.5)*.26+(hs-.5)*.06;
+    else if(t==="pompon")tx=1+(hs-.5)*.26+(fineN(X/.2,Yc/.2)-.5)*.12;
+    else tx=1+(hs-.5)*.17+(fineN(X/.28,Yc/.28)-.5)*.14+(Zo.kind==="sol"?(fineN(X/6+40,Yc/6)-.5)*.1:0);
+    const f=shade*ao*tx;D[k]=Math.min(255,c[0]*f);D[k+1]=Math.min(255,c[1]*f);D[k+2]=Math.min(255,c[2]*f);D[k+3]=255;}
+  x.putImageData(img,0,0);
+}
+const fineN=makeNoise(rng("fibres"));
+
+/* ---------- Légende atelier ---------- */
+function legend(g){
+  const cnt=new Map();let tot=0;
+  for(let o=0;o<g.zone.length;o++){const z=g.zone[o];if(!z)continue;tot++;const Zo=g.zones[z],key=Zo.ref+"|"+Zo.tech;cnt.set(key,(cnt.get(key)||0)+1);}
+  const rows=[...cnt.entries()].sort((a,b)=>b[1]-a[1]);
+  const refs=new Set(rows.map(([k])=>k.split("|")[0]));
+  document.getElementById("legtitle").textContent=`Laines et points · ${refs.size} couleurs`;
+  document.getElementById("legend").innerHTML=rows.map(([k,n])=>{const[ref,tech]=k.split("|"),y=Y[ref];
+    return `<tr><td><span class="sw" style="background:${y.hex}"></span></td><td>${y.nom} <span class="tech">· ${ref}</span></td><td class="tech">${TECH[tech]}</td><td class="n">${(n/tot*100).toFixed(n/tot<.01?1:0)} %</td></tr>`;}).join("");
+}
+
+/* ---------- Interface ---------- */
+function syncChips(){document.querySelectorAll(".chip[data-k]").forEach(b=>b.setAttribute("aria-pressed",String(ST[b.dataset.k]===b.dataset.v)));}
+document.querySelectorAll("[data-group]").forEach(el=>{const k=el.dataset.group;
+  el.innerHTML=OPTS[k].map(([v,l])=>`<button type="button" class="chip" data-k="${k}" data-v="${v}">${l}</button>`).join("");});
+let raf=0;
+function draw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
+  syncChips();document.getElementById("seed").value=ST.seed;
+  const dpr=Math.min(2,window.devicePixelRatio||1),G=dpr>1.4?8:6;
+  const g=generate(ST,G);render(document.getElementById("cv"),g,ST.view);legend(g);
+  document.getElementById("seedinfo").textContent=`Variante ${ST.v+1} · ${g.counts.mounds} monticules, ${g.counts.poms} pompons, ${g.counts.rings} rides`;
+  drawVars();save();});}
+function drawVars(){const box=document.getElementById("vars"),base=Math.floor(ST.v/6)*6;
+  box.innerHTML=Array.from({length:6},(_,i)=>`<button type="button" class="var" data-var="${base+i}" aria-pressed="${base+i===ST.v}"><canvas></canvas>Variante ${base+i+1}</button>`).join("");
+  box.querySelectorAll(".var").forEach((b,i)=>{const g=generate(Object.assign({},ST,{v:base+i}),2.6);render(b.querySelector("canvas"),g,"laine");});}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.k){ST[b.dataset.k]=b.dataset.v;draw();return;}
+  if(b.dataset.var!==undefined){ST.v=+b.dataset.var;draw();return;}
+  if(b.id==="next"){ST.v++;draw();}});
+document.getElementById("seed").addEventListener("change",e=>{ST.seed=e.target.value||"Léa";ST.v=0;draw();});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+draw();
+</script>
+</body>
+</html>
