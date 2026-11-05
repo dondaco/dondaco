@@ -191,6 +191,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 #ai-out .further p{margin:2px 0 8px;font-size:.85rem;font-family:var(--sans);line-height:1.4}
 .further ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
 .further li{font-family:var(--serif);font-size:1.02rem;line-height:1.45}
+.sec-t{font-size:1.1rem;margin:18px 2px 10px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.tr-chip{animation:none}.fd,.card{animation:none}.fd{transition:none;background-position:40% 40%, 0 0, 40% 50%}}
@@ -242,7 +243,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
   <section id="v-read" hidden>
     <button class="back" id="b-redraw">← Refaire ce tirage</button>
     <div class="panel"><span class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Ta question</span><p class="qline" id="r-q"></p></div>
-    <p class="muted" style="margin:0 2px 10px">Chaque carte éclaire une partie de ta question. Touche les phrases qui te parlent.</p>
+    <h2 class="sec-t">Tes cartes</h2>
     <div class="reading" id="cards"></div>
     <div class="panel ai" style="margin-top:14px">
       <h2 style="font-size:1.15rem">✨ Ton interprétation</h2>
@@ -527,7 +528,7 @@ function renderReading(){
       <div class="col" style="background:${c.c};color:${textOn(c.c)}"><span>${esc(c.n)}</span></div>
       <div class="in">
         <p class="c-ess">${esc(ESSENCE[c.n] || "")}</p>
-        <p class="c-hint">♡ Touche les phrases qui te parlent</p>
+        <p class="c-hint">${t.side === "l" ? "♡ Touche ce qui te porte en ce moment" : "♡ Touche ce qui te freine en ce moment"}</p>
         <div class="ph">${ph.slice(1).map((x, j) => `<button type="button" data-i="${i}" data-j="${j + 1}"><i>♡</i><span>${esc(x)}</span></button>`).join("")}</div>
       </div></article>`;
   }).join("");
