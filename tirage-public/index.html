@@ -534,7 +534,7 @@ function renderPhr(i){
     if (at >= 0) kk.splice(at, 1);
     else if (kk.length >= MAX_KEPT) return toast("Tu as déjà choisi " + MAX_KEPT + " phrases pour cette carte");
     else kk.push(x);
-    renderPhr(i); renderKept(); saveDraw();
+    renderPhr(i); renderKept(); saveDraw(loginPending);
   });
   const full = k.length >= MAX_KEPT;
   more.disabled = full; more.textContent = full ? "Tu as choisi le maximum de " + MAX_KEPT + " phrases" : "↻ Autres propositions";
@@ -564,8 +564,9 @@ async function morePhrases(i){
   renderPhr(i); saveDraw();
 }
 const DRAW_KEY = "iris-tirage-en-cours";
-function saveDraw(){
-  try { if (!sp) return; localStorage.setItem(DRAW_KEY, JSON.stringify({ t: Date.now(), s: SPREADS.indexOf(sp), table, picked, kept, shown, q: $("#q").value, ctx: $("#ctx").value })); } catch {}
+let autoAI = false; // après une connexion, l'interprétation se lance toute seule
+function saveDraw(auto){
+  try { if (!sp) return; localStorage.setItem(DRAW_KEY, JSON.stringify({ t: Date.now(), s: SPREADS.indexOf(sp), table, picked, kept, shown, q: $("#q").value, ctx: $("#ctx").value, auto: !!auto })); } catch {}
 }
 function clearDraw(){ try { localStorage.removeItem(DRAW_KEY); } catch {} }
 function restoreDraw(){
@@ -577,6 +578,7 @@ function restoreDraw(){
     renderReading(); kept = d.kept || {};
     Object.keys(d.shown || {}).forEach(i => { if (shown[i]) { shown[i] = d.shown[i]; shown[i].forEach(x => seen[i].add(x)); } });
     sp.pos.forEach((_, i) => renderPhr(i)); renderKept(); show("read");
+    if (d.auto){ autoAI = true; if (sampleFn) setTimeout(() => $("#b-ai").click(), 300); }
     return true;
   } catch { return false; }
 }
@@ -657,15 +659,15 @@ function aiHtml(r){
 const AI_ENDPOINT = ""; // ex. "https://couleurs-ia.ton-nom.workers.dev"
 let sampleFn = null, aiResult = null;
 if (AI_ENDPOINT){ $("#b-ai").hidden = false; }
-else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; $("#ai-none").hidden = !!s; }).catch(() => { $("#ai-none").hidden = false; });
+else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; $("#ai-none").hidden = !!s; if (s && autoAI){ autoAI = false; setTimeout(() => { if (!$("#v-read").hidden && !aiResult) $("#b-ai").click(); }, 300); } }).catch(() => { $("#ai-none").hidden = false; });
 else { // hors de claude.ai (version GitHub) : se connecter ici ne servirait à rien, on renvoie vers Iris sur claude.ai
   $("#ai-none").hidden = false; $("#ai-login").hidden = true; $("#ai-elsewhere").hidden = false;
   $("#ai-none p").textContent = "Iris relie tes couleurs et les phrases que tu as choisies à ta question, pour te donner une vraie réponse.";
 }
 // Après la connexion (dans un autre onglet), on revient ici : Iris se recharge seul et retrouve le tirage
 let loginPending = false;
-$("#ai-login").onclick = () => { saveDraw(); loginPending = true; };
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && loginPending && !sampleFn){ saveDraw(); location.reload(); } });
+$("#ai-login").onclick = () => { saveDraw(true); loginPending = true; };
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && loginPending && !sampleFn){ saveDraw(true); location.reload(); } });
 // Mémoire partagée des retours (version claude.ai) : leçons anonymes, lisibles par tous, écrites avec accord
 let store = null, canShare = null;
 if (!AI_ENDPOINT && window.claude && window.claude.use){
