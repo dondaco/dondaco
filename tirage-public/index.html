@@ -104,10 +104,15 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .chat-in{display:flex;gap:8px;align-items:flex-end}
 .chat-in textarea{flex:1;min-height:48px}
 .chat-btns{display:flex;flex-direction:column;gap:6px}
-.mic-big{width:100%;margin-top:8px;gap:10px}
-.mic-big.on{background:#e5546b;color:#fff;animation:pulse 1.4s ease-in-out infinite}
-.mic-ic{font-size:1.25rem;line-height:1}
-.mic-help{display:flex;gap:10px;align-items:flex-start;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--soft);font-size:.86rem;line-height:1.4}
+/* Zone de saisie façon messagerie : micro dans le champ, qui devient flèche d'envoi dès qu'on écrit */
+.composer{display:flex;align-items:flex-end;gap:6px;border:1px solid var(--line);background:var(--bg);border-radius:22px;padding:5px 5px 5px 14px;margin-top:8px}
+.composer textarea{flex:1;border:0;background:none;padding:8px 0;min-height:24px;max-height:140px;resize:none;outline:none;font:inherit;color:var(--ink)}
+.composer:focus-within{border-color:var(--accent)}
+.cp-btn{flex:none;width:36px;height:36px;border-radius:50%;border:0;display:grid;place-items:center;cursor:pointer;background:none;color:var(--muted)}
+.cp-btn.send{background:var(--accent);color:var(--accent-ink)}
+.cp-btn.on{background:#e5546b;color:#fff;animation:pulse 1.4s ease-in-out infinite}
+.cp-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mic-status{margin:6px 4px 0;font-size:.82rem;color:var(--muted)}
 .rate{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
 #stars button{border:0;background:none;font-size:1.6rem;line-height:1;color:var(--line);cursor:pointer;padding:2px}
 #stars button.on{color:#e8b04a}
@@ -123,6 +128,17 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .trend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:.9rem;color:var(--muted)}
 .tr-chip{font-weight:600;border-radius:99px;padding:4px 12px;color:#fff}
 .tr-elan{background:#2e8b57}.tr-equilibre{background:#b7791f}.tr-prudence{background:#4b6cb7}
+.verdict{border-radius:16px;padding:14px 16px;margin:0 0 14px;background:var(--soft);border-left:5px solid var(--accent)}
+.verdict b{display:block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.verdict p{margin:0;font-family:var(--serif);font-size:1.12rem;line-height:1.5}
+.verdict.v-elan{border-left-color:#2e8b57}.verdict.v-equilibre{border-left-color:#b7791f}.verdict.v-prudence{border-left-color:#4b6cb7}
+.rate-top{margin-top:6px;padding:12px;border-radius:12px;background:var(--soft)}
+.sheet{position:fixed;inset:0;background:rgba(20,16,35,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:12px max(12px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px))}
+.sheet-in{background:var(--surface);border-radius:20px;padding:16px;width:100%;max-width:520px;max-height:92vh;overflow:auto}
+.sh-img{display:block;width:100%;max-width:360px;margin:12px auto 4px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.sh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sh-grid .btn{text-decoration:none;text-align:center}
+#sh-native{grid-column:1/-1}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -174,31 +190,28 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
     <p class="muted" style="margin:0 2px 10px">Lis chaque phrase et touche celles qui te parlent.</p>
     <div class="reading" id="cards"></div>
     <div class="panel ai" style="margin-top:14px">
-      <h2 style="font-size:1.15rem">✨ La conclusion de Claude</h2>
-      <p class="muted" id="ai-intro" style="margin:2px 0 10px">Claude relie les cartes, leur position et les phrases que tu as retenues à ta question.</p>
+      <h2 style="font-size:1.15rem">✨ Ton interprétation</h2>
+      <p class="muted" id="ai-intro" style="margin:2px 0 10px">Claude lit tes couleurs, leur place dans le tirage et les phrases qui t'ont parlé, en lien avec ta question.</p>
       <div id="trend" class="trend" hidden></div>
       <div id="ai-out"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="b-ai" hidden>Demander la conclusion</button>
-        <button class="btn ghost" id="b-ai-copy">Copier une demande pour Claude</button>
-      </div>
-      <p class="note" id="ai-help" style="margin-top:8px">Pas de compte relié à cette page ? Ce bouton copie ton tirage sous forme de demande : colle-la dans une conversation sur claude.ai.</p>
+      <button class="btn" id="b-ai" hidden style="width:100%">Recevoir mon interprétation</button>
+      <p class="note" id="ai-none" hidden style="margin-top:8px">Pour recevoir l'interprétation, ouvre Iris en étant connecté à ton compte Claude (un compte gratuit suffit).</p>
     </div>
     <div class="panel" id="chat" hidden>
       <h2 style="font-size:1.15rem">💬 Comment reçois-tu ce tirage ?</h2>
-      <p class="muted" style="margin:2px 0 10px">Dis avec tes mots ce qui te touche, ce qui ne te parle pas, ce que ça éveille. Claude t'aide à préciser.</p>
-      <div class="chips" id="chat-quick"></div>
-      <div id="chat-log" class="chat-log"></div>
-      <div class="chat-in">
-        <textarea id="chat-txt" rows="2" placeholder="Écris ton ressenti… ou dicte-le"></textarea>
-        <button class="btn sm" id="chat-send">Envoyer</button>
-      </div>
-      <button class="btn ghost mic-big" id="chat-mic" hidden><span class="mic-ic" aria-hidden="true">🎙</span><span id="chat-mic-lbl">Dicter mon retour à voix haute</span></button>
-      <div class="mic-help" id="chat-mic-help"><span class="mic-ic" aria-hidden="true">🎙</span><span>Tu préfères parler ? Touche le champ ci-dessus, puis le <b>micro de ton clavier</b> : ce que tu dis s'écrit tout seul.</span></div>
-      <div class="rate">
+      <div class="rate rate-top">
         <span>Ce tirage t'a-t-il aidé ?</span>
         <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
       </div>
+      <p class="muted" style="margin:12px 0 8px">Si tu veux, dis avec tes mots ce qui te touche ou ne te parle pas, en l'écrivant ou en le dictant. Claude t'aide à préciser.</p>
+      <div class="chips" id="chat-quick"></div>
+      <div id="chat-log" class="chat-log"></div>
+      <div class="composer" id="composer">
+        <textarea id="chat-txt" rows="1" placeholder="Ton ressenti…"></textarea>
+        <button type="button" class="cp-btn" id="chat-mic" aria-label="Parler au lieu d'écrire"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <button type="button" class="cp-btn send" id="chat-send" aria-label="Envoyer" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <p class="mic-status" id="mic-status" hidden></p>
       <div class="sendbox" id="share-box" hidden>
         <p class="muted" style="margin:0 0 4px;font-size:.8rem">Ce qui sera partagé, sans ton nom ni ta question :</p>
         <p id="share-prev" class="share-prev"></p>
@@ -212,12 +225,28 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       <label for="avis" style="margin-top:12px">Mon avis, avec mes mots</label>
       <textarea id="avis" placeholder="Qu'est-ce que ces phrases me disent par rapport à ma question ?"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <button class="btn" id="b-copy">Copier mon tirage</button>
+        <button class="btn" id="b-share">Partager ce tirage</button>
+        <button class="btn ghost" id="b-copy">Copier mon tirage</button>
         <button class="btn ghost" id="b-new">Faire un autre tirage</button>
       </div>
       <p class="note">Textes originaux écrits pour ce site d'après le symbolisme courant des couleurs.</p>
     </div>
   </section>
+</div>
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-label="Partager ce tirage">
+  <div class="sheet-in">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:1.15rem;margin:0">Partager ce tirage</h2><button class="back" id="sh-close" style="margin:0">Fermer</button></div>
+    <img id="sh-img" alt="Image du tirage à partager" class="sh-img">
+    <label class="consent" style="margin:6px 0 10px"><input type="checkbox" id="sh-q"> Afficher ma question sur l'image</label>
+    <div class="sh-grid">
+      <button class="btn" id="sh-native" hidden>Partager…</button>
+      <a class="btn ghost" id="sh-wa" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="btn ghost" id="sh-mail" target="_blank" rel="noopener">E-mail</a>
+      <button class="btn ghost" id="sh-link">Copier le lien</button>
+      <button class="btn ghost" id="sh-save">Enregistrer l'image</button>
+    </div>
+    <p class="muted" style="font-size:.8rem;margin:10px 0 0">Pour joindre l'image à un message, enregistre-la puis ajoute-la depuis tes photos. Le lien permet à la personne qui le reçoit de faire son propre tirage.</p>
+  </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 <script>
@@ -413,7 +442,7 @@ $("#b-reveal").onclick = () => { renderReading(); show("read"); };
 
 /* Lecture */
 function renderReading(){
-  aiResult = null; $("#ai-out").innerHTML = ""; $("#trend").hidden = true; $("#b-ai").textContent = "Demander la conclusion"; $("#chat").hidden = true; stopMic();
+  aiResult = null; $("#ai-out").innerHTML = ""; $("#trend").hidden = true; $("#b-ai").textContent = "Recevoir mon interprétation"; $("#b-ai").hidden = !(sampleFn || AI_ENDPOINT); $("#chat").hidden = true; stopMic();
   const q = $("#q").value.trim();
   $("#r-q").innerHTML = q ? esc(q) : `<span class="muted">Sans question précise</span>`;
   const g = currentGuide();
@@ -469,25 +498,29 @@ function aiPrompt(){
   return "J'ai fait un tirage de cartes de couleurs pour réfléchir sur moi-même. Tirage : « " + sp.name + " » (" + sp.desc + "). Ma question : " + (q ? "« " + q + " »" : "pas de question précise") +
     ". Voici les cartes, le sens de leur position et les phrases qui m'ont parlé : " + JSON.stringify(drawData()) +
     ". Thème : « " + sp.cat + " ». " + guideText() +
-    " Écris : pour chaque carte, 2 phrases qui disent ce que la couleur, à cette place et de ce côté, apporte à ma question ; puis une réponse de 3 ou 4 phrases à ma question, dans la tendance du guide ; puis 2 questions à me poser pour avancer.";
+    " Écris d'abord ta réponse à ma question (\"synthese\" : 3 ou 4 phrases claires, engagées, dans la tendance du guide, qui se suffisent à elles-mêmes), puis pour chaque carte 2 phrases qui disent ce que la couleur, à cette place et de ce côté, apporte à ma question (\"cartes\"), puis 2 questions à me poser pour avancer (\"questions\").";
 }
 function showTrend(){
   const g = currentGuide(), d = DIRECTION[g.direction];
   $("#trend").hidden = false;
   $("#trend").innerHTML = `<span class="tr-chip tr-${g.direction}">${d.icon} ${d.label}</span><span>${esc(d.hint)} Levier : ${esc(g.levier.split(",")[0])}.</span>`;
 }
+// Ordre de lecture : la réponse d'abord (encadré), puis le détail carte par carte, puis les questions
 function aiHtml(r){
-  let h = (r.cartes || []).map((t, i) => sp.pos[i] ? `<div class="part"><b>${esc(sp.pos[i].l)}</b><p>${esc(t)}</p></div>` : "").join("");
-  if (r.synthese) h += `<div class="part"><b>En conclusion</b><p>${esc(r.synthese)}</p></div>`;
-  if ((r.questions || []).length) h += `<div class="part"><b>À te demander</b><p>${r.questions.map(q => "• " + esc(q)).join("\n")}</p></div>`;
+  const dir = currentGuide().direction;
+  let h = r.synthese ? `<div class="verdict v-${dir}"><b>Ma réponse à ta question</b><p>${esc(r.synthese)}</p></div>` : "";
+  const parts = (r.cartes || []).map((t, i) => sp.pos[i] ? `<div class="part"><b>${esc(sp.pos[i].l)} · ${esc(DECK[table[picked[i]].i].n)}</b><p>${esc(t)}</p></div>` : "").join("");
+  if (parts) h += `<p class="muted" style="margin:0 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Le détail, carte par carte</p>` + parts;
+  if ((r.questions || []).length) h += `<div class="part"><b>Pour aller plus loin, demande-toi</b><p>${r.questions.map(q => "• " + esc(q)).join("\n")}</p></div>`;
   return h;
 }
 // Adresse du service relais (Cloudflare Worker) qui interroge Claude avec ta clé, gardée secrète côté serveur.
 // Laisse vide tant que le service n'est pas installé.
 const AI_ENDPOINT = ""; // ex. "https://couleurs-ia.ton-nom.workers.dev"
 let sampleFn = null, aiResult = null;
-if (AI_ENDPOINT){ $("#b-ai").hidden = false; $("#b-ai-copy").hidden = true; $("#ai-help").hidden = true; }
-else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; if (s) $("#ai-help").textContent = "La conclusion utilise le compte Claude de la personne qui consulte la page."; }).catch(() => {});
+if (AI_ENDPOINT){ $("#b-ai").hidden = false; }
+else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; $("#ai-none").hidden = !!s; }).catch(() => { $("#ai-none").hidden = false; });
+else $("#ai-none").hidden = false;
 // Mémoire partagée des retours (version claude.ai) : leçons anonymes, lisibles par tous, écrites avec accord
 let store = null, canShare = null;
 if (!AI_ENDPOINT && window.claude && window.claude.use){
@@ -523,20 +556,15 @@ $("#b-ai").onclick = async () => {
   try {
     const lessons = AI_ENDPOINT ? [] : await lessonsFor();
     const insp = lessons.length ? " Voici ce que d'autres personnes ont dit avoir bien ou mal reçu lors de tirages proches (anonyme) ; inspire-t'en sans le recopier : " + JSON.stringify(lessons.map(l => l.lecon)) + "." : "";
-    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"cartes\": [\"...\"], \"synthese\": \"...\", \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
+    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"synthese\": \"...\", \"cartes\": [\"...\"], \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
     $("#ai-out").innerHTML = aiHtml(aiResult);
-    b.textContent = "Proposer une autre conclusion";
+    b.hidden = true; // une seule interprétation par tirage
     openChat();
   } catch (e) {
     $("#ai-out").innerHTML = `<p class="muted">${e && e.code === "not_granted" ? "Autorise Claude pour cette page afin d'obtenir la conclusion." : e && e.code === "rate_limited" ? "Trop de demandes pour l'instant, réessaie dans un moment." : "Pas de réponse pour l'instant, réessaie."}</p>`;
-    b.textContent = "Demander la conclusion";
+    b.textContent = "Recevoir mon interprétation";
   }
   b.disabled = false;
-};
-$("#b-ai-copy").onclick = async () => {
-  const text = aiPrompt();
-  try { await navigator.clipboard.writeText(text); toast("Demande copiée : colle-la dans Claude"); }
-  catch { $("#ai-out").innerHTML = `<p class="muted">Copie ce texte et colle-le dans Claude :</p><textarea id="ai-txt" readonly style="min-height:140px">${esc(text)}</textarea>`; $("#ai-txt").select(); }
 };
 // Partage du retour en un seul geste : la leçon anonyme se prépare pendant l'échange, le bouton est prêt
 const RETOUR_PAGE = "https://dondaco.github.io/dondaco/tirage-public/retour.html";
@@ -602,7 +630,7 @@ function openChat(){
   chat = []; rating = 0; $("#chat").hidden = false; $("#chat-log").innerHTML = ""; $("#chat-txt").value = "";
   lesson = null; lessonSig = ""; shared = false; clearTimeout(lessonTimer); $("#share-box").hidden = true;
   $("#chat-quick").innerHTML = QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("");
-  $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); t.focus(); });
+  $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); syncComposer(); t.focus(); });
   renderStars();
 }
 function renderStars(){
@@ -617,7 +645,7 @@ function addMsg(role, text){
 }
 $("#chat-send").onclick = async () => {
   const t = $("#chat-txt").value.trim(); if (!t || sending) return;
-  sending = true; $("#chat-txt").value = ""; stopMic(); addMsg("user", t);
+  sending = true; $("#chat-txt").value = ""; stopMic(); syncComposer(); addMsg("user", t);
   const wait = document.createElement("div"); wait.className = "msg ai wait"; wait.textContent = "…"; $("#chat-log").appendChild(wait);
   try {
     let reply;
@@ -635,21 +663,115 @@ $("#chat-txt").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey){ e.preve
 // Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
-function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; } $("#chat-mic").classList.remove("on"); $("#chat-mic-lbl").textContent = "Dicter mon retour à voix haute"; }
-if (SR){
-  $("#chat-mic").hidden = false; $("#chat-mic-help").hidden = true;
-  $("#chat-mic").onclick = () => {
-    if (rec) return stopMic();
-    try {
-      rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true;
-      const base = $("#chat-txt").value ? $("#chat-txt").value + " " : "";
-      rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; };
-      rec.onerror = () => { stopMic(); $("#chat-mic").hidden = true; $("#chat-mic-help").hidden = false; };
-      rec.onend = () => stopMic();
-      rec.start(); $("#chat-mic").classList.add("on"); $("#chat-mic-lbl").textContent = "J'écoute… touche pour arrêter";
-    } catch { stopMic(); }
-  };
+function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; } $("#chat-mic").classList.remove("on"); $("#mic-status").hidden = true; syncComposer(); }
+// Micro quand le champ est vide, flèche d'envoi dès qu'il y a du texte (comme dans Messages)
+function syncComposer(){
+  const t = $("#chat-txt"), has = !!t.value.trim();
+  $("#chat-send").hidden = !has; $("#chat-mic").hidden = has && !rec;
+  t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px";
 }
+$("#chat-txt").addEventListener("input", syncComposer);
+$("#chat-mic").onclick = () => {
+  if (rec) return stopMic();
+  if (!SR){ // pas de dictée intégrée ici : on ouvre le clavier, dont le micro sait dicter
+    $("#chat-txt").focus();
+    $("#mic-status").hidden = false; $("#mic-status").textContent = "Touche le micro de ton clavier pour parler : ce que tu dis s'écrira ici.";
+    return;
+  }
+  startMic();
+};
+function startMic(){
+  try {
+    rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true;
+    const base = $("#chat-txt").value ? $("#chat-txt").value + " " : "";
+    rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; syncComposer(); };
+    rec.onerror = () => { rec = null; stopMic(); $("#chat-txt").focus(); $("#mic-status").hidden = false; $("#mic-status").textContent = "Touche le micro de ton clavier pour parler : ce que tu dis s'écrira ici."; };
+    rec.onend = () => { rec = null; stopMic(); };
+    rec.start(); $("#chat-mic").classList.add("on"); $("#chat-mic").hidden = false;
+    $("#mic-status").hidden = false; $("#mic-status").textContent = "● Je t'écoute… touche le micro pour arrêter";
+  } catch { rec = null; stopMic(); }
+}
+/* Partage : une image soignée du tirage et un lien pour faire le sien */
+const SHARE_LINK = "https://claude.ai/artifact/AqcEbm51cQEmboHYHiKWVe";
+let shareBlob = null;
+function wrapLines(ctx, text, maxW, maxLines){
+  const words = String(text).split(/\s+/), lines = []; let line = "";
+  for (const w of words){ const t = line ? line + " " + w : w; if (ctx.measureText(t).width > maxW && line){ lines.push(line); line = w; } else line = t; }
+  if (line) lines.push(line);
+  if (lines.length > maxLines){ lines.length = maxLines; lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, "") + "…"; }
+  return lines;
+}
+function rr(ctx, x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+async function drawShareImage(withQ){
+  try { await document.fonts.ready; } catch {}
+  const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const x = c.getContext("2d");
+  x.fillStyle = "#f6f2fa"; x.fillRect(0, 0, W, H);
+  [["#f9c6c9", 180, 220, 420], ["#c9d7f8", 900, 300, 380], ["#c5ecd9", 260, 1150, 420], ["#fbe5b6", 920, 1200, 340]].forEach(([col, cx, cy, r]) => {
+    const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(246,242,250,0)"); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  });
+  x.fillStyle = "#221d33"; x.font = "600 110px Literata, Georgia, serif"; x.fillText("Iris", 90, 190);
+  x.fillStyle = "#4b3a8f"; x.font = "italic 400 40px Literata, Georgia, serif"; x.fillText("Ce que les couleurs éclairent en toi", 92, 250);
+  x.fillStyle = "#6c6680"; x.font = "600 30px Outfit, system-ui, sans-serif"; x.fillText(("Tirage « " + sp.name + " »").toUpperCase(), 92, 330);
+  let y = 370;
+  const q = $("#q").value.trim();
+  if (withQ && q){ x.fillStyle = "#221d33"; x.font = "italic 400 38px Literata, Georgia, serif"; wrapLines(x, "« " + q + " »", 900, 2).forEach(l => { y += 50; x.fillText(l, 92, y); }); y += 20; }
+  // les cartes tirées
+  const n = sp.pos.length, gap = 24, cw = Math.min(200, (900 - gap * (n - 1)) / n), ch = cw * 1.35;
+  let cx = (W - (cw * n + gap * (n - 1))) / 2; y += 40;
+  sp.pos.forEach((p, i) => {
+    const t = table[picked[i]], col = DECK[t.i];
+    x.save(); x.shadowColor = "rgba(60,40,90,.18)"; x.shadowBlur = 24; x.shadowOffsetY = 8; rr(x, cx, y, cw, ch, 22); x.fillStyle = col.c; x.fill(); x.restore();
+    x.fillStyle = textOn(col.c); x.font = "600 " + Math.round(cw / 7.5) + "px Outfit, system-ui, sans-serif";
+    wrapLines(x, col.n, cw - 28, 2).forEach((l, k) => x.fillText(l, cx + 14, y + ch - 20 - (wrapLines(x, col.n, cw - 28, 2).length - 1 - k) * (cw / 6.5)));
+    x.fillStyle = "#6c6680"; x.font = "400 " + Math.round(Math.min(24, cw / 8)) + "px Outfit, system-ui, sans-serif";
+    wrapLines(x, p.l, cw, 2).forEach((l, k) => x.fillText(l, cx, y + ch + 34 + k * 28));
+    cx += cw + gap;
+  });
+  y += ch + 110;
+  // la réponse
+  const s = aiResult && aiResult.synthese ? aiResult.synthese : (kept && Object.values(kept).flat()[0]) || "";
+  if (s){
+    x.font = "400 40px Literata, Georgia, serif";
+    const lines = wrapLines(x, s, 840, Math.max(3, Math.floor((H - 200 - y - 90) / 56)));
+    const bh = 80 + lines.length * 56;
+    rr(x, 90, y, 900, bh, 28); x.fillStyle = "rgba(255,255,255,.82)"; x.fill();
+    x.fillStyle = "#4b3a8f"; x.font = "600 26px Outfit, system-ui, sans-serif"; x.fillText(aiResult && aiResult.synthese ? "MA RÉPONSE" : "CE QUI M'A PARLÉ", 130, y + 52);
+    x.fillStyle = "#221d33"; x.font = "400 40px Literata, Georgia, serif"; lines.forEach((l, k) => x.fillText(l, 130, y + 110 + k * 56));
+  }
+  x.fillStyle = "#221d33"; x.font = "600 32px Outfit, system-ui, sans-serif"; x.fillText("Fais ton propre tirage :", 90, H - 110);
+  x.fillStyle = "#4b3a8f"; x.font = "400 30px Outfit, system-ui, sans-serif"; x.fillText(SHARE_LINK.replace("https://", ""), 90, H - 64);
+  return new Promise(r => c.toBlob(r, "image/png"));
+}
+function shareText(){
+  const s = aiResult && aiResult.synthese ? " " + aiResult.synthese.split(/(?<=[.!?])\s/)[0] : "";
+  return "Mon tirage Iris « " + sp.name + " » : " + sp.pos.map((p, i) => DECK[table[picked[i]].i].n).join(", ") + "." + s + "\nFais le tien : " + SHARE_LINK;
+}
+async function refreshShare(){
+  shareBlob = await drawShareImage($("#sh-q").checked);
+  const old = $("#sh-img").src; $("#sh-img").src = URL.createObjectURL(shareBlob); if (old && old.startsWith("blob:")) URL.revokeObjectURL(old);
+  const txt = shareText();
+  $("#sh-wa").href = "https://wa.me/?text=" + encodeURIComponent(txt);
+  $("#sh-mail").href = "mailto:?subject=" + encodeURIComponent("Mon tirage Iris") + "&body=" + encodeURIComponent(txt);
+  const file = new File([shareBlob], "tirage-iris.png", { type: "image/png" });
+  $("#sh-native").hidden = !(navigator.canShare && navigator.canShare({ files: [file] }));
+}
+$("#b-share").onclick = async () => { $("#sheet").hidden = false; await refreshShare(); };
+$("#sh-close").onclick = () => { $("#sheet").hidden = true; };
+$("#sheet").onclick = e => { if (e.target.id === "sheet") $("#sheet").hidden = true; };
+$("#sh-q").onchange = refreshShare;
+$("#sh-native").onclick = async () => {
+  try { await navigator.share({ files: [new File([shareBlob], "tirage-iris.png", { type: "image/png" })], text: shareText(), title: "Mon tirage Iris" }); } catch {}
+};
+$("#sh-link").onclick = async () => {
+  try { await navigator.clipboard.writeText(shareText()); toast("Lien et résumé copiés"); }
+  catch { toast("Copie impossible ici : " + SHARE_LINK); }
+};
+$("#sh-save").onclick = async () => {
+  const dl = window.claude && window.claude.use ? await window.claude.use("downloads").catch(() => null) : null;
+  if (dl){ try { await dl.save({ filename: "tirage-iris.png", data: shareBlob }); } catch {} return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(shareBlob); a.download = "tirage-iris.png"; document.body.appendChild(a); a.click(); a.remove();
+};
 $("#b-new").onclick = () => show("home");
 $("#b-redraw").onclick = () => { kept = {}; shuffleTable(); show("draw"); };
 renderHome();
