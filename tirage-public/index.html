@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Couleurs du moment</title>
+<title>Iris</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Outfit:wght@400;600&display=swap">
@@ -19,6 +19,7 @@
 *{box-sizing:border-box} [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);margin:0}
 .wrap{max-width:640px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.tag{font-family:var(--serif);font-style:italic;color:var(--accent);margin:-2px 0 10px;font-size:1.05rem}
 h1{font-family:var(--serif);font-weight:600;font-size:2rem;line-height:1.15;margin:8px 0 6px;text-wrap:balance}
 h2{font-family:var(--serif);font-weight:600;font-size:1.4rem;margin:0 0 4px;text-wrap:balance}
 .lead{color:var(--muted);margin:0 0 18px;max-width:34em}
@@ -122,7 +123,8 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
   <!-- Accueil -->
   <section id="v-home">
     <div class="band" aria-hidden="true"></div>
-    <h1>Couleurs du moment</h1>
+    <h1>Iris</h1>
+    <p class="tag">Ce que les couleurs éclairent en toi</p>
     <p class="lead">Pose une question, choisis tes cartes face cachée, et laisse les couleurs t'offrir des pistes de réflexion sur toi.</p>
     <div id="themes" class="themes"></div>
   </section>

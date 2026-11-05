@@ -1,4 +1,4 @@
-# Couleurs du moment
+# Iris
 
 Site de tirage de couleurs en une seule page (`index.html`), sans installation ni compte.
 Cartes virtuelles choisies face cachée, 47 couleurs, 11 tirages, textes originaux écrits pour le site

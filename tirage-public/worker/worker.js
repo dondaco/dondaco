@@ -1,4 +1,4 @@
-// Service relais pour « Couleurs du moment » (Cloudflare Worker).
+// Service relais pour « Iris » (Cloudflare Worker).
 // - /interpretation : demande à Claude une conclusion sur un tirage, en s'inspirant des retours passés bien reçus
 // - /echange        : conversation courte avec la personne sur la façon dont elle reçoit son tirage
 // - /retour         : enregistre (si la personne l'accepte) un retour anonyme et en tire une « leçon » pour les prochains tirages
