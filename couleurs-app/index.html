@@ -83,6 +83,16 @@ input[type=color]{padding:2px;height:44px}
 .key{font-weight:700}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .chips button{border:1px solid var(--border);background:var(--chip);color:var(--text);border-radius:99px;padding:6px 10px;font:inherit;font-size:.85rem;cursor:pointer;text-align:left}
+.clamp{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:0;cursor:pointer}
+.chips button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.cat h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 6px}
+.spread-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:6px;font:inherit;color:var(--text);cursor:pointer}
+.spread-row:focus-visible,.chips button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.spread-row .t{flex:1;min-width:0;font-weight:600}
+.spread-row .dots{display:flex;gap:3px;flex:none}
+.spread-row .dots i{width:8px;height:12px;border-radius:2px;background:var(--accent);opacity:.75}
+.spread-row .n{flex:none;font-size:.8rem;color:var(--muted);min-width:56px;text-align:right}
 .empty{text-align:center;color:var(--muted);padding:24px 8px}
 dialog{border:0;border-radius:16px;padding:0;width:min(680px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--surface);color:var(--text)}
 dialog::backdrop{background:rgba(0,0,0,.5)}
@@ -98,63 +108,76 @@ dialog .dbody{padding:16px;overflow:auto}
 
 <main>
 <!-- ============ CONSULTER ============ -->
-<section id="tab-lookup" class="on">
+<section id="tab-lookup">
   <div class="card">
     <h2>Numéro de la couleur</h2>
     <input id="lk-num" class="bignum" inputmode="numeric" placeholder="ex. 12" autocomplete="off">
     <label>Paquet de la carte</label>
     <div id="lk-deck"></div>
-    <label for="lk-spread">Lire pour le tirage</label>
-    <select id="lk-spread"></select>
-    <label for="lk-pos">Position dans le tirage</label>
-    <select id="lk-pos"></select>
+    <button class="btn sec sm" id="lk-scan" style="margin-top:10px">📷 Reconnaître une carte en photo</button>
   </div>
   <div id="lk-result"></div>
 </section>
 
 <!-- ============ TIRAGE ============ -->
-<section id="tab-draw">
-  <div class="card">
-    <h2>1. Choisis ton tirage</h2>
-    <select id="dr-spread" hidden aria-label="Type de tirage"></select>
-    <div class="picker" id="dr-picker"></div>
-    <label class="btn sec sm" style="margin:10px 0 0">📸 Ajouter des tirages depuis mes photos<input type="file" class="spread-photos" accept="image/*" multiple hidden></label>
+<section id="tab-draw" class="on">
+  <!-- Accueil : choix du tirage -->
+  <div id="draw-home">
+    <input id="dh-search" type="search" placeholder="🔍 Chercher un tirage (amour, argent, conflit…)" autocomplete="off">
+    <div class="chips" id="dh-cats" style="margin:10px 0 4px"></div>
+    <div id="dh-list"></div>
+    <details class="card" id="dh-hist-wrap" style="margin-top:12px">
+      <summary><b>Mes tirages précédents</b> <span class="muted" id="dh-hist-count"></span></summary>
+      <div id="dr-history" class="list" style="margin-top:8px"></div>
+    </details>
+    <label class="btn sec sm" style="margin:4px 0 0">📸 Ajouter des tirages depuis mes photos<input type="file" class="spread-photos" accept="image/*" multiple hidden></label>
     <div class="progress spread-prog" hidden><div></div></div>
   </div>
-  <div class="card" id="dr-main">
-    <div class="row"><h2 style="margin:0" id="dr-title"></h2><span class="count" id="dr-count" style="flex:none"></span></div>
-    <p class="meaning" id="dr-desc"></p>
-    <details id="dr-photo-wrap" hidden><summary class="muted">Voir la photo du tirage</summary><img id="dr-photo" class="spread-photo" alt="Photo du tirage"></details>
-    <h3>2. Ta question</h3>
-    <textarea id="dr-q" style="min-height:70px" placeholder="Pose ta question en t'adressant à toi-même…"></textarea>
-    <details id="dr-q-help" style="margin-top:6px"><summary class="muted">Aide pour inventer une question</summary>
-      <p class="meaning">Le jeu éclaire ce dont tu n'as pas forcément conscience. Pose la question sur toi, sur ta part dans la situation, plutôt que sur les autres.</p>
-      <div class="chips" id="dr-q-chips"></div>
-      <div id="dr-q-ai" hidden style="margin-top:10px">
-        <label for="dr-q-sit">Décris ta situation en quelques mots</label>
-        <textarea id="dr-q-sit" style="min-height:60px" placeholder="ex. Je me dispute souvent avec mon associé"></textarea>
-        <button class="btn sm" id="dr-q-gen" style="margin-top:6px">✨ Proposer des questions</button>
-        <div class="chips" id="dr-q-props"></div>
+
+  <!-- Un tirage -->
+  <div id="draw-view" hidden>
+    <button class="btn sec sm" id="dv-back">← Tous les tirages</button>
+    <select id="dr-spread" hidden aria-label="Type de tirage"></select>
+    <div class="card" id="dr-main" style="margin-top:10px">
+      <p class="muted" id="dr-cat" style="margin:0 0 2px"></p>
+      <div class="row" style="align-items:flex-start"><h2 style="margin:0;flex:1;text-wrap:balance" id="dr-title"></h2><span class="count" id="dr-count" style="flex:none"></span></div>
+      <div id="dr-desc-wrap">
+        <p class="meaning clamp" id="dr-desc"></p>
+        <button class="linkbtn" id="dr-desc-more" hidden>Lire toute la consigne</button>
       </div>
-    </details>
-    <h3>3. Tire les cartes et entre leur numéro</h3>
-    <div id="dr-positions"></div>
-    <p class="muted" style="margin:12px 0 0">Les réponses sont des suggestions personnelles, à passer au crible de ton discernement. Elles ne remplacent jamais l'avis d'un médecin ou d'un thérapeute.</p>
-    <div class="row" style="margin-top:10px">
-      <button class="btn sec" id="dr-clear">Effacer</button>
-      <button class="btn" id="dr-save">Garder dans l'historique</button>
+      <details id="dr-photo-wrap" hidden><summary class="muted">Voir la photo du tirage</summary><img id="dr-photo" class="spread-photo" alt="Photo du tirage"></details>
     </div>
-  </div>
-  <div class="card">
-    <h2>Historique</h2>
-    <div id="dr-history" class="list"></div>
+    <div class="card">
+      <h3 style="margin-top:0">1. Ta question</h3>
+      <textarea id="dr-q" style="min-height:64px" placeholder="Pose ta question en t'adressant à toi-même…"></textarea>
+      <details id="dr-q-help" style="margin-top:6px"><summary class="muted">Aide pour inventer une question</summary>
+        <p class="meaning">Le jeu éclaire ce dont tu n'as pas forcément conscience. Pose la question sur toi, sur ta part dans la situation, plutôt que sur les autres.</p>
+        <div class="chips" id="dr-q-chips"></div>
+        <div id="dr-q-ai" hidden style="margin-top:10px">
+          <label for="dr-q-sit">Décris ta situation en quelques mots</label>
+          <textarea id="dr-q-sit" style="min-height:60px" placeholder="ex. Je me dispute souvent avec mon associé"></textarea>
+          <button class="btn sm" id="dr-q-gen" style="margin-top:6px">✨ Proposer des questions</button>
+          <div class="chips" id="dr-q-props"></div>
+        </div>
+      </details>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">2. Tire les cartes et entre leur numéro</h3>
+      <div id="dr-positions"></div>
+      <p class="muted" style="margin:12px 0 0">Les réponses sont des suggestions personnelles, à passer au crible de ton discernement. Elles ne remplacent jamais l'avis d'un médecin ou d'un thérapeute.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sec" id="dr-clear">Effacer</button>
+        <button class="btn" id="dr-save">Garder dans l'historique</button>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- ============ SCANNER ============ -->
 <section id="tab-scan">
   <div class="card">
-    <h2>Scanner une carte</h2>
+    <button class="btn sec sm" id="sc-back" style="margin-bottom:8px">← Retour</button>
+    <h2>Reconnaître une carte</h2>
     <p class="muted">Place la couleur de la carte dans le carré, sous une lumière stable. Pour une bonne reconnaissance, calibre d'abord chaque carte (fiche de la carte → « Calibrer avec la caméra »).</p>
     <div class="video-wrap"><video id="sc-video" playsinline muted></video><div class="reticle"></div></div>
     <div class="row" style="margin-top:10px">
@@ -232,10 +255,9 @@ dialog .dbody{padding:16px;overflow:auto}
 </main>
 
 <nav>
-  <button data-tab="lookup" class="on"><span class="ic">🔢</span>Consulter</button>
-  <button data-tab="draw"><span class="ic">🃏</span>Tirage</button>
-  <button data-tab="scan"><span class="ic">📷</span>Scanner</button>
-  <button data-tab="cards"><span class="ic">📚</span>Cartes</button>
+  <button data-tab="draw" class="on"><span class="ic">🃏</span>Tirer</button>
+  <button data-tab="lookup"><span class="ic">🔢</span>Une couleur</button>
+  <button data-tab="cards"><span class="ic">📚</span>Mes cartes</button>
   <button data-tab="settings"><span class="ic">⚙️</span>Réglages</button>
 </nav>
 
@@ -272,6 +294,7 @@ dialog .dbody{padding:16px;overflow:auto}
 <dialog id="dlg-spread"><div class="dbody">
   <div class="row"><h2 style="margin:0">Type de tirage</h2><button class="btn sec sm" style="flex:none" data-close>Fermer</button></div>
   <label for="se-name">Nom</label><input id="se-name">
+  <label for="se-cat">Thème</label><input id="se-cat" list="se-cats" placeholder="ex. Relations et amour"><datalist id="se-cats"></datalist>
   <label for="se-desc">Description / consigne</label><textarea id="se-desc" style="min-height:60px"></textarea>
   <img id="se-photo" class="spread-photo" alt="Photo du tirage" hidden>
   <h3>Positions</h3>
@@ -423,7 +446,7 @@ async function connectRemote(){
     for (const [k, v] of Object.entries(docs)) sent[k] = JSON.stringify(v);
     db = next; if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); pushRemote(); } sortCards();
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
-    applyTheme(); renderLookup(); renderCards(); renderSettings();
+    applyTheme(); renderLookup(); renderCards(); renderSettings(); renderDraw();
   } catch {}
 }
 load();
@@ -502,16 +525,7 @@ function fillSpreadSelect(sel, keep){
   sel.innerHTML = db.spreads.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
   if (keep && db.spreads.some(s => s.id === keep)) sel.value = keep;
 }
-function renderLookup(){
-  const keepS = $("#lk-spread").value, keepP = $("#lk-pos").value;
-  $("#lk-spread").innerHTML = `<option value="">Toutes les rubriques</option>` + db.spreads.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("");
-  if (db.spreads.some(s => s.id === keepS)) $("#lk-spread").value = keepS;
-  const sp = db.spreads.find(s => s.id === $("#lk-spread").value);
-  $("#lk-pos").disabled = !sp;
-  $("#lk-pos").innerHTML = sp ? sp.positions.map((p, i) => `<option value="${i}">${i + 1}. ${esc(p.label)}${p.field && p.field !== ALL ? " → " + esc(p.field) : ""}</option>`).join("") : `<option>—</option>`;
-  if (sp && keepP && sp.positions[keepP]) $("#lk-pos").value = keepP;
-  showLookup();
-}
+function renderLookup(){ showLookup(); }
 let lkDeck = "";
 function renderLkDeck(){
   $("#lk-deck").innerHTML = deckHtml(lkDeck, "data-lkd");
@@ -520,32 +534,79 @@ function renderLkDeck(){
 function showLookup(){
   const n = $("#lk-num").value.trim();
   if (!n){ $("#lk-result").innerHTML = db.cards.length ? "" : `<div class="card empty">Commence par créer tes cartes dans <b>Réglages</b> puis remplis-les depuis ton livre dans <b>Cartes</b>.</div>`; return; }
-  const sp = db.spreads.find(s => s.id === $("#lk-spread").value);
-  const pos = sp ? sp.positions[$("#lk-pos").value] : null;
-  $("#lk-result").innerHTML = (pos ? `<p class="muted">${esc(sp.name)} — position « ${esc(pos.label)} »${pos.meaning ? " : " + esc(pos.meaning) : ""}</p>` : "") + cardHtml(byNum(n), deckField(lkDeck) || (pos ? pos.field : ALL));
+  $("#lk-result").innerHTML = cardHtml(byNum(n), deckField(lkDeck) || ALL);
 }
 $("#lk-num").oninput = showLookup;
-$("#lk-spread").onchange = renderLookup;
-$("#lk-pos").onchange = showLookup;
+$("#sc-back").onclick = () => { if (scanTarget){ scanTarget = null; drawOpen = true; showTab("draw"); } else showTab("lookup"); };
+$("#lk-scan").onclick = () => { scanTarget = null; $("#sc-result").innerHTML = ""; showTab("scan"); };
 
 /* ---------------- Tirage ---------------- */
-let current = {}, currentDeck = {};
+let current = {}, currentDeck = {}, drawOpen = false, homeCat = "";
+// Thèmes des tirages : celui choisi dans l'éditeur, sinon déduit du nom
+const CATS = ["Au quotidien", "Relations et amour", "Confiance et bien-être", "Travail et talents", "Argent", "Famille et enfants", "Avancer dans la vie", "Autres"];
+const CAT_RULES = [
+  ["Au quotidien", /couleurs? du jour|^une carte|lumière \/ matière|présent \/ opportunit/],
+  ["Argent", /financi|dépenser|gagnant|argent/],
+  ["Famille et enfants", /enfant|scolaire/],
+  ["Travail et talents", /talent|bon moment au bon endroit|profession|orientation|poste|changement|cv\b|carrière|travail/],
+  ["Relations et amour", /entendre|rencontrer|acceptation|conflit|moi.*lui.*nous|plaire|désir amoureux|amour|couple/],
+  ["Confiance et bien-être", /complexe|croire en vous|corps|mieux en mieux|manger|santé/],
+  ["Avancer dans la vie", /monde meilleur|avenir|problème|confusion/]
+];
+function catOf(sp){
+  if (sp.cat) return sp.cat;
+  const txt = (sp.name + " " + sp.positions.map(p => p.label).join(" ")).toLowerCase();
+  for (const [c, re] of CAT_RULES) if (re.test(txt)) return c;
+  return "Autres";
+}
+const norm = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+function renderHome(){
+  const q = norm($("#dh-search").value.trim());
+  const used = CATS.filter(c => db.spreads.some(s => catOf(s) === c)).concat([...new Set(db.spreads.map(catOf))].filter(c => !CATS.includes(c)));
+  if (homeCat && !used.includes(homeCat)) homeCat = "";
+  $("#dh-cats").innerHTML = [`<button type="button" data-cat="" class="${homeCat && !q ? "" : "on"}">Tous</button>`, ...used.map(c => `<button type="button" data-cat="${esc(c)}" class="${homeCat === c && !q ? "on" : ""}">${esc(c)}</button>`)].join("");
+  $("#dh-cats").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { homeCat = b.dataset.cat; $("#dh-search").value = ""; renderHome(); });
+  const match = s => (q || !homeCat || catOf(s) === homeCat) && (!q || norm(s.name + " " + (s.desc || "") + " " + catOf(s)).includes(q));
+  const row = s => `<button type="button" class="spread-row" data-open="${s.id}"><span class="t">${esc(s.name)}</span><span class="dots" aria-hidden="true">${s.positions.slice(0, 7).map(() => "<i></i>").join("")}</span><span class="n">${s.positions.length} carte${s.positions.length > 1 ? "s" : ""}</span></button>`;
+  // Récents : les derniers tirages utilisés
+  const recentIds = [...new Set(db.history.map(h => h.spread))].filter(id => db.spreads.some(s => s.id === id)).slice(0, 3);
+  let html = "";
+  if (!q && !homeCat && recentIds.length) html += `<div class="cat"><h2>Récemment utilisés</h2>${recentIds.map(id => row(db.spreads.find(s => s.id === id))).join("")}</div>`;
+  for (const c of used){
+    const list = db.spreads.filter(s => catOf(s) === c && match(s));
+    if (list.length) html += `<div class="cat"><h2>${esc(c)}</h2>${list.map(row).join("")}</div>`;
+  }
+  $("#dh-list").innerHTML = html || `<div class="empty">${db.spreads.length ? "Aucun tirage ne correspond." : "Aucun tirage : ajoute-les depuis tes photos."}</div>`;
+  $("#dh-list").querySelectorAll("[data-open]").forEach(b => b.onclick = () => openDraw(b.dataset.open));
+  $("#dh-hist-count").textContent = db.history.length ? "(" + db.history.length + ")" : "";
+  renderHistory();
+}
+$("#dh-search").oninput = renderHome;
+function openDraw(id, keep){
+  fillSpreadSelect($("#dr-spread")); $("#dr-spread").value = id;
+  if (!keep){ current = {}; currentDeck = {}; $("#dr-q").value = ""; }
+  drawOpen = true; renderDraw(); window.scrollTo(0, 0);
+}
+$("#dv-back").onclick = () => { drawOpen = false; renderDraw(); window.scrollTo(0, 0); };
+$("#dr-desc-more").onclick = () => { $("#dr-desc").classList.toggle("clamp"); $("#dr-desc-more").textContent = $("#dr-desc").classList.contains("clamp") ? "Lire toute la consigne" : "Réduire"; };
 function renderDraw(){
   fillSpreadSelect($("#dr-spread"), $("#dr-spread").value);
-  const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
-  $("#dr-picker").innerHTML = db.spreads.map(s => `<button type="button" data-sp="${s.id}" class="${sp && s.id === sp.id ? "on" : ""}"><b>${esc(s.name)}</b><span>${s.positions.length} carte${s.positions.length > 1 ? "s" : ""}</span></button>`).join("") || `<p class="muted">Aucun tirage : ajoute-les depuis tes photos.</p>`;
-  $("#dr-picker").querySelectorAll("[data-sp]").forEach(b => b.onclick = () => { $("#dr-spread").value = b.dataset.sp; current = {}; currentDeck = {}; renderDraw(); });
-  $("#dr-main").hidden = !sp;
+  const sp = drawOpen ? db.spreads.find(s => s.id === $("#dr-spread").value) : null;
+  $("#draw-home").hidden = !!sp; $("#draw-view").hidden = !sp;
+  if (!sp){ renderHome(); return; }
   if (sp){
+    $("#dr-cat").textContent = catOf(sp);
     $("#dr-title").textContent = sp.name;
     $("#dr-count").textContent = "Tire " + sp.positions.length + " carte" + (sp.positions.length > 1 ? "s" : "");
     $("#dr-desc").textContent = sp.desc || "";
+    $("#dr-desc").classList.add("clamp"); $("#dr-desc-more").textContent = "Lire toute la consigne";
+    $("#dr-desc-more").hidden = (sp.desc || "").length < 220;
     const img = (db.spreadImages || {})[sp.id];
     $("#dr-photo-wrap").hidden = !img; if (img) $("#dr-photo").src = img;
   }
   $("#dr-positions").innerHTML = sp ? sp.positions.map((p, i) => `
     <div class="pos">
-      <div class="row"><b style="flex:2">${i + 1}. ${esc(p.label)}</b>
+      <div class="row"><b style="flex:2">${/^carte\s*n/i.test(p.label) ? "" : (i + 1) + ". "}${esc(p.label)}</b>
         <input style="flex:1" inputmode="numeric" placeholder="N°" data-i="${i}" value="${esc(current[i] || "")}">
         <button class="btn sec sm" style="flex:none" data-scan="${i}" title="Scanner">📷</button></div>
       ${p.meaning ? `<p class="meaning muted">${esc(p.meaning)}</p>` : ""}
@@ -563,7 +624,6 @@ function renderDraw(){
     drawRes(sp, i);
   });
   renderQuestionHelp();
-  renderHistory();
 }
 // Pistes pour formuler une question tournée vers soi
 const QUESTION_STARTERS = [
@@ -583,7 +643,6 @@ function drawRes(sp, i){
   const n = (current[i] || "").trim(), el = $("#dr-res-" + i);
   if (el) el.innerHTML = n ? cardHtml(byNum(n), deckField(currentDeck[i]) || sp.positions[i].field) : "";
 }
-$("#dr-spread").onchange = () => { current = {}; currentDeck = {}; renderDraw(); };
 $("#dr-clear").onclick = () => { current = {}; currentDeck = {}; $("#dr-q").value = ""; renderDraw(); };
 $("#dr-save").onclick = async () => {
   const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
@@ -601,7 +660,7 @@ function renderHistory(){
   $("#dr-history").querySelectorAll("[data-h]").forEach(el => el.onclick = e => {
     if (e.target.dataset.del){ db.history = db.history.filter(x => x.id !== e.target.dataset.del); save(); return renderHistory(); }
     const x = db.history.find(y => y.id === el.dataset.h);
-    if (db.spreads.some(s => s.id === x.spread)){ $("#dr-spread").value = x.spread; current = { ...x.nums }; currentDeck = { ...(x.decks || []) }; $("#dr-q").value = x.q || ""; renderDraw(); window.scrollTo(0, 0); }
+    if (db.spreads.some(s => s.id === x.spread)){ current = { ...x.nums }; currentDeck = { ...(x.decks || []) }; $("#dr-q").value = x.q || ""; openDraw(x.spread, true); }
   });
 }
 
@@ -684,7 +743,7 @@ async function showMatches(rgb, photo){
           if (!n){ b.textContent = "Numéro illisible"; return; }
           const pq = DECKS[r.paquet] ? r.paquet : "";
           b.textContent = "Carte n° " + n + (pq ? " · " + DECKS[pq].label : "");
-          if (sp){ current[scanTarget.i] = n; if (pq) currentDeck[scanTarget.i] = pq; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
+          if (sp){ current[scanTarget.i] = n; if (pq) currentDeck[scanTarget.i] = pq; scanTarget = null; drawOpen = true; showTab("draw"); }
           else $("#sc-detail").innerHTML = cardHtml(byNum(n));
         } catch { b.textContent = "Lecture impossible"; }
       };
@@ -692,7 +751,7 @@ async function showMatches(rgb, photo){
   }
   $("#sc-result").querySelectorAll("[data-pick]").forEach(el => el.onclick = () => {
     const n = el.dataset.pick;
-    if (sp){ current[scanTarget.i] = n; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
+    if (sp){ current[scanTarget.i] = n; scanTarget = null; drawOpen = true; showTab("draw"); }
     else $("#sc-detail").innerHTML = cardHtml(byNum(n));
   });
 };
@@ -796,7 +855,8 @@ $("#ce-ocr").onchange = async e => {
 function renderSettings(){
   $("#st-fields").value = db.fields.join("\n");
   $("#st-theme").value = db.theme || "";
-  $("#st-spreads").innerHTML = db.spreads.map(s => `<div class="item" data-s="${s.id}"><div class="t"><b>${esc(s.name)}</b><small>${s.positions.length} position(s) · ${s.positions.map(p => esc(p.label)).join(", ")}</small></div><span class="pill">Modifier</span></div>`).join("") || `<div class="empty">Aucun tirage.</div>`;
+  const cats = [...new Set([...CATS, ...db.spreads.map(catOf)])];
+  $("#st-spreads").innerHTML = cats.map(c => { const l = db.spreads.filter(s => catOf(s) === c); return l.length ? `<div class="cat"><h2>${esc(c)}</h2>${l.map(s => `<div class="item" data-s="${s.id}"><div class="t"><b>${esc(s.name)}</b><small>${s.positions.length} carte(s) · ${s.positions.map(p => esc(p.label)).join(", ")}</small></div><span class="pill">Modifier</span></div>`).join("")}</div>` : ""; }).join("") || `<div class="empty">Aucun tirage.</div>`;
   $("#st-spreads").querySelectorAll("[data-s]").forEach(el => el.onclick = () => openSpread(el.dataset.s));
 }
 $("#st-fields-save").onclick = () => {
@@ -843,6 +903,8 @@ function openSpread(id){
   editSpread = id ? db.spreads.find(s => s.id === id) : null;
   const s = editSpread || { name: "", desc: "", positions: [{ label: "Carte 1", field: ALL }] };
   $("#se-name").value = s.name; $("#se-desc").value = s.desc || "";
+  $("#se-cats").innerHTML = [...new Set([...CATS, ...db.spreads.map(catOf)])].map(c => `<option value="${esc(c)}">`).join("");
+  $("#se-cat").value = editSpread ? catOf(editSpread) : "";
   $("#se-positions").innerHTML = ""; s.positions.forEach(addPosRow);
   const img = editSpread && (db.spreadImages || {})[editSpread.id];
   $("#se-photo").hidden = !img; if (img) $("#se-photo").src = img;
@@ -864,7 +926,7 @@ $("#se-save").onclick = () => {
   const name = $("#se-name").value.trim(); if (!name) return toast("Nom obligatoire");
   const positions = [...$("#se-positions").children].map(r => ({ label: r.querySelector("input").value.trim() || "Carte", meaning: r.querySelector("textarea").value.trim(), field: r.querySelector("select").value }));
   if (!positions.length) return toast("Au moins une position");
-  const data = { name, desc: $("#se-desc").value.trim(), positions };
+  const data = { name, desc: $("#se-desc").value.trim(), positions, cat: $("#se-cat").value.trim() };
   if (editSpread) Object.assign(editSpread, data); else db.spreads.push({ id: uid(), ...data });
   save(); $("#dlg-spread").close(); renderSettings(); renderLookup();
 };
@@ -1007,13 +1069,13 @@ document.querySelectorAll(".spread-photos").forEach(inp => inp.onchange = async 
   setProg(null);
   if (!added.length) return toast("Aucun tirage trouvé sur ces photos");
   save(); renderSettings(); renderLookup();
-  fillSpreadSelect($("#dr-spread")); $("#dr-spread").value = added[0].id; current = {}; currentDeck = {}; renderDraw(); showTab("draw");
+  showTab("draw"); openDraw(added[0].id);
   toast(added.length + " tirage(s) ajouté(s) : vérifie-les dans Réglages");
 });
 
 /* ---------------- Démarrage ---------------- */
 if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} }
-applyTheme(); renderLkDeck(); renderLookup(); connectRemote();
+applyTheme(); renderLkDeck(); renderLookup(); renderDraw(); connectRemote();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
