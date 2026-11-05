@@ -123,7 +123,7 @@ dialog .dbody{padding:16px;overflow:auto}
 <section id="tab-draw" class="on">
   <!-- Accueil : choix du tirage -->
   <div id="draw-home">
-    <input id="dh-search" type="search" placeholder="🔍 Chercher un tirage (amour, argent, conflit…)" autocomplete="off">
+    <input id="dh-search" type="search" placeholder="🔍 Chercher un tirage (couple, argent, conflit…)" autocomplete="off">
     <div class="chips" id="dh-cats" style="margin:10px 0 4px"></div>
     <div id="dh-list"></div>
     <details class="card" id="dh-hist-wrap" style="margin-top:12px">
@@ -409,7 +409,7 @@ function save(){
   if (remote) pushRemote();
 }
 function remoteDocs(){
-  const out = { meta: { fields: db.fields, spreads: db.spreads, history: db.history, theme: db.theme || "", catVersion: db.catVersion || 0 } };
+  const out = { meta: { fields: db.fields, spreads: db.spreads, history: db.history, theme: db.theme || "", catVersion: db.catVersion || 0, fixVersion: db.fixVersion || 0 } };
   for (const c of db.cards) out["card-" + c.num] = c;
   for (const [id, img] of Object.entries(db.spreadImages || {})) out["img-" + id] = { img };
   return out;
@@ -444,7 +444,7 @@ async function connectRemote(){
     next.spreadImages = {};
     Object.keys(docs).filter(k => k.startsWith("img-")).forEach(k => next.spreadImages[k.slice(4)] = docs[k].img);
     for (const [k, v] of Object.entries(docs)) sent[k] = JSON.stringify(v);
-    db = next; if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); pushRemote(); } sortCards();
+    db = next; if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); pushRemote(); } if (fixSpreads()) pushRemote(); sortCards();
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
     applyTheme(); renderLookup(); renderCards(); renderSettings(); renderDraw();
   } catch {}
@@ -542,22 +542,57 @@ $("#lk-scan").onclick = () => { scanTarget = null; $("#sc-result").innerHTML = "
 
 /* ---------------- Tirage ---------------- */
 let current = {}, currentDeck = {}, drawOpen = false, homeCat = "";
-// Thèmes des tirages : celui choisi dans l'éditeur, sinon déduit du nom
-const CATS = ["Au quotidien", "Relations et amour", "Confiance et bien-être", "Travail et talents", "Argent", "Famille et enfants", "Avancer dans la vie", "Autres"];
-const CAT_RULES = [
-  ["Au quotidien", /couleurs? du jour|^une carte|lumière \/ matière|présent \/ opportunit/],
-  ["Argent", /financi|dépenser|gagnant|argent/],
-  ["Famille et enfants", /enfant|scolaire/],
-  ["Travail et talents", /talent|bon moment au bon endroit|profession|orientation|poste|changement|cv\b|carrière|travail/],
-  ["Relations et amour", /entendre|rencontrer|acceptation|conflit|moi.*lui.*nous|plaire|désir amoureux|amour|couple/],
-  ["Confiance et bien-être", /complexe|croire en vous|corps|mieux en mieux|manger|santé/],
-  ["Avancer dans la vie", /monde meilleur|avenir|problème|confusion/]
+// Thèmes et ordre des tirages d'après le sommaire du livre (p. 5-6) ; un thème choisi dans l'éditeur l'emporte
+const BOOK = [
+  ["Vivre au présent", ["opportunites du moment", "opportunites du mois", "opportunites de l'annee"]],
+  ["Amour / Relation", ["mieux vous entendre", "rencontrer quelqu'un", "reussir votre couple", "resoudre un conflit", "pratiquer l'acceptation"]],
+  ["Désir / Plaire", ["desir amoureux", "guerir d'un complexe", "oser plaire"]],
+  ["Créativité / Intuition", ["croire en vous", "bon moment", "votre talent"]],
+  ["Corps / Mieux-être", ["bien dans votre corps", "mieux en mieux", "manger selon"]],
+  ["Argent / Pouvoir d'achat", ["esprit d'un gagnant", "depenser intelligemment", "situation financiere"]],
+  ["Profession / Orientation", ["preparer au changement", "redaction de votre cv", "nouveau poste", "profession"]],
+  ["Relation parents / Enfant", ["besoin de votre enfant", "difficultes scolaires"]],
+  ["Écologie / Avenir", ["monde meilleur", "croire en l'avenir"]],
+  ["Problème / Solution", ["resoudre un probleme", "etat de confusion"]]
 ];
-function catOf(sp){
-  if (sp.cat) return sp.cat;
-  const txt = (sp.name + " " + sp.positions.map(p => p.label).join(" ")).toLowerCase();
-  for (const [c, re] of CAT_RULES) if (re.test(txt)) return c;
-  return "Autres";
+const CATS = ["Au quotidien", ...BOOK.map(b => b[0]), "Autres"];
+const simple = t => String(t).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’`]/g, "'");
+function bookPlace(sp){
+  const n = simple(sp.name);
+  for (let c = 0; c < BOOK.length; c++){
+    const k = BOOK[c][1].findIndex(key => n.includes(key));
+    if (k >= 0) return { cat: BOOK[c][0], rank: c * 100 + k };
+  }
+  if (/couleurs? du jour|^une carte|lumiere \/ matiere/.test(n)) return { cat: "Au quotidien", rank: -1 };
+  return { cat: "Autres", rank: 9999 };
+}
+function catOf(sp){ return sp.cat || bookPlace(sp).cat; }
+const byBook = (a, b) => bookPlace(a).rank - bookPlace(b).rank;
+// Corrections ponctuelles des tirages importés (une seule fois)
+const FIX_VERSION = 1;
+function fixSpreads(){
+  if ((db.fixVersion || 0) >= FIX_VERSION) return false;
+  for (const sp of db.spreads){
+    // Le tirage MOI / LUI / NOUS sans titre est « Comment réussir votre couple ? » (seul titre du sommaire absent)
+    if (/^\(nom non visible/i.test(sp.name) && sp.positions.some(p => /moi/i.test(p.label)) && !db.spreads.some(x => /réussir votre couple/i.test(x.name)))
+      sp.name = "Comment réussir votre couple ?";
+  }
+  // Le fragment « Profession / Orientation » (cartes 4 à 7) est la fin du tirage CV, coupé entre deux photos
+  const frag = db.spreads.find(x => /^tirage profession \/ orientation \(titre non visible/i.test(x.name));
+  const cv = db.spreads.find(x => /rédaction de votre cv/i.test(x.name));
+  if (frag && cv && cv.positions.length < 4 && /n°\s*4/i.test((frag.positions[0] || {}).label || "")){
+    cv.positions = cv.positions.concat(frag.positions);
+    cv.desc = String(cv.desc || "").replace(/\s*\(Seules les positions[^)]*\)\s*/i, " ").trim();
+    const concl = String(frag.desc || "").match(/Conclusion\s*:[\s\S]*/i);
+    if (concl) cv.desc += "\n\n" + concl[0].trim();
+    db.spreads = db.spreads.filter(x => x !== frag);
+    if (db.spreadImages && db.spreadImages[frag.id]){
+      if (!db.spreadImages[cv.id]) db.spreadImages[cv.id] = db.spreadImages[frag.id];
+      delete db.spreadImages[frag.id]; remoteDelete("img-" + frag.id);
+    }
+  }
+  db.fixVersion = FIX_VERSION;
+  return true;
 }
 const norm = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 function renderHome(){
@@ -573,7 +608,7 @@ function renderHome(){
   let html = "";
   if (!q && !homeCat && recentIds.length) html += `<div class="cat"><h2>Récemment utilisés</h2>${recentIds.map(id => row(db.spreads.find(s => s.id === id))).join("")}</div>`;
   for (const c of used){
-    const list = db.spreads.filter(s => catOf(s) === c && match(s));
+    const list = db.spreads.filter(s => catOf(s) === c && match(s)).sort(byBook);
     if (list.length) html += `<div class="cat"><h2>${esc(c)}</h2>${list.map(row).join("")}</div>`;
   }
   $("#dh-list").innerHTML = html || `<div class="empty">${db.spreads.length ? "Aucun tirage ne correspond." : "Aucun tirage : ajoute-les depuis tes photos."}</div>`;
@@ -856,7 +891,7 @@ function renderSettings(){
   $("#st-fields").value = db.fields.join("\n");
   $("#st-theme").value = db.theme || "";
   const cats = [...new Set([...CATS, ...db.spreads.map(catOf)])];
-  $("#st-spreads").innerHTML = cats.map(c => { const l = db.spreads.filter(s => catOf(s) === c); return l.length ? `<div class="cat"><h2>${esc(c)}</h2>${l.map(s => `<div class="item" data-s="${s.id}"><div class="t"><b>${esc(s.name)}</b><small>${s.positions.length} carte(s) · ${s.positions.map(p => esc(p.label)).join(", ")}</small></div><span class="pill">Modifier</span></div>`).join("")}</div>` : ""; }).join("") || `<div class="empty">Aucun tirage.</div>`;
+  $("#st-spreads").innerHTML = cats.map(c => { const l = db.spreads.filter(s => catOf(s) === c).sort(byBook); return l.length ? `<div class="cat"><h2>${esc(c)}</h2>${l.map(s => `<div class="item" data-s="${s.id}"><div class="t"><b>${esc(s.name)}</b><small>${s.positions.length} carte(s) · ${s.positions.map(p => esc(p.label)).join(", ")}</small></div><span class="pill">Modifier</span></div>`).join("")}</div>` : ""; }).join("") || `<div class="empty">Aucun tirage.</div>`;
   $("#st-spreads").querySelectorAll("[data-s]").forEach(el => el.onclick = () => openSpread(el.dataset.s));
 }
 $("#st-fields-save").onclick = () => {
@@ -1074,7 +1109,8 @@ document.querySelectorAll(".spread-photos").forEach(inp => inp.onchange = async 
 });
 
 /* ---------------- Démarrage ---------------- */
-if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} }
+if (db.catVersion !== CAT_VERSION) mergeCatalogue();
+if (fixSpreads() || true){ try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} }
 applyTheme(); renderLkDeck(); renderLookup(); renderDraw(); connectRemote();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
