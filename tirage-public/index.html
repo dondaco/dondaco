@@ -142,6 +142,13 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 #fb-tags button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .pour{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:1rem;line-height:1.5}
 .pour b{display:block;font-family:var(--sans);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
+.rstep{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.rstep:first-child{border-top:0;padding-top:0}
+.rn{width:24px;height:24px;border-radius:50%;background:var(--soft);color:var(--accent);font-weight:600;font-size:.8rem;display:grid;place-items:center;margin-top:1px}
+.rt{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rh{margin:2px 0 0;font-weight:600}
+.rp{margin:2px 0 0;color:var(--ink);font-size:.95rem;line-height:1.45}
+.rsum{color:var(--muted);font-size:.88rem;margin-top:6px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -445,6 +452,15 @@ $("#b-reveal").onclick = () => { renderReading(); show("read"); };
 
 /* Lecture */
 let personal = [];
+// Ce que donne la couleur à cette place, en une phrase simple (rôle de la position + côté de la carte)
+const PLACE_SENTENCE = {
+  "ressource+": "À cette place, c'est un appui sur lequel tu peux compter.",
+  "ressource-": "À cette place, c'est un appui à construire : il te demande un effort.",
+  "attention+": "À cette place, c'est un frein léger, facile à transformer en atout.",
+  "attention-": "À cette place, c'est un vrai frein : le reconnaître, c'est déjà commencer à le dépasser.",
+  "etat+": "À cette place, elle décrit un moment porteur.",
+  "etat-": "À cette place, elle décrit un moment qui te demande du travail sur toi."
+};
 function renderReading(){
   aiResult = null; $("#ai-out").innerHTML = ""; $("#trend").hidden = true; $("#b-ai").textContent = "Recevoir mon interprétation"; $("#b-ai").hidden = !(sampleFn || AI_ENDPOINT); $("#chat").hidden = true; stopMic();
   const q = $("#q").value.trim();
@@ -455,11 +471,21 @@ function renderReading(){
     return `<article class="card" style="animation-delay:${i * 180}ms">
       <div class="col" style="background:${c.c};color:${textOn(c.c)}">${esc(c.n)}</div>
       <div class="in">
-        <div class="pl">${sp.pos.length > 1 ? "Carte " + (i + 1) + " · " : ""}${esc(p.l)}</div>
-        <p class="pm">${esc(p.m)}</p>
-        <span class="side">${t.side === "l" ? "☀ Côté lumière : ce qui t'éclaire" : "◐ Côté défi : ce qui te met au travail"}</span>
-        <div class="ess"><p>${esc(ESSENCE[c.n] || "")}</p><p class="ess-r"><b>${esc(ROLE_LABEL[g.cartes[i].role])}</b> · ${esc(g.cartes[i].lecture)}</p></div>
-        <p class="muted" style="margin:12px 0 2px;font-size:.82rem">Les phrases-clés de cette couleur : touche celles qui te parlent</p>
+        <div class="rstep"><span class="rn">1</span><div>
+          <div class="rt">Où tombe la carte</div>
+          <p class="rh">${sp.pos.length > 1 ? "Carte " + (i + 1) + " · " : ""}${esc(p.l)}</p>
+          <p class="rp">${esc(p.m)}</p>
+        </div></div>
+        <div class="rstep"><span class="rn">2</span><div>
+          <div class="rt">Ce que la couleur dit ici</div>
+          <p class="rh">${esc(c.n)}, ${t.side === "l" ? "côté lumière ☀" : "côté défi ◐"}</p>
+          <p class="rp">${esc(ESSENCE[c.n] || "")}</p>
+          <p class="rp rsum">${t.side === "l" ? "Côté lumière : la couleur t'offre ce qu'elle a de meilleur." : "Côté défi : la couleur montre ce qu'elle te demande de travailler."} ${esc(PLACE_SENTENCE[g.cartes[i].role + (t.side === "l" ? "+" : "-")])}</p>
+        </div></div>
+        <div class="rstep"><span class="rn">3</span><div>
+          <div class="rt">Ce qui te parle</div>
+          <p class="rp">Parmi ces phrases, touche celles qui décrivent <b>« ${esc(p.l.toLowerCase())} »</b> pour toi${$("#q").value.trim() ? ", en pensant à ta question" : ""}.</p>
+        </div></div>
         <p class="kp">${esc(ph[0])}</p>
         <div class="ph">${ph.slice(1).map((x, j) => `<button type="button" data-i="${i}" data-j="${j + 1}"><i>♡</i><span>${esc(x)}</span></button>`).join("")}</div>
       </div></article>`;
