@@ -266,6 +266,13 @@ dialog .dbody{padding:16px;overflow:auto}
         <p class="muted" style="margin:12px 0 0">Les réponses sont des suggestions personnelles, à passer au crible de ton discernement. Elles ne remplacent jamais l'avis d'un médecin ou d'un thérapeute.</p>
         <button class="btn" id="dr-save" style="width:100%;margin-top:12px">Enregistrer dans l'historique</button>
       </div>
+      <div class="card">
+        <h3 style="margin-top:0">Et maintenant ?</h3>
+        <div class="row">
+          <button class="btn sec" id="nx-same">↻ Refaire ce tirage</button>
+          <button class="btn sec" id="nx-other">Choisir un autre tirage</button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1048,6 +1055,18 @@ function renderQuestionHelp(){
   box.querySelectorAll("[data-qs]").forEach(b => b.onclick = () => { $("#dr-q").value = QUESTION_STARTERS[b.dataset.qs]; $("#dr-q").focus(); });
   askClaude().then(sample => { if (sample) $("#dr-q-ai").hidden = false; });
 }
+// Un tirage est « enregistré » si son contenu n'a pas changé depuis le dernier enregistrement
+let savedSig = "";
+const drawSig = () => JSON.stringify([$("#dr-q").value.trim(), current, currentDeck, kept, $("#rd-interp").value.trim()]);
+const hasContent = () => Object.values(current).some(Boolean);
+async function leaveDraw(){
+  if (hasContent() && drawSig() !== savedSig){
+    const r = await ask("Ce tirage n'est pas enregistré. L'enregistrer dans l'historique avant de continuer ?");
+    if (r) $("#dr-save").click();
+  }
+}
+$("#nx-same").onclick = async () => { await leaveDraw(); const sp = curSpread(); if (sp){ openDraw(sp.id); savedSig = ""; } };
+$("#nx-other").onclick = async () => { await leaveDraw(); drawOpen = false; savedSig = ""; renderDraw(); window.scrollTo(0, 0); };
 $("#dr-save").onclick = () => {
   const sp = curSpread(); if (!sp) return;
   const entry = { id: editingHist || uid(), date: new Date().toISOString(), spread: sp.id, spreadName: sp.name,
@@ -1058,6 +1077,7 @@ $("#dr-save").onclick = () => {
   db.history = db.history.slice(0, 200); editingHist = entry.id; save();
   toast(old >= 0 ? "Tirage mis à jour" : "Tirage enregistré dans l'historique");
   $("#dr-save").textContent = "Mettre à jour dans l'historique";
+  savedSig = drawSig();
 };
 function renderHistory(){
   const q = norm($("#hi-search").value.trim());
@@ -1082,6 +1102,7 @@ function openHistory(id){
   aiText = x.ai || ""; aiSig = aiText ? JSON.stringify([x.q || "", { ...x.nums }, { ...(x.decks || []) }, (() => { const o = {}; (x.kept || []).forEach((k, i) => o[i] = [...k]); return o; })()]) : "";
   showTab("draw"); openDraw(x.spread, true);
   $("#dr-save").textContent = "Mettre à jour dans l'historique";
+  savedSig = drawSig();
   const del = document.createElement("button"); del.className = "btn danger sm"; del.textContent = "Supprimer ce tirage"; del.style.marginTop = "8px"; del.id = "rd-del";
   const old = $("#rd-del"); if (old) old.remove();
   $("#dr-save").after(del);
