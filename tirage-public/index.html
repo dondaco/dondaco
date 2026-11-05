@@ -150,6 +150,8 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .rh{margin:2px 0 0;font-weight:600}
 .rp{margin:2px 0 0;color:var(--ink);font-size:.95rem;line-height:1.45}
 .rsum{color:var(--muted);font-size:.88rem;margin-top:6px}
+.howto{background:var(--soft);border-radius:14px;padding:12px 14px;margin:0 0 12px;font-size:.9rem;line-height:1.5}
+.howto > b:first-child{display:block;margin-bottom:2px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -200,7 +202,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
   <section id="v-read" hidden>
     <button class="back" id="b-redraw">← Refaire ce tirage</button>
     <div class="panel"><span class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Ta question</span><p class="qline" id="r-q"></p></div>
-    <p class="muted" style="margin:0 2px 10px">Lis chaque phrase et touche celles qui te parlent.</p>
+    <div class="howto"><b>Comment lire tes cartes</b>Chaque carte éclaire une partie de ta question. Pour chacune, tu verras : <b>①</b> la partie de ta question qu'elle éclaire, <b>②</b> ce que sa couleur répond, <b>③</b> les phrases qui en parlent : garde celles qui te ressemblent.</div>
     <div class="reading" id="cards"></div>
     <div class="panel ai" style="margin-top:14px">
       <h2 style="font-size:1.15rem">✨ Ton interprétation</h2>
@@ -214,7 +216,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       <h2 style="font-size:1.15rem">Ton retour sur ce tirage</h2>
       <p class="muted" style="margin:2px 0 10px">Facultatif et anonyme : il aide Iris à mieux lire les prochains tirages.</p>
       <div class="rate rate-top">
-        <span>Ce tirage t'a-t-il aidé ? <small class="muted" style="display:block;font-size:.8rem">Touche une étoile</small></span>
+        <span>Ce tirage t'a-t-il aidé ?</span>
         <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
       </div>
       <p class="muted" style="margin:12px 0 6px">Ce qui est vrai pour toi :</p>
@@ -370,16 +372,25 @@ function readingGuide(cards, spread, themeName){
     return { role, lecture, famille: f, moment: momentOf(c.n) };
   });
   const avg = wsum ? sum / wsum : 0;
-  let direction = avg >= 0.75 ? "elan" : avg <= -0.25 ? "prudence" : "equilibre";
-  if (themeName === "Corps et bien-être" && direction === "elan" && avg < 1.25) direction = "equilibre"; // jamais d'élan téméraire pour le corps
+  // 5 nuances : 0 vrai élan, 1 plutôt porteur, 2 nuancé, 3 invite à la prudence, 4 prudence
+  let niveau = avg >= 1.3 ? 0 : avg >= 0.6 ? 1 : avg >= 0 ? 2 : avg >= -0.6 ? 3 : 4;
+  if (themeName === "Corps et bien-être" && niveau === 0) niveau = 1; // jamais d'élan téméraire pour le corps
+  let direction = niveau <= 1 ? "elan" : niveau === 2 ? "equilibre" : "prudence";
   const dom = Object.keys(fam).sort((a, b) => fam[b] - fam[a])[0];
-  return { score: Math.round(avg * 100) / 100, direction, levier: FAMILY[dom].levier, famille: dom, ton: THEME_TONE[themeName] || "ton chaleureux et clair", cartes: per };
+  return { score: Math.round(avg * 100) / 100, niveau, direction, levier: FAMILY[dom].levier, famille: dom, ton: THEME_TONE[themeName] || "ton chaleureux et clair", cartes: per };
 }
 const DIRECTION = {
   elan: { label: "Élan", icon: "↗", hint: "Les cartes poussent à avancer.", consigne: "Réponds franchement vers le oui et le mouvement : encourage à oser, avec un premier pas concret et réaliste." },
   equilibre: { label: "Équilibre", icon: "→", hint: "Une ouverture, à certaines conditions.", consigne: "Réponds de façon engagée mais nuancée, du type « oui, à condition de… » : nomme clairement la condition et le levier qui fera pencher du bon côté." },
   prudence: { label: "Prudence", icon: "↘", hint: "Les cartes invitent à préparer avant d'agir.", consigne: "Invite à la prudence sans faire peur, du type « pas encore » ou « pas de cette façon » : dis ce qu'il faut préparer, protéger ou laisser mûrir, et termine sur une perspective rassurante et un geste à sa portée." }
 };
+const NUANCES = [
+  { label: "Un vrai élan", dir: "elan", consigne: "Encourage franchement à avancer, avec un premier pas concret." },
+  { label: "Plutôt porteur", dir: "elan", consigne: "Encourage à avancer, en nommant le point à surveiller pour que ça tienne." },
+  { label: "Nuancé", dir: "equilibre", consigne: "Réponds « oui, à condition de… » : nomme clairement la condition et le levier." },
+  { label: "Invite à la prudence", dir: "prudence", consigne: "Invite à préparer ou à ajuster avant d'agir, en montrant ce qui est déjà en ta faveur." },
+  { label: "Prudence", dir: "prudence", consigne: "Conseille d'attendre ou de faire autrement, sans peur, avec une perspective rassurante et un geste à sa portée." }
+];
 const RULES = "Règles d'interprétation : (1) Pars du sens de chaque couleur, de son côté et du rôle de sa position dans le tirage ; les phrases retenues par la personne indiquent seulement ce qui résonne pour elle, elles affinent l'interprétation mais n'en sont pas le cœur. " +
   "(2) Relie chaque carte à la question et au thème, puis donne une vraie réponse à la question, dans la tendance indiquée par le guide. " +
   "(3) N'écris jamais de formule qui se dérobe, comme « personne ne peut savoir », « je ne peux pas te répondre », « seul l'avenir le dira » ou « c'est à toi de voir » ; formule plutôt un élan encourageant ou une prudence bienveillante. " +
@@ -473,18 +484,18 @@ function renderReading(){
       <div class="col" style="background:${c.c};color:${textOn(c.c)}">${esc(c.n)}</div>
       <div class="in">
         <div class="rstep"><span class="rn">1</span><div>
-          <div class="rt">Où tombe la carte</div>
-          <p class="rh">${sp.pos.length > 1 ? "Carte " + (i + 1) + " · " : ""}${esc(p.l)}</p>
-          <p class="rp">${esc(p.m)}</p>
+          <div class="rt">${sp.pos.length > 1 ? "Carte " + (i + 1) + " · " : ""}La partie de ta question qu'elle éclaire</div>
+          <p class="rh">${esc(p.l)}</p>
+          <p class="rp">C'est-à-dire : ${esc(p.m.charAt(0).toLowerCase() + p.m.slice(1))}</p>
         </div></div>
         <div class="rstep"><span class="rn">2</span><div>
-          <div class="rt">Ce que la couleur dit ici</div>
+          <div class="rt">Ce que ta couleur répond</div>
           <p class="rh">${esc(c.n)}, ${t.side === "l" ? "côté lumière ☀" : "côté défi ◐"}</p>
           <p class="rp">${esc(ESSENCE[c.n] || "")}</p>
           <p class="rp rsum">${t.side === "l" ? "Côté lumière : la couleur t'offre ce qu'elle a de meilleur." : "Côté défi : la couleur montre ce qu'elle te demande de travailler."} ${esc(PLACE_SENTENCE[g.cartes[i].role + (t.side === "l" ? "+" : "-")])}</p>
         </div></div>
         <div class="rstep"><span class="rn">3</span><div>
-          <div class="rt">Ce qui te parle</div>
+          <div class="rt">Les phrases de cette couleur</div>
           <p class="rp">Parmi ces phrases, touche celles qui décrivent <b>« ${esc(p.l.toLowerCase())} »</b> pour toi${$("#q").value.trim() ? ", en pensant à ta question" : ""}.</p>
         </div></div>
         <p class="kp">${esc(ph[0])}</p>
@@ -512,8 +523,10 @@ function drawData(){
 }
 function currentGuide(){ return readingGuide(picked.map(k => ({ n: DECK[table[k].i].n, side: table[k].side })), sp, sp.cat); }
 function guideText(){
-  const g = currentGuide(), d = DIRECTION[g.direction];
-  return "Guide de lecture calculé pour ce tirage : tendance « " + d.label + " » (score " + g.score + "). " + d.consigne + " Levier principal suggéré par la famille de couleurs dominante : " + g.levier + ". Ton attendu pour le thème « " + sp.cat + " » : " + g.ton + ". " + RULES;
+  const g = currentGuide(), n = NUANCES[g.niveau];
+  return "Guide de lecture : d'après les côtés des cartes et le rôle de leurs positions, la tendance SUGGÉRÉE est « " + n.label + " » (" + n.consigne + "). " +
+    "Ce n'est qu'une suggestion : confirme-la ou décale-la d'un cran (parmi : " + NUANCES.map(x => x.label).join(", ") + ") si la question, le contexte ou les phrases retenues le justifient, et explique pourquoi en une phrase simple qui cite les couleurs. " +
+    "Levier suggéré par la famille de couleurs dominante : " + g.levier + ". Ton attendu pour le thème « " + sp.cat + " » : " + g.ton + ". " + RULES;
 }
 function aiPrompt(){
   const q = $("#q").value.trim();
@@ -524,14 +537,22 @@ function aiPrompt(){
     " C'est ici que tout se relie : pour chaque carte, dis ce que sa couleur, à cette place et de ce côté, signifie concrètement pour MA question et MA situation, avec mes mots et un exemple tiré de ma vie ; aucune phrase qui pourrait convenir à n'importe qui." +
     " Écris d'abord ta réponse à ma question (\"synthese\" : 3 ou 4 phrases claires, engagées, dans la tendance du guide, qui se suffisent à elles-mêmes), puis pour chaque carte 2 phrases qui disent ce que la couleur, à cette place et de ce côté, apporte à ma question (\"cartes\"), puis 2 questions à me poser pour avancer (\"questions\"), et enfin ta réponse résumée en une seule phrase courte et claire de 15 mots maximum, pour une image à partager (\"resume\").";
 }
-function showTrend(){
-  const g = currentGuide(), d = DIRECTION[g.direction];
+// La tendance s'affiche avec la réponse : celle retenue par Claude (à un cran près de la suggestion), avec sa raison
+function trendOf(r){
+  const g = currentGuide();
+  let k = NUANCES.findIndex(x => r && r.tendance && x.label.toLowerCase() === String(r.tendance).toLowerCase().trim());
+  const ok = k >= 0 && Math.abs(k - g.niveau) <= 1;
+  if (!ok) k = g.niveau;
+  return { k, n: NUANCES[k], ok };
+}
+function showTrend(r){
+  const { n, ok } = trendOf(r);
   $("#trend").hidden = false;
-  $("#trend").innerHTML = `<span class="tr-chip tr-${g.direction}">${d.icon} ${d.label}</span><span>${esc(d.hint)} Levier : ${esc(g.levier.split(",")[0])}.</span>`;
+  $("#trend").innerHTML = `<span class="tr-chip tr-${n.dir}">${esc(n.label)}</span>${ok && r.pourquoi ? `<span>${esc(r.pourquoi)}</span>` : ""}`;
 }
 // Ordre de lecture : la réponse d'abord (encadré), puis le détail carte par carte, puis les questions
 function aiHtml(r){
-  const dir = currentGuide().direction;
+  const dir = trendOf(r).n.dir;
   let h = r.synthese ? `<div class="verdict v-${dir}"><b>Ma réponse à ta question</b><p>${esc(r.synthese)}</p></div>` : "";
   const parts = (r.cartes || []).map((t, i) => sp.pos[i] ? `<div class="part"><b>${esc(sp.pos[i].l)} · ${esc(DECK[table[picked[i]].i].n)}</b><p>${esc(t)}</p></div>` : "").join("");
   if (parts) h += `<p class="muted" style="margin:0 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Le détail, carte par carte</p>` + parts;
@@ -576,12 +597,11 @@ $("#b-ai").onclick = async () => {
   if (!sampleFn && !AI_ENDPOINT) return;
   const b = $("#b-ai"); b.disabled = true; b.textContent = "Claude réfléchit…";
   $("#ai-out").innerHTML = `<p class="muted wait">Claude relie ton tirage à ta question…</p>`;
-  showTrend();
   try {
     const lessons = AI_ENDPOINT ? [] : await lessonsFor();
     const insp = lessons.length ? " Voici ce que d'autres personnes ont dit avoir bien ou mal reçu lors de tirages proches (anonyme) ; inspire-t'en sans le recopier : " + JSON.stringify(lessons.map(l => l.lecon)) + "." : "";
-    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"synthese\": \"...\", \"cartes\": [\"...\"], \"questions\": [\"...\", \"...\"], \"resume\": \"...\"}.", { modelTier: "default" });
-    $("#ai-out").innerHTML = aiHtml(aiResult);
+    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"synthese\": \"...\", \"cartes\": [\"...\"], \"questions\": [\"...\", \"...\"], \"resume\": \"...\", \"tendance\": \"une des nuances\", \"pourquoi\": \"une phrase\"}.", { modelTier: "default" });
+    showTrend(aiResult); $("#ai-out").innerHTML = aiHtml(aiResult);
     b.hidden = true; // une seule interprétation par tirage
     openChat();
   } catch (e) {
@@ -741,13 +761,13 @@ async function drawShareImage(withQ){
     x.fillStyle = "#4b3a8f"; x.font = "600 26px Outfit, system-ui, sans-serif"; x.fillText(aiResult ? "MA RÉPONSE" : "CE QUI M'A PARLÉ", 130, y + 52);
     x.fillStyle = "#221d33"; x.font = "400 " + size + "px Literata, Georgia, serif"; lines.forEach((l, k) => x.fillText(l, 130, y + 52 + 22 + lh * (k + 0.8)));
   }
-  x.fillStyle = "#221d33"; x.font = "600 32px Outfit, system-ui, sans-serif"; x.fillText("Fais ton propre tirage :", 90, H - 110);
-  x.fillStyle = "#4b3a8f"; x.font = "400 30px Outfit, system-ui, sans-serif"; x.fillText(SHARE_LINK.replace("https://", ""), 90, H - 64);
+  // pied de page : une signature, sans adresse (le lien cliquable accompagne l'image dans le message)
+  x.fillStyle = "#4b3a8f"; x.font = "600 34px Outfit, system-ui, sans-serif"; x.fillText("✦ Fais ton propre tirage sur Iris", 90, H - 84);
   return new Promise(r => c.toBlob(r, "image/png"));
 }
 function shareText(){
   const s = aiResult && aiResult.synthese ? " " + aiResult.synthese.split(/(?<=[.!?])\s/)[0] : "";
-  return "Mon tirage Iris « " + sp.name + " » : " + sp.pos.map((p, i) => DECK[table[picked[i]].i].n).join(", ") + "." + s + "\nFais le tien : " + SHARE_LINK;
+  return "Mon tirage Iris « " + sp.name + " » : " + sp.pos.map((p, i) => DECK[table[picked[i]].i].n).join(", ") + "." + s + "\nFais ton propre tirage sur Iris : " + SHARE_LINK;
 }
 async function refreshShare(){
   shareBlob = await drawShareImage($("#sh-q").checked);
