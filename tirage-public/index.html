@@ -68,6 +68,10 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .kept p{margin:4px 0;font-family:var(--serif)}
 .note{font-size:.82rem;color:var(--muted);margin-top:18px}
 .back{background:none;border:0;color:var(--accent);font:inherit;font-weight:600;padding:0;margin-bottom:10px;cursor:pointer}
+.ai{border-color:var(--accent)}
+#ai-out .part{margin-bottom:10px}#ai-out b{display:block;color:var(--accent);font-size:.85rem}
+#ai-out p{margin:2px 0 0;font-family:var(--serif);font-size:1.03rem;line-height:1.45;white-space:pre-wrap}
+.wait{animation:pulse 1.4s ease-in-out infinite}@keyframes pulse{50%{opacity:.4}}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -112,7 +116,17 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
     <div class="panel"><span class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Ta question</span><p class="qline" id="r-q"></p></div>
     <p class="muted" style="margin:0 2px 10px">Lis chaque phrase et touche celles qui te parlent.</p>
     <div class="reading" id="cards"></div>
-    <div class="panel" style="margin-top:14px">
+    <div class="panel ai" style="margin-top:14px">
+      <h2 style="font-size:1.15rem">✨ La conclusion de Claude</h2>
+      <p class="muted" id="ai-intro" style="margin:2px 0 10px">Claude relie les cartes, leur position et les phrases que tu as retenues à ta question.</p>
+      <div id="ai-out"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="b-ai" hidden>Demander la conclusion</button>
+        <button class="btn ghost" id="b-ai-copy">Copier une demande pour Claude</button>
+      </div>
+      <p class="note" id="ai-help" style="margin-top:8px">Pas de compte relié à cette page ? Ce bouton copie ton tirage sous forme de demande : colle-la dans une conversation sur claude.ai.</p>
+    </div>
+    <div class="panel">
       <h2 style="font-size:1.15rem">Ce qui me parle</h2>
       <div class="kept" id="kept"></div>
       <label for="avis" style="margin-top:12px">Mon avis, avec mes mots</label>
@@ -176,6 +190,7 @@ $("#b-reveal").onclick = () => { renderReading(); show("read"); };
 
 /* Lecture */
 function renderReading(){
+  aiResult = null; $("#ai-out").innerHTML = ""; $("#b-ai").textContent = "Demander la conclusion";
   const q = $("#q").value.trim();
   $("#r-q").innerHTML = q ? esc(q) : `<span class="muted">Sans question précise</span>`;
   $("#cards").innerHTML = sp.pos.map((p, i) => {
@@ -206,10 +221,49 @@ function renderKept(){
 $("#b-copy").onclick = async () => {
   const lines = ["Tirage « " + sp.name + " »", "Question : " + ($("#q").value.trim() || "—"), ""];
   sp.pos.forEach((p, i) => { const t = table[picked[i]], c = DECK[t.i]; lines.push(p.l + " : " + c.n + " (" + (t.side === "l" ? "lumière" : "défi") + ")"); (kept[i] || []).forEach(x => lines.push("  ♥ " + x)); });
+  if (aiResult && aiResult.synthese) lines.push("", "Conclusion de Claude : " + aiResult.synthese);
   if ($("#avis").value.trim()) lines.push("", "Mon avis : " + $("#avis").value.trim());
   const text = lines.join("\n");
   try { await navigator.clipboard.writeText(text); toast("Tirage copié"); }
   catch { const ta = $("#avis"); const old = ta.value; ta.value = text; ta.select(); toast("Sélectionne et copie le texte"); setTimeout(() => { ta.value = old; }, 8000); }
+};
+/* Conclusion de Claude : avec le compte de la personne qui consulte la page, sinon une demande à copier */
+function drawData(){
+  return sp.pos.map((p, i) => { const t = table[picked[i]], c = DECK[t.i], ph = t.side === "l" ? c.l : c.d;
+    return { position: p.l, sens_de_la_position: p.m, couleur: c.n, cote: t.side === "l" ? "lumière (ce qui éclaire)" : "défi (ce qui met au travail)", phrase_cle: ph[0], phrases_retenues: kept[i] || [] }; });
+}
+function aiPrompt(){
+  const q = $("#q").value.trim();
+  return "J'ai fait un tirage de cartes de couleurs pour réfléchir sur moi-même. Tirage : « " + sp.name + " » (" + sp.desc + "). Ma question : " + (q ? "« " + q + " »" : "pas de question précise") +
+    ". Voici les cartes, le sens de leur position et les phrases qui m'ont parlé : " + JSON.stringify(drawData()) +
+    ". Fais-moi une conclusion en me tutoyant : une piste courte pour chaque carte en lien avec ma question, puis une synthèse de 3 ou 4 phrases qui répond à ma question, puis 2 questions à me poser. Ce sont des pistes de réflexion, jamais des certitudes ni des prédictions, sans conseil médical.";
+}
+function aiHtml(r){
+  let h = (r.cartes || []).map((t, i) => sp.pos[i] ? `<div class="part"><b>${esc(sp.pos[i].l)}</b><p>${esc(t)}</p></div>` : "").join("");
+  if (r.synthese) h += `<div class="part"><b>En conclusion</b><p>${esc(r.synthese)}</p></div>`;
+  if ((r.questions || []).length) h += `<div class="part"><b>À te demander</b><p>${r.questions.map(q => "• " + esc(q)).join("\n")}</p></div>`;
+  return h;
+}
+let sampleFn = null, aiResult = null;
+if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; if (s) $("#ai-help").textContent = "La conclusion utilise le compte Claude de la personne qui consulte la page."; }).catch(() => {});
+$("#b-ai").onclick = async () => {
+  if (!sampleFn) return;
+  const b = $("#b-ai"); b.disabled = true; b.textContent = "Claude réfléchit…";
+  $("#ai-out").innerHTML = `<p class="muted wait">Claude relie ton tirage à ta question…</p>`;
+  try {
+    aiResult = await sampleFn.json(aiPrompt() + " Réponds en JSON {\"cartes\": [\"...\"], \"synthese\": \"...\", \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
+    $("#ai-out").innerHTML = aiHtml(aiResult);
+    b.textContent = "Proposer une autre conclusion";
+  } catch (e) {
+    $("#ai-out").innerHTML = `<p class="muted">${e && e.code === "not_granted" ? "Autorise Claude pour cette page afin d'obtenir la conclusion." : e && e.code === "rate_limited" ? "Trop de demandes pour l'instant, réessaie dans un moment." : "Pas de réponse pour l'instant, réessaie."}</p>`;
+    b.textContent = "Demander la conclusion";
+  }
+  b.disabled = false;
+};
+$("#b-ai-copy").onclick = async () => {
+  const text = aiPrompt();
+  try { await navigator.clipboard.writeText(text); toast("Demande copiée : colle-la dans Claude"); }
+  catch { $("#ai-out").innerHTML = `<p class="muted">Copie ce texte et colle-le dans Claude :</p><textarea id="ai-txt" readonly style="min-height:140px">${esc(text)}</textarea>`; $("#ai-txt").select(); }
 };
 $("#b-new").onclick = () => show("home");
 $("#b-redraw").onclick = () => { kept = {}; shuffleTable(); show("draw"); };
