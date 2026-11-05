@@ -260,7 +260,6 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
         <h3>Ton interprétation personnalisée t'attend</h3>
         <p>Iris relie tes couleurs et les phrases que tu as choisies à ta question, pour te donner une vraie réponse. Il suffit de te connecter avec un compte gratuit. Ton tirage est gardé.</p>
         <a class="btn" id="ai-login" href="https://claude.ai/login" target="_blank" rel="noopener" style="width:100%;text-decoration:none">Me connecter</a>
-        <button type="button" class="btn ghost" id="ai-reload" style="width:100%;margin-top:8px">C'est fait, afficher mon interprétation</button>
         <p class="muted" id="ai-elsewhere" hidden style="margin:10px 0 0;font-size:.85rem">Sur cette version du site, l'interprétation n'est pas disponible. <a href="https://claude.ai/artifact/AqcEbm51cQEmboHYHiKWVe" target="_blank" rel="noopener">Ouvre Iris ici</a> pour la recevoir.</p>
       </div>
     </div>
@@ -661,11 +660,13 @@ let sampleFn = null, aiResult = null;
 if (AI_ENDPOINT){ $("#b-ai").hidden = false; }
 else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; $("#ai-none").hidden = !!s; }).catch(() => { $("#ai-none").hidden = false; });
 else { // hors de claude.ai (version GitHub) : se connecter ici ne servirait à rien, on renvoie vers Iris sur claude.ai
-  $("#ai-none").hidden = false; $("#ai-login").hidden = true; $("#ai-reload").hidden = true; $("#ai-elsewhere").hidden = false;
+  $("#ai-none").hidden = false; $("#ai-login").hidden = true; $("#ai-elsewhere").hidden = false;
   $("#ai-none p").textContent = "Iris relie tes couleurs et les phrases que tu as choisies à ta question, pour te donner une vraie réponse.";
 }
-$("#ai-login").onclick = () => saveDraw();
-$("#ai-reload").onclick = () => { saveDraw(); location.reload(); };
+// Après la connexion (dans un autre onglet), on revient ici : Iris se recharge seul et retrouve le tirage
+let loginPending = false;
+$("#ai-login").onclick = () => { saveDraw(); loginPending = true; };
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && loginPending && !sampleFn){ saveDraw(); location.reload(); } });
 // Mémoire partagée des retours (version claude.ai) : leçons anonymes, lisibles par tous, écrites avec accord
 let store = null, canShare = null;
 if (!AI_ENDPOINT && window.claude && window.claude.use){
