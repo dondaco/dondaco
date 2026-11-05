@@ -43,10 +43,22 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .tips button{text-align:left;border:1px dashed var(--line);background:none;color:var(--ink);border-radius:10px;padding:8px 10px;font:inherit;font-size:.9rem;cursor:pointer}
 .muted{color:var(--muted)}
 .table{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 0}
-.fd{aspect-ratio:2/3;border-radius:12px;border:0;cursor:pointer;position:relative;padding:0;
-  background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.35),transparent 55%),conic-gradient(from 0deg,#d62828,#f77f00,#ffd60a,#2e9e44,#1e6fd9,#3f37c9,#8e44ad,#d62828);
-  box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .2s,box-shadow .2s;animation:deal .4s both}
-.fd::after{content:"";position:absolute;inset:6px;border:1.5px solid rgba(255,255,255,.7);border-radius:8px}
+/* Dos des cartes : fond pastel, taches de couleur floues et formes abstraites ; chaque carte varie via des variables */
+.fd{aspect-ratio:2/3;border-radius:12px;border:0;cursor:pointer;position:relative;padding:0;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(circle at var(--x1,25%) var(--y1,25%), #f9c6c9 0 18%, transparent 46%),
+    radial-gradient(circle at var(--x2,80%) var(--y2,40%), #c9d7f8 0 16%, transparent 44%),
+    radial-gradient(circle at var(--x3,35%) var(--y3,82%), #c5ecd9 0 18%, transparent 48%),
+    radial-gradient(circle at var(--x4,85%) var(--y4,88%), #fbe5b6 0 14%, transparent 40%),
+    linear-gradient(160deg,#f6f0fb,#eef3fb);
+  box-shadow:0 2px 8px rgba(60,40,90,.14);transition:transform .2s,box-shadow .2s;animation:deal .4s both}
+.fd::before{content:"";position:absolute;width:62%;aspect-ratio:1;left:var(--cx,40%);top:var(--cy,22%);transform:translate(-50%,-50%) rotate(var(--r,20deg));
+  border-radius:58% 42% 63% 37% / 45% 55% 45% 55%;border:1.5px solid rgba(110,90,160,.35);z-index:-1}
+.fd::after{content:"";position:absolute;width:40%;aspect-ratio:1;left:var(--dx,62%);top:var(--dy,68%);transform:translate(-50%,-50%) rotate(calc(var(--r,20deg) * -2));
+  border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.85),rgba(255,255,255,0) 70%);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.9);z-index:-1}
+.fd i.arc{position:absolute;inset:auto 10% 12% 10%;height:18%;border-bottom:1.5px solid rgba(110,90,160,.28);border-radius:0 0 50% 50%;z-index:-1}
+.fd i.dot{position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(110,90,160,.4);left:var(--ex,20%);top:var(--ey,55%)}
 .fd.on{transform:translateY(-8px) scale(1.03);box-shadow:0 0 0 3px var(--accent),0 8px 18px rgba(0,0,0,.2)}
 .fd span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;display:grid;place-items:center;z-index:1}
 @keyframes deal{from{opacity:0;transform:translateY(10px) rotate(-3deg)}to{opacity:1;transform:none}}
@@ -84,6 +96,19 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .slots div.ok{color:var(--ink)}.slots div.ok i{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .slots div.next{color:var(--ink);font-weight:600}.slots div.next i{border-color:var(--accent)}
 .dock{position:sticky;bottom:0;padding:10px 0 calc(10px + env(safe-area-inset-bottom, 0px));background:linear-gradient(transparent,var(--bg) 30%)}
+.chat-log{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.msg{max-width:88%;padding:9px 12px;border-radius:14px;line-height:1.45;white-space:pre-wrap}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.msg.ai{align-self:flex-start;background:var(--soft);font-family:var(--serif);border-bottom-left-radius:4px}
+.chat-in{display:flex;gap:8px;align-items:flex-end}
+.chat-in textarea{flex:1;min-height:48px}
+.chat-btns{display:flex;flex-direction:column;gap:6px}
+#chat-mic.on{background:#e5546b;color:#fff}
+.rate{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
+#stars button{border:0;background:none;font-size:1.6rem;line-height:1;color:var(--line);cursor:pointer;padding:2px}
+#stars button.on{color:#e8b04a}
+.consent{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:var(--muted);margin-top:10px}
+.consent input{margin-top:3px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -143,6 +168,26 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       </div>
       <p class="note" id="ai-help" style="margin-top:8px">Pas de compte relié à cette page ? Ce bouton copie ton tirage sous forme de demande : colle-la dans une conversation sur claude.ai.</p>
     </div>
+    <div class="panel" id="chat" hidden>
+      <h2 style="font-size:1.15rem">💬 Comment reçois-tu ce tirage ?</h2>
+      <p class="muted" style="margin:2px 0 10px">Dis avec tes mots ce qui te touche, ce qui ne te parle pas, ce que ça éveille. Claude t'aide à préciser.</p>
+      <div class="chips" id="chat-quick"></div>
+      <div id="chat-log" class="chat-log"></div>
+      <div class="chat-in">
+        <textarea id="chat-txt" rows="2" placeholder="Écris ou dicte ton ressenti…"></textarea>
+        <div class="chat-btns">
+          <button class="btn ghost sm" id="chat-mic" hidden aria-label="Dicter à la voix">🎙</button>
+          <button class="btn sm" id="chat-send">Envoyer</button>
+        </div>
+      </div>
+      <p class="muted" id="chat-mic-help" style="font-size:.8rem;margin:6px 0 0">Pour parler plutôt qu'écrire, utilise le micro de ton clavier.</p>
+      <div class="rate">
+        <span>Ce tirage t'a-t-il aidé ?</span>
+        <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
+      </div>
+      <label class="consent" id="consent-wrap"><input type="checkbox" id="consent"> Partager anonymement mon retour pour améliorer les prochains tirages (sans mon nom ni ma question)</label>
+      <button class="btn" id="chat-end" style="width:100%;margin-top:10px">Terminer et envoyer mon retour</button>
+    </div>
     <div class="panel">
       <h2 style="font-size:1.15rem">Ce qui me parle</h2>
       <div class="kept" id="kept"></div>
@@ -201,7 +246,8 @@ function openSpread(i){ sp = SPREADS[i]; kept = {}; $("#q").value = ""; $("#avis
 let tableBuilt = false;
 function renderTable(){
   if (!tableBuilt){
-    $("#table").innerHTML = table.map((t, k) => `<button type="button" class="fd" data-k="${k}" style="animation-delay:${k * 35}ms" aria-label="Carte face cachée"></button>`).join("");
+    const pc = (a, b) => (a + rand(b - a)) + "%";
+    $("#table").innerHTML = table.map((t, k) => `<button type="button" class="fd" data-k="${k}" aria-label="Carte face cachée" style="animation-delay:${k * 35}ms;--x1:${pc(10, 45)};--y1:${pc(10, 40)};--x2:${pc(55, 90)};--y2:${pc(20, 55)};--x3:${pc(15, 55)};--y3:${pc(65, 95)};--x4:${pc(60, 95)};--y4:${pc(70, 95)};--cx:${pc(30, 70)};--cy:${pc(20, 45)};--dx:${pc(35, 75)};--dy:${pc(55, 80)};--ex:${pc(15, 85)};--ey:${pc(40, 60)};--r:${rand(90)}deg"><i class="arc"></i><i class="dot"></i></button>`).join("");
     $("#table").querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
       const k = +b.dataset.k, p = picked.indexOf(k);
       if (p >= 0) picked.splice(p, 1); else if (picked.length < sp.pos.length) picked.push(k);
@@ -213,7 +259,7 @@ function renderTable(){
   $("#table").querySelectorAll("[data-k]").forEach(b => {
     const p = picked.indexOf(+b.dataset.k);
     b.classList.toggle("on", p >= 0);
-    b.innerHTML = p >= 0 ? `<span>${p + 1}</span>` : "";
+    b.innerHTML = '<i class="arc"></i><i class="dot"></i>' + (p >= 0 ? `<span>${p + 1}</span>` : "");
     b.setAttribute("aria-label", "Carte face cachée" + (p >= 0 ? ", choisie en position " + (p + 1) : ""));
   });
   const left = sp.pos.length - picked.length;
@@ -230,7 +276,7 @@ $("#b-reveal").onclick = () => { renderReading(); show("read"); };
 
 /* Lecture */
 function renderReading(){
-  aiResult = null; $("#ai-out").innerHTML = ""; $("#b-ai").textContent = "Demander la conclusion";
+  aiResult = null; $("#ai-out").innerHTML = ""; $("#b-ai").textContent = "Demander la conclusion"; $("#chat").hidden = true; stopMic();
   const q = $("#q").value.trim();
   $("#r-q").innerHTML = q ? esc(q) : `<span class="muted">Sans question précise</span>`;
   $("#cards").innerHTML = sp.pos.map((p, i) => {
@@ -286,13 +332,16 @@ function aiHtml(r){
 }
 // Adresse du service relais (Cloudflare Worker) qui interroge Claude avec ta clé, gardée secrète côté serveur.
 // Laisse vide tant que le service n'est pas installé.
-const AI_ENDPOINT = "";
+const AI_ENDPOINT = ""; // ex. "https://couleurs-ia.ton-nom.workers.dev"
 let sampleFn = null, aiResult = null;
 if (AI_ENDPOINT){ $("#b-ai").hidden = false; $("#b-ai-copy").hidden = true; $("#ai-help").hidden = true; }
 else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; if (s) $("#ai-help").textContent = "La conclusion utilise le compte Claude de la personne qui consulte la page."; }).catch(() => {});
 async function askEndpoint(){
-  const res = await fetch(AI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tirage: sp.name, consigne: sp.desc, question: $("#q").value.trim(), cartes: drawData() }) });
+  return relay("/interpretation", {});
+}
+async function relay(path, extra){
+  const res = await fetch(AI_ENDPOINT.replace(/\/+$/, "") + path, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tirage: sp.name, consigne: sp.desc, question: $("#q").value.trim(), cartes: drawData(), ...extra }) });
   if (res.status === 429) throw { code: "rate_limited" };
   if (!res.ok) throw { code: "http_" + res.status };
   return res.json();
@@ -305,6 +354,7 @@ $("#b-ai").onclick = async () => {
     aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + " Réponds en JSON {\"cartes\": [\"...\"], \"synthese\": \"...\", \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
     $("#ai-out").innerHTML = aiHtml(aiResult);
     b.textContent = "Proposer une autre conclusion";
+    openChat();
   } catch (e) {
     $("#ai-out").innerHTML = `<p class="muted">${e && e.code === "not_granted" ? "Autorise Claude pour cette page afin d'obtenir la conclusion." : e && e.code === "rate_limited" ? "Trop de demandes pour l'instant, réessaie dans un moment." : "Pas de réponse pour l'instant, réessaie."}</p>`;
     b.textContent = "Demander la conclusion";
@@ -316,6 +366,74 @@ $("#b-ai-copy").onclick = async () => {
   try { await navigator.clipboard.writeText(text); toast("Demande copiée : colle-la dans Claude"); }
   catch { $("#ai-out").innerHTML = `<p class="muted">Copie ce texte et colle-le dans Claude :</p><textarea id="ai-txt" readonly style="min-height:140px">${esc(text)}</textarea>`; $("#ai-txt").select(); }
 };
+/* Échange après l'interprétation, puis retour anonyme (si la personne l'accepte) */
+let chat = [], rating = 0, sending = false;
+const QUICK = ["Ça me parle beaucoup", "Une carte me touche plus que les autres", "Je ne me reconnais pas dans…", "Ça me fait penser à…"];
+function conclusionText(){
+  if (!aiResult) return "";
+  return [...(aiResult.cartes || []), aiResult.synthese || "", ...(aiResult.questions || [])].filter(Boolean).join("\n");
+}
+function openChat(){
+  chat = []; rating = 0; $("#chat").hidden = false; $("#chat-log").innerHTML = ""; $("#chat-txt").value = "";
+  $("#consent-wrap").hidden = !AI_ENDPOINT; $("#consent").checked = false;
+  $("#chat-quick").innerHTML = QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("");
+  $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); t.focus(); });
+  renderStars(); $("#chat-end").disabled = false; $("#chat-end").textContent = AI_ENDPOINT ? "Terminer et envoyer mon retour" : "Terminer";
+}
+function renderStars(){
+  $("#stars").innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} sur 5" data-n="${n}" class="${n <= rating ? "on" : ""}">★</button>`).join("");
+  $("#stars").querySelectorAll("[data-n]").forEach(b => b.onclick = () => { rating = +b.dataset.n; renderStars(); });
+}
+function addMsg(role, text){
+  chat.push({ role, content: text });
+  const el = document.createElement("div"); el.className = "msg " + (role === "user" ? "me" : "ai"); el.textContent = nb(text);
+  $("#chat-log").appendChild(el); el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  return el;
+}
+$("#chat-send").onclick = async () => {
+  const t = $("#chat-txt").value.trim(); if (!t || sending) return;
+  sending = true; $("#chat-txt").value = ""; stopMic(); addMsg("user", t);
+  const wait = document.createElement("div"); wait.className = "msg ai wait"; wait.textContent = "…"; $("#chat-log").appendChild(wait);
+  try {
+    let reply;
+    if (AI_ENDPOINT){ reply = (await relay("/echange", { conclusion: conclusionText(), messages: chat })).reponse; }
+    else if (sampleFn){
+      const ctx = "Tu accompagnes une personne qui a fait un tirage de cartes de couleurs pour réfléchir sur elle-même. Tu tutoies, en français simple et chaleureux, 2 à 5 phrases, en reformulant ce qui la touche et en finissant souvent par une question ouverte. Pas de certitudes, pas de prédictions, pas de conseil médical. Tirage : " + JSON.stringify({ tirage: sp.name, question: $("#q").value.trim(), cartes: drawData() }) + ". Conclusion proposée : " + conclusionText();
+      const r = await sampleFn([{ role: "user", content: ctx + "\n\nVoici ce que la personne te dit : " + chat[0].content }, ...chat.slice(1)].map((m, i) => i === 0 ? m : m), { modelTier: "default", cache: false });
+      reply = r.text;
+    }
+    wait.remove(); addMsg("assistant", (reply || "Merci pour ton retour.").trim());
+  } catch (e) { wait.remove(); toast(e && e.code === "rate_limited" ? "Trop de messages pour l'instant, réessaie dans un moment" : "Pas de réponse pour l'instant, réessaie"); }
+  sending = false;
+};
+$("#chat-txt").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#chat-send").click(); } };
+$("#chat-end").onclick = async () => {
+  const b = $("#chat-end"); b.disabled = true;
+  if (AI_ENDPOINT && $("#consent").checked){
+    b.textContent = "Envoi…";
+    try { const r = await relay("/retour", { conclusion: conclusionText(), messages: chat, note: rating || 3, consentement: true }); toast(r.enregistre ? "Merci, ton retour aidera les prochains tirages" : "Merci pour ton retour"); }
+    catch { toast("Ton retour n'a pas pu être envoyé"); }
+  } else toast("Merci pour ce tirage");
+  b.textContent = "Merci !";
+};
+// Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; $("#chat-mic").classList.remove("on"); } }
+if (SR){
+  $("#chat-mic").hidden = false; $("#chat-mic-help").textContent = "Touche 🎙 pour parler, touche à nouveau pour arrêter.";
+  $("#chat-mic").onclick = () => {
+    if (rec) return stopMic();
+    try {
+      rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true;
+      const base = $("#chat-txt").value ? $("#chat-txt").value + " " : "";
+      rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; };
+      rec.onerror = () => { stopMic(); $("#chat-mic").hidden = true; $("#chat-mic-help").textContent = "La dictée n'est pas disponible ici : utilise le micro de ton clavier."; };
+      rec.onend = () => stopMic();
+      rec.start(); $("#chat-mic").classList.add("on");
+    } catch { stopMic(); }
+  };
+}
 $("#b-new").onclick = () => show("home");
 $("#b-redraw").onclick = () => { kept = {}; shuffleTable(); show("draw"); };
 renderHome();

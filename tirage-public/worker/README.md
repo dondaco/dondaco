@@ -1,26 +1,36 @@
-# Interprétation par Claude pour tous les visiteurs
+# Interprétation, échange et mémoire des retours (service relais)
 
-Le site est statique : il ne peut pas contenir de clé secrète. Ce petit service relais (Cloudflare Worker, gratuit)
-garde ta clé API Claude côté serveur, reçoit les tirages du site et renvoie l'interprétation.
+Le site est statique : il ne peut pas contenir de clé secrète. Ce petit service (Cloudflare Worker, gratuit)
+garde ta clé API Claude côté serveur. Il fait trois choses :
 
-## Mise en place (une fois, environ 15 minutes)
+- **/interpretation** : la conclusion du tirage, inspirée des retours passés bien reçus ;
+- **/echange** : une courte conversation (8 messages maximum) où la personne dit comment elle reçoit son tirage ;
+- **/retour** : si la personne coche la case de consentement, Claude tire de l'échange une **leçon anonyme**
+  (sans prénom, question ni détail personnel) qui sera réutilisée pour les prochains tirages du même type
+  et des mêmes couleurs.
+
+## Mise en place (une fois, environ 20 minutes)
 
 1. **Clé API Claude** : sur https://console.anthropic.com, crée un compte, ajoute un moyen de paiement
    (facturation à l'usage, indépendante de l'abonnement Claude), fixe une **limite de dépense mensuelle**
-   (Settings → Limits), puis crée une clé (API Keys → Create Key). Garde-la pour l'étape 3.
-2. **Cloudflare** : crée un compte gratuit sur https://dash.cloudflare.com, puis
-   Workers & Pages → Create → Create Worker. Nomme-le `couleurs-ia`, valide, puis « Edit code » :
-   remplace tout le code par le contenu de `worker.js`, puis « Deploy ».
-3. **Secret** : dans le Worker → Settings → Variables and Secrets → Add → type *Secret*,
-   nom `ANTHROPIC_API_KEY`, valeur = ta clé. Enregistre.
-4. **Adresse** : copie l'adresse du Worker (du type `https://couleurs-ia.<ton-nom>.workers.dev`)
-   et mets-la dans `tirage-public/index.html`, à la ligne `const AI_ENDPOINT = "";`
-   (ou envoie-la à Claude, qui la mettra pour toi).
+   (Settings → Limits), puis crée une clé (API Keys → Create Key).
+2. **Cloudflare** : compte gratuit sur https://dash.cloudflare.com → Workers & Pages → Create → Create Worker.
+   Nomme-le `couleurs-ia`, valide, puis « Edit code » : remplace tout par le contenu de `worker.js`, puis « Deploy ».
+3. **Secret** : Worker → Settings → Variables and Secrets → Add → type *Secret*, nom `ANTHROPIC_API_KEY`, valeur = ta clé.
+4. **Mémoire des retours** : Storage & Databases → KV → Create namespace, nom `couleurs-retours`.
+   Puis Worker → Settings → Bindings → Add → KV namespace, nom de variable `RETOURS`, choisir `couleurs-retours`.
+   (Sans cette étape tout fonctionne, mais les retours ne sont pas mémorisés.)
+5. **Adresse** : copie l'adresse du Worker (`https://couleurs-ia.<ton-nom>.workers.dev`) et envoie-la à Claude,
+   ou mets-la dans `tirage-public/index.html` à la ligne `const AI_ENDPOINT = "";`.
 
-## Sécurité et coût
+Tu peux relire les leçons enregistrées dans Cloudflare : KV → `couleurs-retours` → les clés `t:<tirage>`
+(par tirage) et `c:<couleur>:<côté>` (par couleur).
+
+## Sécurité, vie privée et coût
 
 - La clé n'apparaît jamais dans le site.
-- Le service n'accepte que les demandes venant de `https://dondaco.github.io`, et seulement des tirages
-  (pas de questions libres), avec au plus 20 interprétations par heure et par visiteur.
-- Le modèle utilisé est le plus économique (Claude Haiku) ; chaque interprétation coûte moins d'un centime.
-  La limite de dépense fixée à l'étape 1 garantit que la facture ne peut pas dépasser ce que tu as choisi.
+- Le service n'accepte que les demandes venant de `https://dondaco.github.io`, ne parle que du tirage,
+  et limite à 40 appels par heure et par visiteur.
+- Rien n'est conservé sans la case cochée ; ce qui est conservé est une leçon générale et anonyme, pas la conversation.
+- Modèle le plus économique (Claude Haiku) : un tirage avec échange coûte de l'ordre d'un centime.
+  La limite de dépense de l'étape 1 plafonne la facture.
