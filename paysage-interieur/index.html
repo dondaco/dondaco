@@ -375,7 +375,7 @@ function compose(){
 function answeredCount(){return Object.keys(S.a).filter(k=>Q[k]&&Q[k].opts).length;}
 
 /* ---------- Le tapis : réponses → réglages du moteur ---------- */
-let VIEW="client";
+const VIEW="atelier"; // la vue client est mise de côté : le rendu réaliste viendra d’un générateur d’images guidé par ce plan
 function rugParams(){
   const c=compose(),t4=opt("t4"),t3=opt("t3"),cx=opt("cx"),sc=scores();
   // l'élément signature : celui que les réponses portent le plus (un seul par tapis)
@@ -465,8 +465,8 @@ function renderScape(final){
     return `<div class="layer"><div class="head"><span class="eyebrow">${LAYERS[L].label}</span>${S.ov[L]?'<span class="note">choisi par toi</span>':""}</div>
       <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
       ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
-  return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Ton tapis vu du dessus"></canvas>
-      <div class="rugbar"><button type="button" class="chip" data-rugv>Autre proposition</button><button type="button" class="chip" data-rview="client" aria-pressed="${VIEW==="client"}">Vue client</button><button type="button" class="chip" data-rview="atelier" aria-pressed="${VIEW==="atelier"}">Vue atelier</button></div>
+  return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
+      <div class="rugbar"><button type="button" class="chip" data-rugv>Autre proposition</button></div>
       <div class="rugleg" id="rugleg"></div></div>
     <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
 }
@@ -590,7 +590,6 @@ document.addEventListener("click",e=>{
   if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
   if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
   if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
-  if(t.dataset.rview){VIEW=t.dataset.rview;return keep(()=>{});}
   if(t.hasAttribute("data-dl")&&DL){const cv=document.getElementById("cv"),toast=document.getElementById("toast");
     cv.toBlob(blob=>{DL.save({filename:"esquisse-tapis"+((S.a.prenom||"").trim()?"-"+S.a.prenom.trim():"")+".png",data:blob})
       .then(()=>{toast.textContent="Esquisse enregistrée";setTimeout(()=>toast.textContent="",2500);})
