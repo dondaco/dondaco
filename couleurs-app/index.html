@@ -137,6 +137,8 @@ input[type=color]{padding:2px;height:44px}
 .rd-bar i{display:block;height:100%;background:var(--accent);transition:width .25s}
 .rd-t{font-family:var(--serif);font-size:1.2rem;line-height:1.35;min-height:3.2em;margin:10px 0 12px;text-wrap:pretty}
 .rd-k{margin:4px 0;font-family:var(--serif)}
+.cf-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.cf-row .deck button{padding:8px 10px}
 .kept-list p{margin:4px 0;font-family:var(--serif)}
 .hcard{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:8px;font:inherit;color:var(--text);cursor:pointer}
 .hcard .q{font-family:var(--serif);font-size:1.05rem;margin:6px 0}
@@ -211,6 +213,10 @@ dialog .dbody{padding:16px;overflow:auto}
       </div>
       <div class="card">
         <h3 style="margin-top:0">Tes cartes</h3>
+        <label class="btn" id="pk-photo-l" style="width:100%;margin:0 0 6px" hidden>📸 Photo de tout le tirage<input type="file" id="pk-photo" accept="image/*" capture="environment" hidden></label>
+        <div class="progress" id="pk-photo-prog" hidden><div></div></div>
+        <div id="pk-confirm" hidden></div>
+        <p class="muted" id="pk-or" style="margin:4px 0 8px" hidden>ou choisis chaque carte :</p>
         <div class="slots" id="pk-slots"></div>
         <p class="meaning muted" id="pk-meaning"></p>
         <div class="deck big" id="pk-deck"></div>
@@ -699,6 +705,7 @@ const deckOfField = f => f === "Lumière" ? "or" : f === "Matière" ? "rouge" : 
 function openDraw(id, keep){
   fillSpreadSelect($("#dr-spread")); $("#dr-spread").value = id;
   readPos = {}; readAll = {};
+  if (!keep) needDeck = {};
   if (!keep){ current = {}; currentDeck = {}; kept = {}; editingHist = null; $("#dr-q").value = ""; $("#rd-interp").value = ""; step = 1; activeSlot = 0;
     $("#dr-save").textContent = "Enregistrer dans l'historique"; const d = $("#rd-del"); if (d) d.remove(); }
   drawOpen = true; renderDraw(); window.scrollTo(0, 0);
@@ -725,44 +732,112 @@ function renderDraw(){
 }
 /* --- Étape 1 : choisir les cartes --- */
 function slotDeck(sp, i){ return currentDeck[i] || deckOfField(sp.positions[i].field) || lastDeck; }
+let needDeck = {};   // cartes reconnues sur la photo dont il reste à préciser Rouge ou Or
 function renderPicker(sp){
   if (activeSlot >= sp.positions.length) activeSlot = 0;
+  askClaude().then(sm => { $("#pk-photo-l").hidden = !sm; $("#pk-or").hidden = !sm; });
+  renderConfirm(sp);
   $("#pk-slots").innerHTML = sp.positions.map((p, i) => {
     const c = current[i] ? byNum(current[i]) : null, d = currentDeck[i];
     return `<button type="button" class="slot ${i === activeSlot ? "on" : ""}" data-slot="${i}">
       <span class="sw ${c ? "full" : ""}" style="${c ? `background:${esc(c.hex)};color:${textOn(c.hex)}` : ""}">${c ? esc(c.num) : i + 1}</span>
       <span class="lb">${esc(shortLabel(p.label, i))}</span>
-      <span class="lb">${c ? (d ? DECKS[d].label + " · " : "") + esc(c.name || "") : "à choisir"}</span></button>`;
+      <span class="lb">${c ? (needDeck[i] ? "Rouge ou Or ? · " : d ? DECKS[d].label + " · " : "") + esc(c.name || "") : "à choisir"}</span></button>`;
   }).join("");
   $("#pk-slots").querySelectorAll("[data-slot]").forEach(b => b.onclick = () => { activeSlot = +b.dataset.slot; renderPicker(sp); });
   const p = sp.positions[activeSlot];
   $("#pk-meaning").textContent = (sp.positions.length > 1 ? "Carte " + (activeSlot + 1) + " : " : "") + (p.meaning || p.label);
   const d = slotDeck(sp, activeSlot);
   $("#pk-deck").innerHTML = Object.entries(DECKS).map(([k, x]) => `<button type="button" data-pd="${k}" class="${d === k ? "on" : ""}"><i style="background:${x.color}"></i>${x.label} · ${x.field}</button>`).join("");
-  $("#pk-deck").querySelectorAll("[data-pd]").forEach(b => b.onclick = () => { currentDeck[activeSlot] = lastDeck = b.dataset.pd; renderPicker(sp); });
+  $("#pk-deck").querySelectorAll("[data-pd]").forEach(b => b.onclick = () => { currentDeck[activeSlot] = lastDeck = b.dataset.pd; if (needDeck[activeSlot]) needDeck[activeSlot] = false; renderPicker(sp); });
   const usedNums = Object.values(current);
   $("#pk-grid").innerHTML = db.cards.slice().sort((a, b) => a.num - b.num).map(c => `<button type="button" class="tile ${String(current[activeSlot]) === String(c.num) ? "used" : ""}" data-n="${esc(c.num)}" title="${esc(c.name || "")}" style="background:${esc(c.hex || "#888")};color:${textOn(c.hex)}">${esc(c.num)}</button>`).join("");
   $("#pk-grid").querySelectorAll("[data-n]").forEach(b => b.onclick = () => pickCard(activeSlot, b.dataset.n));
-  const all = sp.positions.every((_, i) => current[i]);
+  const all = sp.positions.every((_, i) => current[i]) && !Object.values(needDeck).some(Boolean);
   $("#pk-go").disabled = !all; $("#pk-go").style.opacity = all ? 1 : .5;
-  $("#pk-go").textContent = all ? "Voir la lecture →" : "Choisis encore " + sp.positions.filter((_, i) => !current[i]).length + " carte(s)";
+  const missing = sp.positions.filter((_, i) => !current[i]).length, nd = Object.values(needDeck).filter(Boolean).length;
+  $("#pk-go").textContent = all ? "Voir la lecture →" : missing ? "Choisis encore " + missing + " carte(s)" : "Indique Rouge ou Or pour " + nd + " carte(s)";
 }
 // Couleur de texte lisible sur une pastille
 function textOn(hex){ const [r, g, b] = hexToRgb(hex); return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#1d1830" : "#ffffff"; }
 function shortLabel(l, i){ return String(l).replace(/^carte\s*n°?\s*\d+\s*[–-]?\s*/i, "") || "Carte " + (i + 1); }
 function posTitle(sp, i){ const l = shortLabel(sp.positions[i].label, i); return sp.positions.length > 1 && l !== "Carte " + (i + 1) ? "Carte " + (i + 1) + " · " + l : l; }
+function renderConfirm(sp){
+  const box = $("#pk-confirm"), idx = Object.keys(needDeck).filter(k => needDeck[k] !== undefined).map(Number);
+  if (!idx.length){ box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = `<p style="margin:4px 0 8px"><b>Cartes reconnues sur la photo.</b> Indique pour chacune si elle est Rouge ou Or :</p>` +
+    sp.positions.map((p, i) => { const c = byNum(current[i]); if (!c) return "";
+      return `<div class="cf-row"><span class="swatch" style="background:${esc(c.hex)};width:34px;height:34px"></span>
+        <div style="flex:1;min-width:0"><b>N° ${esc(c.num)} · ${esc(c.name || "")}</b><div class="muted" style="font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(posTitle(sp, i))}</div></div>
+        <div class="deck" style="margin:0;flex:none">${Object.entries(DECKS).map(([k, x]) => `<button type="button" data-cf="${i}" data-k="${k}" class="${!needDeck[i] && currentDeck[i] === k ? "on" : ""}"><i style="background:${x.color}"></i>${x.label}</button>`).join("")}</div></div>`; }).join("") +
+    `<p class="muted" style="margin:6px 0 0;font-size:.82rem">Une carte mal reconnue ? Touche sa case ci-dessous puis choisis la bonne couleur.</p>`;
+  box.querySelectorAll("[data-cf]").forEach(b => b.onclick = () => {
+    const i = +b.dataset.cf; currentDeck[i] = lastDeck = b.dataset.k; needDeck[i] = false;
+    renderPicker(sp);
+    if (sp.positions.every((_, k) => current[k]) && !Object.values(needDeck).some(Boolean)) setTimeout(() => { step = 2; needDeck = {}; renderDraw(); window.scrollTo(0, 0); }, 350);
+  });
+}
+// Photo de toutes les cartes du tirage : Claude les reconnaît et les place dans l'ordre
+$("#pk-photo").onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  const sp = curSpread(), sample = await askClaude(); if (!sp || !sample) return;
+  const prog = $("#pk-photo-prog"); prog.hidden = false; prog.firstElementChild.style.width = "30%";
+  try {
+    const img = await shrink(file, 1600, 0.85);
+    const names = db.cards.map(c => c.num + " = " + (c.name || "")).join(" ; ");
+    const r = await sample.json("Photo de cartes d'un jeu de 48 couleurs numérotées, posées pour un tirage de " + sp.positions.length + " carte(s) (\"" + sp.name + "\"). " +
+      "Liste des couleurs : " + names + ". Repère chaque carte visible, lis son numéro (ou à défaut reconnais sa couleur dans la liste), " +
+      "et range-les dans l'ordre de lecture du tirage : de gauche à droite, puis de haut en bas, sauf si la disposition indique clairement un autre ordre. " +
+      "Si on voit si la carte est du paquet rouge ou or, indique-le, sinon laisse vide. Donne aussi le cadre de chaque carte en fractions de l'image (x, y du coin haut gauche, l, h). " +
+      "Réponds en JSON {\"cartes\": [{\"numero\": \"\", \"paquet\": \"rouge\" | \"or\" | \"\", \"cadre\": {\"x\": 0, \"y\": 0, \"l\": 0, \"h\": 0}}]}.",
+      { images: [img], modelTier: "default" });
+    prog.firstElementChild.style.width = "80%";
+    const found = ((r && r.cartes) || []).filter(c => byNum(String(c.numero || "").replace(/\D/g, "")));
+    if (!found.length){ toast("Aucune carte reconnue : reprends la photo de plus près, bien éclairée"); prog.hidden = true; return; }
+    let bmp = null; try { bmp = await createImageBitmap(file); } catch {}
+    needDeck = {}; let learned = 0;
+    found.slice(0, sp.positions.length).forEach((c, i) => {
+      const n = String(c.numero).replace(/\D/g, "");
+      current[i] = n;
+      if (DECKS[c.paquet]){ currentDeck[i] = c.paquet; needDeck[i] = false; } else { delete currentDeck[i]; needDeck[i] = true; }
+      if (bmp && c.cadre && learnColor(n, sampleBox(bmp, c.cadre))) learned++;
+    });
+    if (learned) save();
+    const miss = sp.positions.length - Math.min(found.length, sp.positions.length);
+    activeSlot = Math.max(0, sp.positions.findIndex((_, k) => !current[k]));
+    toast(Math.min(found.length, sp.positions.length) + " carte(s) reconnue(s)" + (miss ? ", il en manque " + miss : "") + (found.length > sp.positions.length ? " (cartes en trop ignorées)" : ""));
+    renderPicker(sp);
+  } catch (err) { toast(err && err.code === "not_granted" ? "Autorise l'envoi de la photo à Claude" : "Reconnaissance impossible, réessaie"); }
+  prog.hidden = true;
+};
+// Couleur médiane au centre d'un cadre (fractions de l'image)
+function sampleBox(bmp, b){
+  const x = +b.x, y = +b.y, l = +b.l, h = +b.h;
+  if (![x, y, l, h].every(v => v >= 0 && v <= 1) || l < 0.02 || h < 0.02) return null;
+  const cx = (x + l / 2) * bmp.width, cy = (y + h / 2) * bmp.height, side = Math.max(8, Math.min(l * bmp.width, h * bmp.height) * 0.3);
+  const c = document.createElement("canvas"); c.width = c.height = 40;
+  const ctx = c.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(bmp, cx - side / 2, cy - side / 2, side, side, 0, 0, 40, 40);
+  const d = ctx.getImageData(0, 0, 40, 40).data, R = [], G = [], B = [];
+  for (let i = 0; i < d.length; i += 4){ R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]); }
+  const med = a => { a.sort((p, q) => p - q); return a[a.length >> 1]; };
+  return [med(R), med(G), med(B)];
+}
 function pickCard(i, n, deck){
   const sp = curSpread(); if (!sp || !byNum(n)) return toast("Carte n° " + n + " introuvable");
+  if (needDeck[i] !== undefined){ needDeck[i] = deck ? false : needDeck[i]; }
   current[i] = String(n); currentDeck[i] = deck || slotDeck(sp, i); lastDeck = currentDeck[i];
   const next = sp.positions.findIndex((_, k) => !current[k]);
   if (next >= 0){ activeSlot = next; step = 1; renderDraw(); return; }
   step = 1; renderDraw();
-  setTimeout(() => { step = 2; renderDraw(); window.scrollTo(0, 0); }, 350); // toutes choisies : on passe à la lecture
+  if (Object.values(needDeck).some(Boolean)) return; // il reste Rouge / Or à préciser
+  setTimeout(() => { step = 2; needDeck = {}; renderDraw(); window.scrollTo(0, 0); }, 350); // toutes choisies : on passe à la lecture
 }
 $("#pk-ok").onclick = () => { const n = $("#pk-num").value.trim(); if (n){ $("#pk-num").value = ""; pickCard(activeSlot, n); } };
 $("#pk-num").onkeydown = e => { if (e.key === "Enter") $("#pk-ok").click(); };
 $("#pk-scan").onclick = () => { scanTarget = { spread: curSpread().id, i: activeSlot }; $("#sc-result").innerHTML = ""; showTab("scan"); startCam("#sc-video"); };
-$("#pk-go").onclick = () => { step = 2; renderDraw(); window.scrollTo(0, 0); };
+$("#pk-go").onclick = () => { step = 2; needDeck = {}; renderDraw(); window.scrollTo(0, 0); };
 
 /* --- Étape 2 : lecture --- */
 function phrasesOf(c, field){ return String(((c || {}).values || {})[field] || "").split("\n").map(x => x.trim()).filter(Boolean); }
@@ -977,6 +1052,17 @@ async function sampleFile(file){
   } catch { return null; }
 }
 async function askClaude(){ return window.claude && window.claude.use ? await window.claude.use("sample") : null; }
+// Apprentissage : chaque photo confirmée affine la couleur réelle de la carte (moyenne des 10 dernières)
+function learnColor(num, rgb){
+  const c = byNum(num); if (!c || !rgb) return false;
+  const cat = CATALOGUE.find(x => x[0] === String(c.num));
+  if (cat && dE(rgb, hexToRgb(cat[3])) > 55) return false;     // trop loin de la teinte attendue : photo ou carte douteuse
+  if (c.ref && (c.refN || 0) >= 3 && dE(rgb, c.ref) > 35) return false;
+  const n = Math.min(c.refN || (c.ref ? 1 : 0), 9);
+  c.ref = c.ref ? c.ref.map((v, k) => Math.round((v * n + rgb[k]) / (n + 1))) : rgb.map(Math.round);
+  c.refN = n + 1;
+  return true;
+}
 async function showMatches(rgb, photo){
   const cands = db.cards.filter(c => c.ref || c.hex).map(c => ({ c, d: dE(rgb, c.ref || hexToRgb(c.hex)) })).sort((a, b) => a.d - b.d).slice(0, 3);
   if (!cands.length){ $("#sc-result").innerHTML = `<div class="card empty">Aucune carte avec couleur enregistrée.</div>`; return; }
@@ -999,6 +1085,7 @@ async function showMatches(rgb, photo){
           if (!n){ b.textContent = "Numéro illisible"; return; }
           const pq = DECKS[r.paquet] ? r.paquet : "";
           b.textContent = "Carte n° " + n + (pq ? " · " + DECKS[pq].label : "");
+          if (learnColor(n, rgb)) save();
           if (sp){ const i = scanTarget.i; scanTarget = null; drawOpen = true; showTab("draw"); pickCard(i, n, pq || undefined); }
           else $("#sc-detail").innerHTML = cardHtml(byNum(n));
         } catch { b.textContent = "Lecture impossible"; }
@@ -1007,7 +1094,7 @@ async function showMatches(rgb, photo){
   }
   $("#sc-result").querySelectorAll("[data-pick]").forEach(el => el.onclick = () => {
     const n = el.dataset.pick;
-    if (sp){ const i = scanTarget.i; scanTarget = null; drawOpen = true; showTab("draw"); pickCard(i, n); }
+    if (sp){ if (learnColor(n, rgb)) save(); const i = scanTarget.i; scanTarget = null; drawOpen = true; showTab("draw"); pickCard(i, n); }
     else $("#sc-detail").innerHTML = cardHtml(byNum(n));
   });
 };
@@ -1021,7 +1108,7 @@ function renderCards(){
     const filled = db.fields.filter(k => (c.values || {})[k]).length;
     return `<div class="item" onclick="openCard('${esc(c.num)}')"><div class="swatch" style="background:${esc(c.hex || "#888")}"></div>
       <div class="t"><b>N° ${esc(c.num)}</b> ${esc(c.name || "")}<small>${esc(Object.values(c.values || {}).find(v => v) || "vide")}</small></div>
-      <span class="pill">${filled}/${db.fields.length}${c.ref ? " · 📷" : ""}</span></div>`;
+      <span class="pill">${filled}/${db.fields.length}${c.ref ? " · 📷" + (c.refN > 1 ? "×" + c.refN : "") : ""}</span></div>`;
   }).join("") : `<div class="empty">Aucune carte. Utilise « + Ajouter » ou « Créer les cartes d'un coup » dans Réglages.</div>`;
 }
 $("#cd-filter").oninput = renderCards;
@@ -1035,7 +1122,7 @@ window.openCard = (num, preset, autoOcr) => {
   const c = editing || { num: preset || "", name: "", hex: "#888888", values: {}, notes: "" };
   $("#ce-title").textContent = editing ? "Carte n° " + c.num : "Nouvelle carte";
   $("#ce-num").value = c.num; $("#ce-name").value = c.name || ""; $("#ce-hex").value = c.hex || "#888888"; $("#ce-notes").value = c.notes || "";
-  $("#ce-calib-state").textContent = pendingRef ? "✓ calibrée" : "non calibrée";
+  $("#ce-calib-state").textContent = pendingRef ? "✓ calibrée" + (editing && editing.refN > 1 ? " (apprise sur " + editing.refN + " photos)" : "") : "non calibrée (s'apprend avec tes photos)";
   $("#ce-fields").innerHTML = db.fields.map((f, i) => `<label for="ce-f${i}">${esc(f)}</label><textarea id="ce-f${i}" data-f="${esc(f)}">${esc((c.values || {})[f] || "")}</textarea>`).join("");
   $("#ce-ocr-text").hidden = $("#ce-ocr-help").hidden = $("#ce-ocr-prog").hidden = true; $("#ce-ocr-btns").innerHTML = "";
   $("#ce-del").hidden = !editing;
@@ -1048,6 +1135,7 @@ $("#ce-save").onclick = () => {
   const other = byNum(num);
   if (other && other !== editing) return toast("Ce numéro existe déjà");
   const values = {}; $("#ce-fields").querySelectorAll("textarea").forEach(t => values[t.dataset.f] = t.value.trim());
+  if (editing && pendingRef !== editing.ref) editing.refN = 1;
   const data = { num, group: editing ? editing.group || "" : "", name: $("#ce-name").value.trim(), hex: $("#ce-hex").value, values, notes: $("#ce-notes").value.trim(), ref: pendingRef };
   if (editing) Object.assign(editing, data); else db.cards.push(data);
   save(); $("#dlg-card").close(); renderCards(); showLookup(); toast("Carte enregistrée");
