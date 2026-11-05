@@ -104,7 +104,10 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .chat-in{display:flex;gap:8px;align-items:flex-end}
 .chat-in textarea{flex:1;min-height:48px}
 .chat-btns{display:flex;flex-direction:column;gap:6px}
-#chat-mic.on{background:#e5546b;color:#fff}
+.mic-big{width:100%;margin-top:8px;gap:10px}
+.mic-big.on{background:#e5546b;color:#fff;animation:pulse 1.4s ease-in-out infinite}
+.mic-ic{font-size:1.25rem;line-height:1}
+.mic-help{display:flex;gap:10px;align-items:flex-start;margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--soft);font-size:.86rem;line-height:1.4}
 .rate{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
 #stars button{border:0;background:none;font-size:1.6rem;line-height:1;color:var(--line);cursor:pointer;padding:2px}
 #stars button.on{color:#e8b04a}
@@ -113,6 +116,13 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .share-prev{font-family:var(--serif);margin:0 0 10px;line-height:1.4}
 .share-prev.wait{color:var(--muted)}
 .sendbox{margin-top:10px;padding:12px;border:1px dashed var(--accent);border-radius:12px;background:var(--soft)}
+.ess{background:var(--soft);border-radius:12px;padding:10px 12px;margin:4px 0 0}
+.ess p{margin:0;font-family:var(--serif);font-size:1.02rem;line-height:1.45}
+.ess .ess-r{font-family:var(--sans);font-size:.84rem;color:var(--muted);margin-top:6px}
+.ess .ess-r b{color:var(--ink);font-weight:600}
+.trend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:.9rem;color:var(--muted)}
+.tr-chip{font-weight:600;border-radius:99px;padding:4px 12px;color:#fff}
+.tr-elan{background:#2e8b57}.tr-equilibre{background:#b7791f}.tr-prudence{background:#4b6cb7}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -166,6 +176,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
     <div class="panel ai" style="margin-top:14px">
       <h2 style="font-size:1.15rem">✨ La conclusion de Claude</h2>
       <p class="muted" id="ai-intro" style="margin:2px 0 10px">Claude relie les cartes, leur position et les phrases que tu as retenues à ta question.</p>
+      <div id="trend" class="trend" hidden></div>
       <div id="ai-out"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="b-ai" hidden>Demander la conclusion</button>
@@ -179,13 +190,11 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       <div class="chips" id="chat-quick"></div>
       <div id="chat-log" class="chat-log"></div>
       <div class="chat-in">
-        <textarea id="chat-txt" rows="2" placeholder="Écris ou dicte ton ressenti…"></textarea>
-        <div class="chat-btns">
-          <button class="btn ghost sm" id="chat-mic" hidden aria-label="Dicter à la voix">🎙</button>
-          <button class="btn sm" id="chat-send">Envoyer</button>
-        </div>
+        <textarea id="chat-txt" rows="2" placeholder="Écris ton ressenti… ou dicte-le"></textarea>
+        <button class="btn sm" id="chat-send">Envoyer</button>
       </div>
-      <p class="muted" id="chat-mic-help" style="font-size:.8rem;margin:6px 0 0">Pour parler plutôt qu'écrire, utilise le micro de ton clavier.</p>
+      <button class="btn ghost mic-big" id="chat-mic" hidden><span class="mic-ic" aria-hidden="true">🎙</span><span id="chat-mic-lbl">Dicter mon retour à voix haute</span></button>
+      <div class="mic-help" id="chat-mic-help"><span class="mic-ic" aria-hidden="true">🎙</span><span>Tu préfères parler ? Touche le champ ci-dessus, puis le <b>micro de ton clavier</b> : ce que tu dis s'écrit tout seul.</span></div>
       <div class="rate">
         <span>Ce tirage t'a-t-il aidé ?</span>
         <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
@@ -216,6 +225,125 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 const DECK = [{"n": "Rouge clair", "c": "#f28b82", "l": ["Élan naissant", "Une énergie qui se réveille doucement", "Oser faire un premier pas", "L'enthousiasme d'un commencement", "Se sentir vivant dans son corps", "Une envie qui demande à grandir"], "d": ["Impatience", "Vouloir tout, tout de suite", "S'emballer puis s'essouffler", "Agir avant d'avoir écouté", "Une colère encore mal dite", "Le besoin de prouver sa force"]}, {"n": "Rouge vif", "c": "#d62828", "l": ["Vitalité", "Passer à l'action avec courage", "Une présence pleine et assumée", "Défendre ce qui compte pour soi", "La joie d'être en mouvement", "Avoir les pieds sur terre"], "d": ["Combativité", "Forcer au lieu de laisser venir", "Se mettre en colère pour exister", "Un rapport de force dans la relation", "S'épuiser à tout porter", "Confondre intensité et précipitation"]}, {"n": "Rouge profond", "c": "#7f1d1d", "l": ["Puissance tranquille", "Une force qui n'a plus besoin de se montrer", "Tenir ses engagements dans la durée", "Protéger sans écraser", "Un ancrage solide dans le concret", "Assumer ses désirs avec maturité"], "d": ["Rigidité", "Une rancune ancienne qui pèse encore", "Garder le contrôle par peur de perdre", "Une ténacité qui devient entêtement", "Le poids des responsabilités", "La difficulté à demander de l'aide"]}, {"n": "Orange clair", "c": "#ffc58f", "l": ["Curiosité", "Retrouver le goût du jeu", "S'ouvrir à de nouvelles rencontres", "Une créativité qui commence à poindre", "Se faire plaisir simplement", "La légèreté du moment présent"], "d": ["Dispersion", "Chercher le plaisir pour éviter l'ennui", "Papillonner d'une envie à l'autre", "Le besoin d'être rassuré par les autres", "Remettre l'effort à plus tard", "La peur de s'engager"]}, {"n": "Orange vif", "c": "#f77f00", "l": ["Joie de vivre", "Partager, célébrer, rassembler", "Une créativité généreuse", "Le plaisir des sens assumé", "Une chaleur qui met les autres à l'aise", "Un optimisme communicatif"], "d": ["Excès", "En faire trop pour être aimé", "Compenser par la nourriture ou les achats", "Fuir le silence dans l'agitation", "Dépendre du regard des autres", "Promettre plus qu'on ne peut tenir"]}, {"n": "Orange profond", "c": "#a84c00", "l": ["Sensualité mûre", "Savoir ce qui nous fait vraiment du bien", "Créer quelque chose qui dure", "Une convivialité profonde et sincère", "Accueillir ses émotions sans honte", "Le plaisir partagé dans la confiance"], "d": ["Blessure émotionnelle", "Un manque affectif ancien", "Un plaisir qui devient habitude", "Se fermer après une déception", "La culpabilité autour du plaisir", "Chercher dehors ce qui manque dedans"]}, {"n": "Jaune clair", "c": "#fff3a3", "l": ["Éveil de l'esprit", "Une idée nouvelle qui éclaire", "Apprendre avec plaisir", "Une confiance qui commence à naître", "Voir la situation sous un jour neuf", "La légèreté de la pensée"], "d": ["Doute", "Trop réfléchir avant d'agir", "Hésiter à prendre sa place", "Se comparer sans cesse", "Une nervosité diffuse", "Chercher l'approbation"]}, {"n": "Jaune vif", "c": "#ffd60a", "l": ["Clarté", "Rayonner sa propre lumière", "Affirmer ce que l'on pense", "Comprendre et faire comprendre", "Un optimisme lucide", "Prendre sa place avec assurance"], "d": ["Mental envahissant", "Vouloir avoir raison", "Contrôler par l'analyse", "La critique de soi ou des autres", "Une agitation intérieure", "Se sentir jugé"]}, {"n": "Jaune profond", "c": "#b8930b", "l": ["Sagesse pratique", "Mettre ses connaissances au service", "Un jugement sûr et bienveillant", "Une autorité naturelle", "Transmettre ce que l'on a compris", "Une estime de soi stable"], "d": ["Orgueil", "Se croire seul à savoir", "Des idées figées", "Une ambition qui isole", "L'amertume face à une reconnaissance qui tarde", "La peur de perdre son statut"]}, {"n": "Vert clair", "c": "#b7e4a7", "l": ["Renouveau", "Un cœur qui s'ouvre de nouveau", "Une espérance tranquille", "Laisser pousser sans forcer", "Une tendresse naissante", "Respirer plus librement"], "d": ["Fragilité affective", "La peur d'aimer et d'être blessé", "Le besoin d'être rassuré", "Une jalousie discrète", "S'adapter au point de s'oublier", "Hésiter à dire ce que l'on ressent"]}, {"n": "Vert vif", "c": "#2e9e44", "l": ["Harmonie", "Aimer sans condition", "L'équilibre entre donner et recevoir", "Se sentir à sa juste place", "Une générosité naturelle", "La paix du cœur"], "d": ["Attachement", "Donner pour être aimé", "Éviter le conflit à tout prix", "Se sentir redevable", "Envier ce qu'ont les autres", "Ne pas savoir dire non"]}, {"n": "Vert profond", "c": "#1b4d2a", "l": ["Profondeur du lien", "La fidélité aux siens", "Accueillir l'autre tel qu'il est", "Une patience qui fait grandir", "La sécurité affective", "Prendre soin sur la durée"], "d": ["Possessivité", "Retenir au lieu de laisser vivre", "Des habitudes affectives figées", "Un sacrifice silencieux", "Un chagrin non exprimé", "La méfiance après une trahison"]}, {"n": "Bleu clair", "c": "#a9d6f5", "l": ["Sincérité", "Dire les choses avec douceur", "Une écoute attentive", "Une sérénité qui s'installe", "Rêver en confiance", "Le calme intérieur"], "d": ["Retrait", "Taire ce que l'on pense", "Une naïveté face aux autres", "Fuir dans la rêverie", "La timidité", "La peur de déranger"]}, {"n": "Bleu vif", "c": "#1e6fd9", "l": ["Authenticité", "Être fidèle à ce que l'on est", "Une parole vraie et posée", "Voir clair dans la situation", "La loyauté", "Avoir confiance en ce que l'on perçoit"], "d": ["Froideur", "Prendre de la distance pour se protéger", "Idéaliser puis être déçu", "Une exigence de vérité qui blesse", "Se couper de ses émotions", "Une solitude choisie par défense"]}, {"n": "Bleu profond", "c": "#0d2f6b", "l": ["Intégrité", "Une vision large et profonde", "La fiabilité", "Rester calme dans la tempête", "Assumer ses convictions", "La sagesse de l'expérience"], "d": ["Mélancolie", "Porter seul ses soucis", "Une rigidité morale", "Une nostalgie qui retient", "La méfiance", "Un sérieux qui étouffe la joie"]}, {"n": "Indigo clair", "c": "#8f9be0", "l": ["Intuition", "Écouter la petite voix intérieure", "Une sensibilité fine", "L'ouverture à l'invisible", "Une imagination fertile", "Pressentir avant de comprendre"], "d": ["Confusion", "Se perdre dans ses impressions", "L'hypersensibilité", "Des inquiétudes sans objet", "La difficulté à s'ancrer", "Se fier aux signes plus qu'aux faits"]}, {"n": "Indigo", "c": "#3f37c9", "l": ["Motivation profonde", "Savoir pourquoi l'on agit", "Une vision intérieure claire", "La concentration", "La foi en son chemin", "Le discernement"], "d": ["Isolement", "S'enfermer dans ses pensées", "L'obsession d'un but", "Une exigence trop haute envers soi", "Se sentir incompris", "Le repli sur soi"]}, {"n": "Indigo profond", "c": "#221b6e", "l": ["Maîtrise intérieure", "Unir intuition et raison", "Une compréhension profonde", "L'autonomie", "Tenir son cap", "Un silence fécond"], "d": ["Austérité", "Se refuser la légèreté", "Contrôler ses émotions", "Se méfier de ses propres ressentis", "La dureté envers soi", "Une distance avec la vie concrète"]}, {"n": "Violet clair", "c": "#d4b5f0", "l": ["Inspiration", "Aspirer à plus grand que soi", "Douceur et délicatesse", "Une transformation qui commence", "La beauté des choses simples", "Une ouverture spirituelle"], "d": ["Fuite", "Idéaliser pour éviter le réel", "Se sentir à part", "L'indécision", "Rêver sa vie au lieu de la vivre", "La fragilité face aux critiques"]}, {"n": "Violet", "c": "#8e44ad", "l": ["Direction", "Donner un sens à sa vie", "Guider avec bienveillance", "Transformer une épreuve en force", "La dignité", "Un dévouement juste"], "d": ["Autorité pesante", "Vouloir guider les autres malgré eux", "L'exigence de perfection", "Le sacrifice de soi", "Un sentiment de mission écrasant", "Une distance hautaine"]}, {"n": "Violet profond", "c": "#4a1f63", "l": ["Accomplissement", "Assumer sa propre autorité", "Une sagesse transmise", "Lâcher ce qui est accompli", "La sérénité du chemin parcouru", "Le respect de soi et des autres"], "d": ["Deuil", "La difficulté à tourner la page", "Le poids de l'héritage familial", "La gravité", "La peur de la fin", "Contrôler par la culpabilité"]}, {"n": "Blanc", "c": "#fafafa", "l": ["Renouveau total", "Une page blanche à écrire", "La simplicité", "Une clarté retrouvée", "Le pardon", "Une neutralité bienveillante"], "d": ["Vide", "Ne pas savoir ce que l'on veut", "Se couper de ses émotions", "Le perfectionnisme", "Une attente passive", "Fuir le conflit par l'absence"]}, {"n": "Gris perle", "c": "#c8c8c8", "l": ["Nuance", "Accepter que tout ne soit pas tranché", "La diplomatie", "Un recul apaisant", "La discrétion", "La patience"], "d": ["Indécision", "Ne pas oser choisir", "S'effacer", "La lassitude", "Rester dans l'entre-deux", "La peur de s'affirmer"]}, {"n": "Gris", "c": "#8a8a8a", "l": ["Humilité", "Observer avant d'agir", "Une prudence utile", "Faire les choses sans bruit", "L'endurance", "Le réalisme"], "d": ["Effacement", "Se faire tout petit", "Une routine qui éteint", "L'ennui", "Le manque de confiance", "La résignation"]}, {"n": "Noir", "c": "#151515", "l": ["Retour à soi", "Le repos fécond avant un nouveau départ", "La profondeur", "Accepter le mystère", "La fin d'un cycle", "La force du silence"], "d": ["Peur", "Se protéger derrière une armure", "Le pessimisme", "Garder secret ce qui fait mal", "Refuser le changement", "Une tristesse enfouie"]}, {"n": "Prune", "c": "#3d0f3a", "l": ["Transformation intérieure", "Traverser une épreuve et en ressortir grandi", "La lucidité sur ses ombres", "Un courage intime", "Une guérison lente", "Lâcher un vieux schéma"], "d": ["Tourment", "Ressasser le passé", "Une colère retournée contre soi", "La dépendance affective", "Un drame intérieur", "Se sentir prisonnier d'une histoire"]}, {"n": "Brun", "c": "#6b4226", "l": ["Ancrage", "La stabilité et la sécurité", "Une simplicité concrète", "Des racines familiales assumées", "La patience de la terre", "La fiabilité"], "d": ["Lourdeur", "L'attachement aux habitudes", "Le matérialisme", "Le poids de la famille", "La peur du manque", "L'immobilisme"]}, {"n": "Kaki", "c": "#9a9a3a", "l": ["Discernement", "Trier ce qui nous appartient et ce qui vient des autres", "Assumer ses imperfections", "Sortir de la comparaison", "L'humour sur soi", "Se libérer d'une jalousie"], "d": ["Envie", "Se comparer et se sentir moins bien", "La rancœur", "Un malaise mal identifié", "La critique facile", "Se sentir lésé"]}, {"n": "Rose", "c": "#f7b6c8", "l": ["Tendresse", "La douceur envers soi", "Un amour inconditionnel", "La réconciliation", "La délicatesse", "Prendre soin"], "d": ["Besoin d'être aimé", "La dépendance affective", "La naïveté", "Fuir les conflits", "Une sensibilité blessée", "S'oublier pour plaire"]}, {"n": "Fuchsia", "c": "#e0218a", "l": ["Affirmation de soi", "Oser être vu", "Une passion créative", "Une sensibilité assumée", "L'audace", "Une joie vibrante"], "d": ["Besoin d'attention", "Provoquer pour exister", "Un excès émotionnel", "L'impatience dans la relation", "L'égocentrisme", "La peur d'être ignoré"]}, {"n": "Bordeaux", "c": "#6e0f22", "l": ["Passion profonde", "La fidélité à ses engagements", "Une intensité maîtrisée", "L'engagement du cœur", "La force de caractère", "Un rayonnement intérieur"], "d": ["Jalousie", "La possessivité", "Une colère contenue", "La rancune", "Vouloir garder la main", "Une blessure d'orgueil"]}, {"n": "Turquoise", "c": "#30c5c0", "l": ["Communication du cœur", "Exprimer ses émotions avec justesse", "L'autonomie affective", "La fraîcheur", "La liberté intérieure", "Une créativité expressive"], "d": ["Indépendance défensive", "Se protéger en restant à distance", "La superficialité", "La difficulté à s'engager", "Parler pour ne rien dire", "Une froideur apparente"]}, {"n": "Sable", "c": "#e3cfa3", "l": ["Lâcher-prise", "Accepter ce qui est", "La douceur du temps qui passe", "La simplicité", "Le repos", "La confiance"], "d": ["Impermanence mal vécue", "Vouloir retenir ce qui s'en va", "La fatigue", "Le manque de structure", "Laisser tout filer", "L'insécurité"]}, {"n": "Cuivre", "c": "#b8733a", "l": ["Échange", "Faire circuler l'énergie", "Une chaleur relationnelle", "Un talent mis en valeur", "Une prospérité simple", "Relier les gens entre eux"], "d": ["Calcul", "Donner pour recevoir", "L'agitation", "Une surface brillante sur un fond inquiet", "La recherche de reconnaissance", "La dispersion des forces"]}, {"n": "Argent", "c": "#c0c4c8", "l": ["Réceptivité", "Refléter avec justesse", "Une intuition lunaire", "La fluidité", "La pureté d'intention", "L'écoute de ses cycles"], "d": ["Instabilité émotionnelle", "Absorber les humeurs des autres", "L'illusion", "Changer d'avis selon l'entourage", "Une froideur protectrice", "L'hypersensibilité"]}, {"n": "Or", "c": "#d4af37", "l": ["Rayonnement", "Reconnaître sa propre valeur", "La générosité", "Une confiance profonde", "Une réussite juste", "Une joie lumineuse"], "d": ["Besoin de briller", "La peur de manquer", "L'orgueil", "L'attachement à la réussite", "La dépendance au succès", "Paraître plutôt qu'être"]}, {"n": "Opale", "c": "#e6e0f5", "l": ["Pluralité", "Accueillir toutes ses facettes", "L'émerveillement", "L'ouverture", "Une fluidité joyeuse", "La magie du quotidien"], "d": ["Éparpillement", "Ne pas savoir qui l'on est", "Changer sans cesse", "L'illusion", "La superficialité", "Fuir l'engagement"]}, {"n": "Cristal", "c": "#f2f6f8", "l": ["Authenticité totale", "N'avoir rien à cacher", "La légèreté", "Une présence pure", "La clarté des intentions", "La liberté"], "d": ["Invisibilité", "Ne pas se sentir vu", "Le manque de limites", "Tout absorber", "S'effacer", "La vulnérabilité"]}, {"n": "Lilas", "c": "#c8a2c8", "l": ["Douceur spirituelle", "Une paix retrouvée", "La délicatesse", "Le pardon", "La sérénité", "La grâce"], "d": ["Évitement", "Fuir le concret", "La nostalgie", "L'hypersensibilité", "Le retrait", "L'idéalisme"]}, {"n": "Perle", "c": "#f3ece2", "l": ["Beauté intérieure", "Transformer une blessure en perle", "La délicatesse", "La patience", "Une protection douce", "L'harmonie"], "d": ["Protection excessive", "Se refermer comme une coquille", "Une pudeur qui isole", "Une vulnérabilité cachée", "Le perfectionnisme", "La méfiance"]}, {"n": "Ocre", "c": "#c9862b", "l": ["Terre féconde", "Une créativité ancrée", "La chaleur", "Une tradition vivante", "Le savoir-faire", "L'authenticité"], "d": ["Lourdeur", "La résistance au changement", "L'attachement au passé", "La lenteur", "La méfiance envers la nouveauté", "La rugosité"]}, {"n": "Safran", "c": "#f4a300", "l": ["Joie spirituelle", "Un engagement lumineux", "Le dévouement", "Une chaleur généreuse", "Un élan vers les autres", "Le rayonnement"], "d": ["Excès de zèle", "Le fanatisme", "L'oubli de soi", "L'exaltation", "Imposer sa vérité", "L'épuisement"]}, {"n": "Caramel", "c": "#a8632a", "l": ["Douceur", "Le réconfort", "Le plaisir simple", "La gourmandise de la vie", "La chaleur humaine", "La tendresse"], "d": ["Compensation", "Se consoler par des douceurs", "La mollesse", "La dépendance au confort", "Éviter l'effort", "Se laisser aller"]}, {"n": "Vert d'eau", "c": "#7fd1a8", "l": ["Vivacité", "Un esprit agile", "Un renouveau rapide", "L'adaptabilité", "La fraîcheur", "L'inventivité"], "d": ["Nervosité", "L'instabilité", "L'impatience", "L'agitation", "La superficialité", "Changer pour fuir"]}, {"n": "Crème", "c": "#f6efd9", "l": ["Douceur maternelle", "Nourrir et être nourri", "La bienveillance", "La tranquillité", "La simplicité", "La protection"], "d": ["Dépendance", "Rester dans le cocon", "La passivité", "Le besoin d'être pris en charge", "Revenir à de vieux réflexes d'enfant", "La mièvrerie"]}, {"n": "Chocolat", "c": "#5a3a29", "l": ["Profondeur chaleureuse", "Un réconfort solide", "La sensualité", "Un ancrage joyeux", "La maturité affective", "Le plaisir partagé"], "d": ["Repli", "La lourdeur", "Une mélancolie douce", "L'attachement", "La gourmandise excessive", "La compensation"]}, {"n": "Café au lait", "c": "#a58a6e", "l": ["Énergie mesurée", "Un éveil vif et léger", "La sociabilité", "Une pause qui ressource", "L'équilibre entre action et détente", "La fraîcheur d'esprit"], "d": ["Stimulation excessive", "Courir après le temps", "La nervosité", "Une fatigue masquée", "La dépendance aux excitants", "La dispersion"]}];
 const SPREADS = [{"cat": "Vivre au présent", "name": "La couleur du jour", "desc": "Une carte pour sentir l'énergie de la journée.", "pos": [{"l": "La couleur du jour", "m": "L'énergie qui t'accompagne aujourd'hui et sur laquelle tu peux t'appuyer."}]}, {"cat": "Vivre au présent", "name": "Maintenant et ressource", "desc": "Deux cartes pour faire le point sur le moment présent.", "pos": [{"l": "Ce que tu vis", "m": "Ce qui se joue pour toi en ce moment, souvent sans que tu t'en rendes compte."}, {"l": "Ta ressource", "m": "La qualité ou l'attitude sur laquelle t'appuyer maintenant."}]}, {"cat": "Vivre au présent", "name": "Ton mois à venir", "desc": "Trois cartes en début de mois pour en sentir le climat.", "pos": [{"l": "Le climat du mois", "m": "L'ambiance générale des semaines qui viennent."}, {"l": "Ce qui demande ton attention", "m": "Le point sensible à surveiller avec douceur."}, {"l": "Ce que tu peux cultiver", "m": "Ce que tu peux faire grandir ce mois-ci."}]}, {"cat": "Vivre au présent", "name": "Ton année", "desc": "Trois cartes pour une année qui commence ou un anniversaire.", "pos": [{"l": "Ce que tu laisses derrière toi", "m": "Ce qui se termine et que tu peux remercier."}, {"l": "Le fil de l'année", "m": "Le thème qui va t'accompagner."}, {"l": "Ton cadeau", "m": "La qualité que cette année peut faire grandir en toi."}]}, {"cat": "Amour et relations", "name": "Toi, l'autre et le lien", "desc": "Trois cartes pour éclairer une relation. Pense à la personne en tirant.", "pos": [{"l": "Ce que tu apportes", "m": "Ce que tu mets dans cette relation, consciemment ou non."}, {"l": "Ce que l'autre apporte", "m": "Ce que l'autre y apporte, vu à travers ton regard."}, {"l": "Ce dont le lien a besoin", "m": "Ce qui ferait du bien à la relation maintenant."}]}, {"cat": "Amour et relations", "name": "Apaiser une tension", "desc": "Trois cartes quand une relation est tendue, pour comprendre ta part et trouver un geste juste.", "pos": [{"l": "Ce que tu ressens", "m": "L'émotion qui est vraiment là, derrière la tension."}, {"l": "Ce que tu ne vois pas encore", "m": "Ce qui t'échappe dans la situation."}, {"l": "Le geste qui apaise", "m": "L'attitude qui peut détendre les choses."}]}, {"cat": "Amour et relations", "name": "S'ouvrir à une rencontre", "desc": "Deux cartes si tu souhaites rencontrer quelqu'un.", "pos": [{"l": "Ce qui te ferme", "m": "L'attitude qui, sans le vouloir, tient les autres à distance."}, {"l": "Ce qui t'ouvre", "m": "La qualité qui rend la rencontre possible."}]}, {"cat": "Amour et relations", "name": "Mieux s'écouter à deux", "desc": "Trois cartes pour un couple ou une amitié où l'on ne se comprend plus.", "pos": [{"l": "Ce que tu exprimes", "m": "Ce que tu montres ou dis à l'autre."}, {"l": "Ce que l'autre entend", "m": "La façon dont ton message est reçu."}, {"l": "Le pont entre vous", "m": "Ce qui aiderait à vous comprendre."}]}, {"cat": "Désir et confiance en soi", "name": "Retrouver confiance", "desc": "Deux cartes quand tu doutes de toi.", "pos": [{"l": "Ce qui t'a fragilisé", "m": "Ce qui a entamé ta confiance."}, {"l": "La force déjà là", "m": "La qualité que tu possèdes déjà et que tu peux réveiller."}]}, {"cat": "Désir et confiance en soi", "name": "Oser te montrer", "desc": "Trois cartes pour oser être vu tel que tu es.", "pos": [{"l": "Ce que tu caches", "m": "La part de toi que tu gardes à l'abri."}, {"l": "Ta beauté singulière", "m": "Ce qui te rend unique et attirant."}, {"l": "Le premier pas", "m": "Le petit geste qui t'aide à oser."}]}, {"cat": "Désir et confiance en soi", "name": "Raviver l'élan", "desc": "Deux cartes quand le désir ou l'envie se sont endormis.", "pos": [{"l": "Ce qui éteint", "m": "Ce qui étouffe ton élan en ce moment."}, {"l": "Ce qui rallume", "m": "Ce qui peut raviver ta flamme."}]}, {"cat": "Créativité et intuition", "name": "Ton talent", "desc": "Trois cartes pour mieux voir ce que tu as à offrir.", "pos": [{"l": "Ton talent", "m": "Ce que tu fais naturellement bien, parfois sans t'en rendre compte."}, {"l": "Ce qui le freine", "m": "Ce qui t'empêche de l'exprimer."}, {"l": "Où l'offrir", "m": "Le terrain où ce talent peut s'épanouir."}]}, {"cat": "Créativité et intuition", "name": "Écouter ton intuition", "desc": "Deux cartes avant une décision, pour entendre ta petite voix.", "pos": [{"l": "Ce que ta tête dit", "m": "Ce que ton raisonnement te conseille."}, {"l": "Ce que ton intuition sait", "m": "Ce que tu ressens au fond de toi."}]}, {"cat": "Corps et bien-être", "name": "Prendre soin de toi", "desc": "Trois cartes pour écouter ce dont tu as besoin. Ne remplace jamais l'avis d'un médecin.", "pos": [{"l": "Ce dont tu as besoin", "m": "Ce que ton corps ou ton cœur réclame en ce moment."}, {"l": "Ce qui te fatigue", "m": "Ce qui te coûte de l'énergie sans que tu le remarques."}, {"l": "Ce qui te ressource", "m": "Ce qui te remet en forme et en joie."}]}, {"cat": "Corps et bien-être", "name": "Ton énergie du moment", "desc": "Deux cartes pour sentir où en est ton énergie.", "pos": [{"l": "Ton énergie actuelle", "m": "Comment tu te sens vraiment, au-delà de la fatigue ou de l'agitation."}, {"l": "Ce qui l'équilibre", "m": "Ce qui t'aide à retrouver un juste niveau d'énergie."}]}, {"cat": "Argent", "name": "Ta relation à l'argent", "desc": "Deux cartes pour regarder ton rapport à l'argent, sans jugement.", "pos": [{"l": "Ton attitude actuelle", "m": "La façon dont tu vis l'argent en ce moment."}, {"l": "L'attitude qui t'aiderait", "m": "Ce qui rendrait ta relation à l'argent plus sereine."}]}, {"cat": "Argent", "name": "Dépenser en conscience", "desc": "Trois cartes avant une grosse dépense ou pour faire le point.", "pos": [{"l": "Ce que tu cherches vraiment", "m": "Le besoin qui se cache derrière l'envie d'acheter."}, {"l": "Ce qui te rassure", "m": "Ce qui te donne un sentiment de sécurité."}, {"l": "Le choix juste", "m": "L'attitude qui respecte à la fois tes envies et ton équilibre."}]}, {"cat": "Travail et orientation", "name": "Ton chemin professionnel", "desc": "Trois cartes pour faire le point sur ton travail ou un projet.", "pos": [{"l": "Tes forces actuelles", "m": "Ce sur quoi tu peux compter."}, {"l": "Ce qui te freine", "m": "Ce qui ralentit ton élan, en toi ou autour de toi."}, {"l": "Le prochain pas", "m": "L'attitude ou l'action qui t'aide à avancer."}]}, {"cat": "Travail et orientation", "name": "Ce nouveau poste me convient-il ?", "desc": "Quatre cartes pour sentir une offre ou un changement de poste.", "pos": [{"l": "Ce qui t'attire", "m": "Ce qui te donne envie dans cette proposition."}, {"l": "Ce qui t'inquiète", "m": "Ce qui te retient ou te fait hésiter."}, {"l": "Ce que tu y apporterais", "m": "Ta contribution singulière."}, {"l": "Ce que tu y gagnerais", "m": "Ce que ce poste peut faire grandir en toi."}]}, {"cat": "Travail et orientation", "name": "Traverser un changement", "desc": "Trois cartes quand tout bouge.", "pos": [{"l": "Ce qui se termine", "m": "Ce que tu quittes et peux remercier."}, {"l": "Ce qui t'aide à passer", "m": "La ressource pour traverser la transition."}, {"l": "Ce qui commence", "m": "Ce qui s'ouvre devant toi."}]}, {"cat": "Famille et enfants", "name": "Comprendre un enfant", "desc": "Trois cartes en pensant à un enfant, pour mieux le comprendre.", "pos": [{"l": "Ce qu'il vit", "m": "Ce que l'enfant traverse en ce moment."}, {"l": "Ce dont il a besoin", "m": "Ce qui l'aiderait à s'épanouir."}, {"l": "Ton rôle", "m": "Ce que tu peux lui offrir."}]}, {"cat": "Famille et enfants", "name": "Ma place dans la famille", "desc": "Deux cartes pour regarder ta place parmi les tiens.", "pos": [{"l": "La place que tu prends", "m": "Le rôle que tu joues aujourd'hui."}, {"l": "La place qui te va", "m": "La place juste pour toi."}]}, {"cat": "Avenir et monde", "name": "Croire en l'avenir", "desc": "Trois cartes quand l'avenir inquiète.", "pos": [{"l": "Ce qui t'inquiète", "m": "La peur qui assombrit l'horizon."}, {"l": "Ce qui reste solide", "m": "Ce sur quoi tu peux t'appuyer."}, {"l": "Ta part de lumière", "m": "Ce que tu peux apporter au monde, à ta mesure."}]}, {"cat": "Avenir et monde", "name": "Ma contribution", "desc": "Une carte pour sentir comment participer à un monde meilleur.", "pos": [{"l": "Ta contribution", "m": "La qualité que tu peux offrir autour de toi."}]}, {"cat": "Décider et avancer", "name": "Choisir entre deux voies", "desc": "Trois cartes quand tu hésites. Nomme la voie A et la voie B avant de tirer.", "pos": [{"l": "La voie A", "m": "Ce que cette voie t'apporterait, ce qu'elle réveille en toi."}, {"l": "La voie B", "m": "Ce que cette autre voie t'apporterait."}, {"l": "Ce qui t'aide à choisir", "m": "La qualité à écouter pour décider."}]}, {"cat": "Décider et avancer", "name": "Situation, obstacle, conseil, issue", "desc": "Quatre cartes pour démêler une situation compliquée.", "pos": [{"l": "La situation", "m": "Ce qui se passe vraiment, vu de l'intérieur."}, {"l": "L'obstacle", "m": "Ce qui bloque ou fait peur."}, {"l": "Le conseil", "m": "L'attitude à adopter."}, {"l": "L'issue possible", "m": "Ce vers quoi les choses peuvent évoluer si tu suis le conseil."}]}, {"cat": "Décider et avancer", "name": "Sortir de la confusion", "desc": "Trois cartes quand tu ne sais plus où tu en es.", "pos": [{"l": "Ce qui brouille", "m": "Ce qui crée le flou en toi."}, {"l": "Ce qui est clair", "m": "Ce que tu sais déjà, au fond."}, {"l": "Le premier pas", "m": "La petite action qui remet du mouvement."}]}];
 const THEMES = [{"n": "Vivre au présent", "i": "☀", "d": "Faire le point sur le moment, le mois ou l'année."}, {"n": "Amour et relations", "i": "♡", "d": "Comprendre un lien, apaiser une tension, rencontrer."}, {"n": "Désir et confiance en soi", "i": "✦", "d": "Se plaire, oser, retrouver l'élan."}, {"n": "Créativité et intuition", "i": "✧", "d": "Écouter ses talents et sa petite voix."}, {"n": "Corps et bien-être", "i": "❀", "d": "Prendre soin de soi et de son énergie."}, {"n": "Argent", "i": "◎", "d": "Regarder sa relation à l'argent sans jugement."}, {"n": "Travail et orientation", "i": "➶", "d": "Choisir un chemin, préparer un changement."}, {"n": "Famille et enfants", "i": "⌂", "d": "Mieux comprendre ses proches."}, {"n": "Avenir et monde", "i": "◍", "d": "Trouver sa place et garder confiance."}, {"n": "Décider et avancer", "i": "⇄", "d": "Démêler une situation, choisir entre deux voies."}];
+
+/* ---------------- Guide de lecture d'Iris ----------------
+   Résumé de chaque couleur (textes originaux) et petit algorithme qui donne la tendance d'un tirage :
+   1. chaque position a un rôle : ressource (ce qui aide), point d'attention (ce qui freine) ou état (ce qui est) ;
+   2. chaque carte a un côté : lumière (+) ou défi (−) ; la combinaison rôle × côté donne un score,
+      les positions de conclusion (conseil, issue, prochain pas…) comptent double ;
+   3. la moyenne donne la tendance : élan, équilibre ou prudence ;
+   4. la famille dominante des couleurs donne le levier (agir, miser sur le lien, écouter, consolider),
+      la nuance (claire, vive, profonde) donne le moment (début, plein mouvement, maturité) ;
+   5. le thème ajuste le ton (douceur pour le corps, concret pour l'argent…).
+   Claude reçoit ce guide et doit s'y tenir : réponse engagée, jamais « personne ne peut savoir ». */
+const ESSENCE = {
+  "Rouge clair": "Un élan vital qui s'éveille : l'envie d'agir, encore fragile, demande à être nourrie.",
+  "Rouge vif": "La force d'agir et de s'affirmer : courage, présence, désir d'avancer concrètement.",
+  "Rouge profond": "Une puissance mûre et ancrée : tenir dans la durée, protéger, assumer ses engagements.",
+  "Orange clair": "La curiosité et le plaisir qui renaissent : s'ouvrir, jouer, oser de nouvelles expériences.",
+  "Orange vif": "La joie de vivre partagée : créativité, convivialité, plaisir des sens.",
+  "Orange profond": "Une créativité et une sensualité mûres, qui savent ce qui nourrit vraiment.",
+  "Jaune clair": "Une clarté nouvelle : une idée, une compréhension qui commence à éclairer la situation.",
+  "Jaune vif": "La lumière de l'esprit : confiance en soi, affirmation, prendre sa place.",
+  "Jaune profond": "Une sagesse pratique : mettre ce que l'on a compris au service, avec assurance et bienveillance.",
+  "Vert clair": "Un renouveau du cœur : l'espoir et la tendresse qui repoussent doucement.",
+  "Vert vif": "L'harmonie : aimer, donner et recevoir à sa juste mesure, se sentir à sa place.",
+  "Vert profond": "La profondeur des liens : fidélité, patience, sécurité affective.",
+  "Bleu clair": "La sincérité et le calme : une parole douce, une écoute qui apaise.",
+  "Bleu vif": "L'authenticité : être vrai, voir clair, rester fidèle à soi.",
+  "Bleu profond": "L'intégrité et le recul : une vision large, la sérénité de l'expérience.",
+  "Indigo clair": "L'intuition qui s'éveille : sentir avant de comprendre, écouter sa petite voix.",
+  "Indigo": "La motivation profonde : savoir pourquoi l'on agit, garder son cap intérieur.",
+  "Indigo profond": "La maîtrise intérieure : unir intuition et raison, avancer en autonomie.",
+  "Violet clair": "L'inspiration : aspirer à plus grand, une transformation qui commence en douceur.",
+  "Violet": "Le sens et la direction : transformer l'expérience en force, guider avec bienveillance.",
+  "Violet profond": "L'accomplissement : une étape se termine, la sagesse du chemin parcouru.",
+  "Blanc": "Une page blanche : simplicité, recommencement, clarté retrouvée.",
+  "Gris perle": "La nuance : prendre du recul, accepter que tout ne soit pas tranché tout de suite.",
+  "Gris": "L'humilité et l'observation : avancer sans bruit, avec réalisme.",
+  "Noir": "Le retour à soi : la fin d'un cycle, un repos fécond avant un nouveau départ.",
+  "Prune": "La transformation intérieure : traverser une épreuve pour en ressortir grandi.",
+  "Brun": "L'ancrage : stabilité, racines, sécurité concrète.",
+  "Kaki": "Le discernement : faire le tri, sortir de la comparaison, reprendre ce qui est à soi.",
+  "Rose": "La tendresse : douceur envers soi et les autres, réconciliation.",
+  "Fuchsia": "L'affirmation joyeuse : oser se montrer, une passion vibrante.",
+  "Bordeaux": "La passion profonde : un engagement du cœur intense et fidèle.",
+  "Turquoise": "La communication du cœur : exprimer ses émotions avec liberté et justesse.",
+  "Sable": "Le lâcher-prise : accepter, se reposer, faire confiance au temps.",
+  "Cuivre": "L'échange : faire circuler l'énergie, relier, mettre ses talents en valeur.",
+  "Argent": "La réceptivité : refléter avec justesse, écouter ses cycles, la fluidité.",
+  "Or": "Le rayonnement : reconnaître sa valeur, une réussite juste et généreuse.",
+  "Opale": "La pluralité : accueillir toutes ses facettes, s'émerveiller.",
+  "Cristal": "La transparence : authenticité, clarté des intentions, légèreté.",
+  "Lilas": "La paix douce : pardon, sérénité, délicatesse.",
+  "Perle": "La beauté intérieure : une blessure transformée en force, avec patience.",
+  "Ocre": "La terre féconde : une créativité ancrée dans le savoir-faire.",
+  "Safran": "L'élan généreux : un engagement lumineux tourné vers les autres.",
+  "Caramel": "Le réconfort : douceur, plaisirs simples, chaleur humaine.",
+  "Vert d'eau": "La vivacité : un esprit agile, un renouveau rapide.",
+  "Crème": "La douceur protectrice : nourrir, être nourri, la tranquillité.",
+  "Chocolat": "Un réconfort solide : chaleur, sensualité, maturité affective.",
+  "Café au lait": "L'énergie mesurée : l'équilibre entre action et détente."
+};
+// Familles de couleurs → levier de la réponse
+const FAMILY = {
+  mouvement: { names: ["Rouge clair", "Rouge vif", "Rouge profond", "Orange clair", "Orange vif", "Orange profond", "Jaune clair", "Jaune vif", "Jaune profond", "Fuchsia", "Cuivre", "Or", "Safran", "Ocre", "Vert d'eau"], levier: "passer à l'action, oser, s'affirmer concrètement" },
+  coeur: { names: ["Vert clair", "Vert vif", "Vert profond", "Rose", "Bordeaux", "Turquoise", "Caramel", "Crème", "Chocolat"], levier: "miser sur le lien, l'émotion et la douceur" },
+  interiorite: { names: ["Bleu clair", "Bleu vif", "Bleu profond", "Indigo clair", "Indigo", "Indigo profond", "Violet clair", "Violet", "Violet profond", "Lilas", "Argent", "Opale", "Cristal", "Perle"], levier: "écouter son intuition, prendre du recul intérieur, clarifier ce que l'on veut" },
+  ancrage: { names: ["Blanc", "Gris perle", "Gris", "Noir", "Prune", "Brun", "Kaki", "Sable", "Café au lait"], levier: "consolider, faire le tri, laisser mûrir avant de trancher" }
+};
+const familyOf = n => Object.keys(FAMILY).find(k => FAMILY[k].names.includes(n)) || "ancrage";
+const momentOf = n => /clair/.test(n) ? "un début, quelque chose qui naît et demande à être nourri" : /profond/.test(n) ? "la maturité, quelque chose qui s'accomplit ou se consolide" : /vif/.test(n) || /^(Indigo|Violet)$/.test(n) ? "le plein mouvement" : "";
+// Rôle d'une position d'après son nom et son sens
+const ROLE_ATTENTION = /obstacle|frein|ferme|inqui[eè]t|fragilis|fatigu|brouill|éteint|caches|attention|ne vois pas|laisses derrière|se termine|bloqu|coûte/i;
+const ROLE_RESSOURCE = /ressource|force|aide|conseil|ouvre|cadeau|cultiver|rallume|solide|pont|apaise|choisir|issue|gagnerais|contribution|talent|besoin|place qui te va|juste|ton rôle|commence|est clair|premier pas|prochain pas|équilibre|beauté|intuition sait|lumière/i;
+const FINAL = /issue|prochain pas|premier pas|conseil|ce qui commence|cadeau|choix juste|ce qui t'aide à choisir|le geste/i;
+function roleOf(p){
+  if (ROLE_ATTENTION.test(p.l)) return "attention";
+  if (ROLE_RESSOURCE.test(p.l)) return "ressource";
+  return "etat";
+}
+const ROLE_LABEL = { ressource: "Ressource : ce qui t'aide", attention: "Point d'attention : ce qui te freine", etat: "État : ce qui se vit en ce moment" };
+const THEME_TONE = {
+  "Vivre au présent": "ton lumineux et concret, ancré dans les jours qui viennent",
+  "Amour et relations": "ton chaleureux, centré sur ce que la personne peut faire de son côté dans la relation, sans juger l'autre",
+  "Désir et confiance en soi": "ton qui redonne confiance, valorisant, qui ose",
+  "Créativité et intuition": "ton inspirant, qui autorise et met en valeur le talent",
+  "Corps et bien-être": "ton doux et bienveillant ; parle de soin et d'écoute de soi, jamais de diagnostic ni de traitement",
+  "Argent": "ton concret et rassurant ; parle d'attitude et de choix, jamais de conseil financier chiffré",
+  "Travail et orientation": "ton clair et pragmatique, avec un prochain pas réaliste",
+  "Famille et enfants": "ton tendre et rassurant, centré sur la place de chacun",
+  "Avenir et monde": "ton d'espérance, qui redonne de la prise sur ce qui dépend de la personne",
+  "Décider et avancer": "ton net : aide vraiment à trancher ou à avancer, sans laisser la personne au milieu du gué"
+};
+function readingGuide(cards, spread, themeName){
+  let sum = 0, wsum = 0;
+  const fam = {}, per = cards.map((c, i) => {
+    const role = roleOf(spread.pos[i]), lum = c.side === "l";
+    const w = FINAL.test(spread.pos[i].l) ? 2 : 1;
+    const s = role === "ressource" ? (lum ? 2 : -1) : role === "attention" ? (lum ? 1 : -0.5) : (lum ? 1 : -1);
+    sum += s * w; wsum += w;
+    const f = familyOf(c.n); fam[f] = (fam[f] || 0) + w;
+    const lecture = role === "ressource" ? (lum ? "ressource pleinement disponible : appuie-toi dessus" : "ressource à conquérir : elle demande un effort, elle n'est pas encore acquise")
+      : role === "attention" ? (lum ? "frein léger, facile à transformer en atout" : "frein réel et bien identifié : le nommer, c'est déjà commencer à le dépasser")
+      : (lum ? "situation porteuse" : "situation qui demande du travail sur soi");
+    return { role, lecture, famille: f, moment: momentOf(c.n) };
+  });
+  const avg = wsum ? sum / wsum : 0;
+  let direction = avg >= 0.75 ? "elan" : avg <= -0.25 ? "prudence" : "equilibre";
+  if (themeName === "Corps et bien-être" && direction === "elan" && avg < 1.25) direction = "equilibre"; // jamais d'élan téméraire pour le corps
+  const dom = Object.keys(fam).sort((a, b) => fam[b] - fam[a])[0];
+  return { score: Math.round(avg * 100) / 100, direction, levier: FAMILY[dom].levier, famille: dom, ton: THEME_TONE[themeName] || "ton chaleureux et clair", cartes: per };
+}
+const DIRECTION = {
+  elan: { label: "Élan", icon: "↗", hint: "Les cartes poussent à avancer.", consigne: "Réponds franchement vers le oui et le mouvement : encourage à oser, avec un premier pas concret et réaliste." },
+  equilibre: { label: "Équilibre", icon: "→", hint: "Une ouverture, à certaines conditions.", consigne: "Réponds de façon engagée mais nuancée, du type « oui, à condition de… » : nomme clairement la condition et le levier qui fera pencher du bon côté." },
+  prudence: { label: "Prudence", icon: "↘", hint: "Les cartes invitent à préparer avant d'agir.", consigne: "Invite à la prudence sans faire peur, du type « pas encore » ou « pas de cette façon » : dis ce qu'il faut préparer, protéger ou laisser mûrir, et termine sur une perspective rassurante et un geste à sa portée." }
+};
+const RULES = "Règles d'interprétation : (1) Pars du sens de chaque couleur, de son côté et du rôle de sa position dans le tirage ; les phrases retenues par la personne indiquent seulement ce qui résonne pour elle, elles affinent l'interprétation mais n'en sont pas le cœur. " +
+  "(2) Relie chaque carte à la question et au thème, puis donne une vraie réponse à la question, dans la tendance indiquée par le guide. " +
+  "(3) N'écris jamais de formule qui se dérobe, comme « personne ne peut savoir », « je ne peux pas te répondre », « seul l'avenir le dira » ou « c'est à toi de voir » ; formule plutôt un élan encourageant ou une prudence bienveillante. " +
+  "(4) Tutoie, sois chaleureux et précis, sans jargon, sans prédiction datée ni certitude absolue sur l'avenir, sans conseil médical, juridique ou financier. Termine sur une phrase qui donne confiance.";
 const $ = s => document.querySelector(s);
 const nb = s => String(s ?? "").replace(/ (?=[?!:;»])/g, " ");
 const esc = s => nb(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -285,9 +413,10 @@ $("#b-reveal").onclick = () => { renderReading(); show("read"); };
 
 /* Lecture */
 function renderReading(){
-  aiResult = null; $("#ai-out").innerHTML = ""; $("#b-ai").textContent = "Demander la conclusion"; $("#chat").hidden = true; stopMic();
+  aiResult = null; $("#ai-out").innerHTML = ""; $("#trend").hidden = true; $("#b-ai").textContent = "Demander la conclusion"; $("#chat").hidden = true; stopMic();
   const q = $("#q").value.trim();
   $("#r-q").innerHTML = q ? esc(q) : `<span class="muted">Sans question précise</span>`;
+  const g = currentGuide();
   $("#cards").innerHTML = sp.pos.map((p, i) => {
     const t = table[picked[i]], c = DECK[t.i], ph = t.side === "l" ? c.l : c.d;
     return `<article class="card" style="animation-delay:${i * 180}ms">
@@ -296,6 +425,8 @@ function renderReading(){
         <div class="pl">${sp.pos.length > 1 ? "Carte " + (i + 1) + " · " : ""}${esc(p.l)}</div>
         <p class="pm">${esc(p.m)}</p>
         <span class="side">${t.side === "l" ? "☀ Côté lumière : ce qui t'éclaire" : "◐ Côté défi : ce qui te met au travail"}</span>
+        <div class="ess"><p>${esc(ESSENCE[c.n] || "")}</p><p class="ess-r"><b>${esc(ROLE_LABEL[g.cartes[i].role])}</b> · ${esc(g.cartes[i].lecture)}</p></div>
+        <p class="muted" style="margin:12px 0 2px;font-size:.82rem">Les phrases-clés de cette couleur : touche celles qui te parlent</p>
         <p class="kp">${esc(ph[0])}</p>
         <div class="ph">${ph.slice(1).map((x, j) => `<button type="button" data-i="${i}" data-j="${j + 1}"><i>♡</i><span>${esc(x)}</span></button>`).join("")}</div>
       </div></article>`;
@@ -325,13 +456,25 @@ $("#b-copy").onclick = async () => {
 /* Conclusion de Claude : avec le compte de la personne qui consulte la page, sinon une demande à copier */
 function drawData(){
   return sp.pos.map((p, i) => { const t = table[picked[i]], c = DECK[t.i], ph = t.side === "l" ? c.l : c.d;
-    return { position: p.l, sens_de_la_position: p.m, couleur: c.n, cote: t.side === "l" ? "lumière (ce qui éclaire)" : "défi (ce qui met au travail)", phrase_cle: ph[0], phrases_retenues: kept[i] || [] }; });
+    const gi = currentGuide().cartes[i];
+    return { position: p.l, sens_de_la_position: p.m, role: ROLE_LABEL[gi.role], couleur: c.n, sens_de_la_couleur: ESSENCE[c.n] || "", moment: gi.moment, cote: t.side === "l" ? "lumière (ce qui éclaire)" : "défi (ce qui met au travail)", lecture_guidee: gi.lecture, phrase_cle: ph[0], phrases_retenues: kept[i] || [] }; });
+}
+function currentGuide(){ return readingGuide(picked.map(k => ({ n: DECK[table[k].i].n, side: table[k].side })), sp, sp.cat); }
+function guideText(){
+  const g = currentGuide(), d = DIRECTION[g.direction];
+  return "Guide de lecture calculé pour ce tirage : tendance « " + d.label + " » (score " + g.score + "). " + d.consigne + " Levier principal suggéré par la famille de couleurs dominante : " + g.levier + ". Ton attendu pour le thème « " + sp.cat + " » : " + g.ton + ". " + RULES;
 }
 function aiPrompt(){
   const q = $("#q").value.trim();
   return "J'ai fait un tirage de cartes de couleurs pour réfléchir sur moi-même. Tirage : « " + sp.name + " » (" + sp.desc + "). Ma question : " + (q ? "« " + q + " »" : "pas de question précise") +
     ". Voici les cartes, le sens de leur position et les phrases qui m'ont parlé : " + JSON.stringify(drawData()) +
-    ". Fais-moi une conclusion en me tutoyant : une piste courte pour chaque carte en lien avec ma question, puis une synthèse de 3 ou 4 phrases qui répond à ma question, puis 2 questions à me poser. Ce sont des pistes de réflexion, jamais des certitudes ni des prédictions, sans conseil médical.";
+    ". Thème : « " + sp.cat + " ». " + guideText() +
+    " Écris : pour chaque carte, 2 phrases qui disent ce que la couleur, à cette place et de ce côté, apporte à ma question ; puis une réponse de 3 ou 4 phrases à ma question, dans la tendance du guide ; puis 2 questions à me poser pour avancer.";
+}
+function showTrend(){
+  const g = currentGuide(), d = DIRECTION[g.direction];
+  $("#trend").hidden = false;
+  $("#trend").innerHTML = `<span class="tr-chip tr-${g.direction}">${d.icon} ${d.label}</span><span>${esc(d.hint)} Levier : ${esc(g.levier.split(",")[0])}.</span>`;
 }
 function aiHtml(r){
   let h = (r.cartes || []).map((t, i) => sp.pos[i] ? `<div class="part"><b>${esc(sp.pos[i].l)}</b><p>${esc(t)}</p></div>` : "").join("");
@@ -367,7 +510,7 @@ async function askEndpoint(){
 }
 async function relay(path, extra){
   const res = await fetch(AI_ENDPOINT.replace(/\/+$/, "") + path, { method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tirage: sp.name, consigne: sp.desc, question: $("#q").value.trim(), cartes: drawData(), ...extra }) });
+    body: JSON.stringify({ tirage: sp.name, theme: sp.cat, consigne: sp.desc, question: $("#q").value.trim(), cartes: drawData(), guide: guideText(), ...extra }) });
   if (res.status === 429) throw { code: "rate_limited" };
   if (!res.ok) throw { code: "http_" + res.status };
   return res.json();
@@ -376,6 +519,7 @@ $("#b-ai").onclick = async () => {
   if (!sampleFn && !AI_ENDPOINT) return;
   const b = $("#b-ai"); b.disabled = true; b.textContent = "Claude réfléchit…";
   $("#ai-out").innerHTML = `<p class="muted wait">Claude relie ton tirage à ta question…</p>`;
+  showTrend();
   try {
     const lessons = AI_ENDPOINT ? [] : await lessonsFor();
     const insp = lessons.length ? " Voici ce que d'autres personnes ont dit avoir bien ou mal reçu lors de tirages proches (anonyme) ; inspire-t'en sans le recopier : " + JSON.stringify(lessons.map(l => l.lecon)) + "." : "";
@@ -479,7 +623,7 @@ $("#chat-send").onclick = async () => {
     let reply;
     if (AI_ENDPOINT){ reply = (await relay("/echange", { conclusion: conclusionText(), messages: chat })).reponse; }
     else if (sampleFn){
-      const ctx = "Tu accompagnes une personne qui a fait un tirage de cartes de couleurs pour réfléchir sur elle-même. Tu tutoies, en français simple et chaleureux, 2 à 5 phrases, en reformulant ce qui la touche et en finissant souvent par une question ouverte. Pas de certitudes, pas de prédictions, pas de conseil médical. Tirage : " + JSON.stringify({ tirage: sp.name, question: $("#q").value.trim(), cartes: drawData() }) + ". Conclusion proposée : " + conclusionText();
+      const ctx = "Tu accompagnes une personne qui a fait un tirage de cartes de couleurs pour réfléchir sur elle-même. Tu tutoies, en français simple et chaleureux, 2 à 5 phrases, en reformulant ce qui la touche et en finissant souvent par une question ouverte. Pas de certitudes absolues, pas de conseil médical. Ne te dérobe jamais : donne toujours une piste engagée. Tirage : " + JSON.stringify({ tirage: sp.name, theme: sp.cat, question: $("#q").value.trim(), cartes: drawData() }) + ". " + guideText() + " Conclusion proposée : " + conclusionText();
       const r = await sampleFn([{ role: "user", content: ctx + "\n\nVoici ce que la personne te dit : " + chat[0].content }, ...chat.slice(1)].map((m, i) => i === 0 ? m : m), { modelTier: "default", cache: false });
       reply = r.text;
     }
@@ -491,18 +635,18 @@ $("#chat-txt").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey){ e.preve
 // Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
-function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; $("#chat-mic").classList.remove("on"); } }
+function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; } $("#chat-mic").classList.remove("on"); $("#chat-mic-lbl").textContent = "Dicter mon retour à voix haute"; }
 if (SR){
-  $("#chat-mic").hidden = false; $("#chat-mic-help").textContent = "Touche 🎙 pour parler, touche à nouveau pour arrêter.";
+  $("#chat-mic").hidden = false; $("#chat-mic-help").hidden = true;
   $("#chat-mic").onclick = () => {
     if (rec) return stopMic();
     try {
       rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true;
       const base = $("#chat-txt").value ? $("#chat-txt").value + " " : "";
       rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; };
-      rec.onerror = () => { stopMic(); $("#chat-mic").hidden = true; $("#chat-mic-help").textContent = "La dictée n'est pas disponible ici : utilise le micro de ton clavier."; };
+      rec.onerror = () => { stopMic(); $("#chat-mic").hidden = true; $("#chat-mic-help").hidden = false; };
       rec.onend = () => stopMic();
-      rec.start(); $("#chat-mic").classList.add("on");
+      rec.start(); $("#chat-mic").classList.add("on"); $("#chat-mic-lbl").textContent = "J'écoute… touche pour arrêter";
     } catch { stopMic(); }
   };
 }
