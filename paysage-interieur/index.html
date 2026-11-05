@@ -332,6 +332,10 @@ const STEPS=[
      {fr:"douce et voilée, un matin d’été",p:"ete"},
      {fr:"claire et vive, un jour de printemps",p:"printemps"},
      {fr:"nette et froide, un matin d’hiver",p:"hiver"}]},
+   {id:"cx",q:"Le bouquet qui te ferait le plus plaisir",opts:[
+     {fr:"une seule sorte de fleur, en plusieurs tons",cx:"mono",en:"tone-on-tone, a single color family in many shades",frc:"ton sur ton, une seule famille de couleurs en plusieurs nuances"},
+     {fr:"quelques fleurs de couleurs proches, qui s’accordent bien",cx:"nuance",en:"a harmonious, nuanced mix of neighbouring colors",frc:"un mélange nuancé de couleurs voisines"},
+     {fr:"un bouquet des champs, toutes les couleurs mélangées",cx:"explosif",en:"an exuberant multicolor mix with many vivid accents",frc:"un mélange multicolore et joyeux, avec beaucoup d’accents vifs"}]},
    {id:"eviter",type:"text",q:"Une couleur que tu ne veux surtout pas sur ton tapis ?",ph:"Facultatif"}
  ]},
  {id:"paysage",label:"Ton paysage",title:"Ton paysage",scape:true},
@@ -463,6 +467,7 @@ function promptText(lang){
     if(t1)p.push(`Relief: ${t1.tuft}.`);
     if(t2)p.push(`Texture: ${t2.tex}.`);
     p.push(`Color palette: ${P?P.en:"harmonious natural colors"}${av?`, no ${av}`:""}.`);
+    if(opt("cx"))p.push(`Color mood: ${opt("cx").en}.`);
     if(ajout)p.push(`Integrate one small, very stylized abstract motif subtly inspired by: ${ajout} (simple shape or color accent, not a literal depiction).`);
     p.push("Visible wool fibers, high-low tufting, soft natural light, rug lying on a light wooden floor, serene and meditative atmosphere, highly detailed.");
     return p.join(" ");
@@ -474,6 +479,7 @@ function promptText(lang){
   if(t1)p.push(`Relief : ${t1.tuftfr}.`);
   if(t2)p.push(`Texture : ${t2.texfr}.`);
   p.push(`Palette : ${P?P.frl:"couleurs naturelles et harmonieuses"}${av?`, sans ${av}`:""}.`);
+  if(opt("cx"))p.push(`Ambiance des couleurs : ${opt("cx").frc}.`);
   if(ajout)p.push(`Intégrer un petit motif abstrait très stylisé, discrètement inspiré de : ${ajout} (une forme simple ou une touche de couleur, pas une représentation réaliste).`);
   p.push("Fibres de laine visibles, différentes hauteurs de laine, lumière naturelle douce, tapis posé sur un parquet clair, atmosphère sereine et méditative, très détaillé.");
   return p.join(" ");

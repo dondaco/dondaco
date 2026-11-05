@@ -96,6 +96,7 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
         <p class="note" id="seedinfo"></p>
       </div>
       <div class="group"><span class="lab">Palette</span><div class="chips" data-group="pal"></div></div>
+      <div class="group"><span class="lab">Couleurs</span><div class="chips" data-group="coul"></div></div>
       <div class="group"><span class="lab">Contour</span><div class="chips" data-group="shape"></div></div>
       <div class="group"><span class="lab">Densité</span><div class="chips" data-group="dens"></div></div>
       <div class="group"><span class="lab">Relief</span><div class="chips" data-group="relief"></div></div>
@@ -105,7 +106,7 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
         <ul class="rules">
           <li>Cut 1,5 cm pour le sol et l’eau, loop 3 cm, cut 4 cm pour la mousse, cut 4 cm brossé pour les zones feutrées, pompons.</li>
           <li>Aucun élément de moins de 1 cm ; rivage de 1 cm minimum entre l’eau et le reste.</li>
-          <li>Seulement les laines du nuancier Tufting Shop.</li>
+          <li>Seulement les laines du nuancier Tufting Shop ; les petites baies font au moins 2 cm et restent à 1 cm les unes des autres.</li>
           <li>Dessin vu de face, pas encore inversé pour le tuftage.</li>
         </ul>
       </div>
@@ -124,24 +125,37 @@ const LAINES=[["061","Noir","#131314"],["1B07","Anthracite Grey","#36343D"],["00
 const Y={};LAINES.forEach(([ref,nom,hex])=>{if(ref)Y[ref]={ref,nom,hex,rgb:[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16))};});
 
 /* ---------- Palettes du biome (références de laine) ---------- */
+/* dom : la famille dominante ; ana : familles voisines (nuancé) ; pop : familles vives (explosif) */
 const PALS={
-  printemps:{fr:"Printemps",ground:"153",mounds:["803C","1J08","1I06","802C"],water:["ARS3F15","274","3B15"],shore:"009",accent:["447","806C"]},
-  ete:{fr:"Été",ground:"206",mounds:["209","169","192","1I06"],water:["218","278","264"],shore:"499",accent:["336","597"]},
-  automne:{fr:"Automne",ground:"403",mounds:["1I11","381","205","1I06"],water:["300","3A17","264"],shore:"368",accent:["423","301"]},
-  hiver:{fr:"Hiver",ground:"192",mounds:["205","1B07","206","209"],water:["110","ARS3F15","561"],shore:"000",accent:["000","4A13"]}
+  printemps:{fr:"Printemps",ground:["153","1I06"],water:["300","ARS3F15","274","3B15"],shore:"009",
+    dom:["802C","803C","1J08","153","1I06","205"],ana:[["429","447","3J01"],["459","498"]],
+    pop:[["806C","485","4E08"],["597","585"],["313","2C13","3H04"],["ARS3F15","274"],["447","3J01"]],accent:["447","806C","000"]},
+  ete:{fr:"Été",ground:["206","209"],water:["300","218","278","264"],shore:"499",
+    dom:["209","169","206","1I06","192"],ana:[["336","499","498"],["597","278"]],
+    pop:[["517","485","464"],["597","585","502"],["218","278","264"],["429","4N05"]],accent:["336","597","4N05"]},
+  automne:{fr:"Automne",ground:["403","381"],water:["300","3A17","264","561"],shore:"368",
+    dom:["1I06","403","381","1I11","205","192"],ana:[["353","3H04","423"],["4L11","351","4H11"]],
+    pop:[["301","2A11","452"],["2024C","325"],["502","464"],["3A17","264"],["423","313"]],accent:["423","301","2024C"]},
+  hiver:{fr:"Hiver",ground:["192","205"],water:["110","ARS3F15","3B15","561"],shore:"000",
+    dom:["209","206","205","192","1B07"],ana:[["096","113","056"],["AD10","4N05","110"]],
+    pop:[["4A13","4A08","452"],["BRB 1530","806C"],["585","502"],["3B15","2J10"],["3J01","447"]],accent:["000","4A13","3J01"]}
 };
 const OPTS={
   pal:Object.entries(PALS).map(([k,p])=>[k,p.fr]),
   shape:[["rect","Rectangle"],["organique","Organique"],["ovale","Ovale"]],
   dens:[["epure","Épuré"],["equilibre","Équilibré"],["foisonnant","Foisonnant"]],
   relief:[["lisse","Lisse"],["doux","Doux"],["sculpte","Sculpté"]],
-  eau:[["petite","Petit étang"],["moyenne","Étang"],["grande","Grande lagune"]]
+  eau:[["petite","Petit étang"],["moyenne","Étang"],["grande","Grande lagune"]],
+  coul:[["mono","Ton sur ton"],["nuance","Nuancé"],["explosif","Explosif"]]
 };
 const TECH={cut15:"Cut 1,5 cm",loop3:"Loop 3 cm",cut4:"Cut 4 cm",brush4:"Cut 4 cm brossé",pompon:"Pompons"};
 const TH={cut15:1.5,loop3:3,cut4:4,brush4:4,pompon:4};
-let ST={seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",view:"laine"};
-try{const s=JSON.parse(localStorage.getItem("proto-mousse-v1"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
-const save=()=>{try{localStorage.setItem("proto-mousse-v1",JSON.stringify(ST))}catch(e){}};
+const lum=ref=>{const c=Y[ref].rgb;return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+const fam=a=>a.filter(r=>Y[r]).sort((x,y)=>lum(y)-lum(x));
+Object.values(PALS).forEach(P=>{P.dom=fam(P.dom);P.ana=P.ana.map(fam);P.pop=P.pop.map(fam);P.accent=P.accent.filter(r=>Y[r]);});
+let ST={seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",view:"laine"};
+try{const s=JSON.parse(localStorage.getItem("proto-mousse-v2"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
+const save=()=>{try{localStorage.setItem("proto-mousse-v2",JSON.stringify(ST))}catch(e){}};
 
 /* ---------- Hasard reproductible et bruit ---------- */
 function rng(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
@@ -177,7 +191,7 @@ function generate(p,G){
   const r=rng(p.seed.trim().toLowerCase()+"|"+p.v),n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r);
   const P=PALS[p.pal];
   const zones=[null];const Z=(o)=>(zones.push(o),zones.length-1);
-  const zGround=Z({ref:P.ground,tech:"cut15",kind:"sol"}),zShore=Z({ref:P.shore,tech:"cut15",kind:"rivage"});
+  const zGround=Z({ref:P.ground[0],tech:"cut15",kind:"sol"}),zGround2=Z({ref:P.ground[1],tech:"cut15",kind:"sol"}),zShore=Z({ref:P.shore,tech:"cut15",kind:"rivage"});
   const zWater=P.water.map((ref,i)=>Z({ref,tech:"cut15",kind:"eau"}));
   const zRing=Z({ref:P.water[0],tech:"loop3",kind:"ride"});
   // contour du tapis (distance signée en cm, négative dedans)
@@ -202,10 +216,10 @@ function generate(p,G){
   const dInP=distT(lake,w,h),notLake=new Uint8Array(N);for(let o=0;o<N;o++)notLake[o]=lake[o]?0:1;
   const dOutP=distT(notLake,w,h);
   const zone=new Uint16Array(N),H=new Float32Array(N);
-  const t1=2.2,t2=4.8;
+  const t1=2.2,t2=4.6,t3=8;
   for(let o=0;o<N;o++){const i=o%w,j=(o-i)/w,x=i/G,y=j/G;
-    if(lake[o]){const d=dInP[o]/G,wob=(n3(x/7,y/7)-.5)*1.1;zone[o]=d<t1+wob*.6?zWater[0]:d<t2+wob?zWater[1]:zWater[2];H[o]=1.5;}
-    else if(inRug[o]){const d=dOutP[o]/G,sw=1.3+n3(x/6+9,y/6)*.7;if(d<sw){zone[o]=zShore;H[o]=1.5;}else{zone[o]=zGround;H[o]=1.5;}}}
+    if(lake[o]){const d=dInP[o]/G,wob=(n3(x/7,y/7)-.5)*1.1;zone[o]=d<t1+wob*.6?zWater[0]:d<t2+wob?zWater[1]:d<t3+wob?zWater[2]:zWater[3];H[o]=1.5;}
+    else if(inRug[o]){const d=dOutP[o]/G,sw=1.3+n3(x/6+9,y/6)*.7;if(d<sw){zone[o]=zShore;H[o]=1.5;}else{zone[o]=fbm(n1,x/14+31,y/14+7)>.6?zGround2:zGround;H[o]=1.5;}}}
   // rides dans l'eau : anneau en loop + point central
   const nRing={epure:1,equilibre:2,foisonnant:3}[p.dens];let rings=0;const ringsAt=[];
   for(let t=0;t<400&&rings<nRing;t++){const i=Math.floor(r()*w),j=Math.floor(r()*h),o=j*w+i;if(!lake[o])continue;
@@ -226,31 +240,42 @@ function generate(p,G){
     const edge=Math.exp(-Math.max(0,-s)/7),shore=Math.exp(-(dl-rad)/5);if(r()>.18+.82*Math.max(edge,shore))continue;
     let ok=true,near=null,nd=1e9;for(const m of mounds){const d=Math.hypot(m.x-x,m.y-y);if(d<Math.max(m.r,rad)*.62){ok=false;break;}if(d<m.r+rad+2&&d<nd){nd=d;near=m;}}
     if(!ok)continue;
-    const opts=P.mounds.filter(c=>!near||c!==near.ref);const ref=opts[Math.floor(r()*opts.length)];
-    mounds.push({x,y,r:rad,ref,tech:pickTech(),p1:r()*6.28,p2:r()*6.28});got+=Math.PI*rad*rad*.8;}
+    const pickFam=()=>{const u=r();if(p.coul==="mono")return P.dom;
+      if(p.coul==="nuance")return u<.7?P.dom:P.ana[Math.floor(r()*P.ana.length)];
+      if(near&&r()<.45)return near.fam;return u<.3?P.dom:u<.5?P.ana[Math.floor(r()*P.ana.length)]:P.pop[Math.floor(r()*P.pop.length)];};
+    const F=pickFam(),pool=F.filter(c=>(!near||c!==near.ref)&&!P.ground.includes(c)),ref=(pool.length?pool:F)[Math.floor(r()*(pool.length||F.length))];
+    mounds.push({x,y,r:rad,ref,fam:F,tech:pickTech(),p1:r()*6.28,p2:r()*6.28});got+=Math.PI*rad*rad*.8;}
   // pompons : grappes près de la mousse
   const nCl=Math.max(0,{epure:0,equilibre:1,foisonnant:3}[p.dens]+(relief==="sculpte"?1:0)-(relief==="lisse"?1:0));
   const poms=[];
   for(let c=0,t=0;c<nCl&&t<300;t++){const m=mounds[Math.floor(r()*mounds.length)];if(!m)break;
     const a=r()*6.28,cx=m.x+Math.cos(a)*(m.r+2),cy=m.y+Math.sin(a)*(m.r+2),i=Math.floor(cx*G),j=Math.floor(cy*G);
     if(i<0||j<0||i>=w||j>=h)continue;const o=j*w+i;if(lake[o]||dOutP[o]/G<6||sdf[o]>-3)continue;
-    const ref=r()<.75?P.accent[0]:P.accent[1],n=3+Math.floor(r()*5);
+    const cpool=p.coul==="mono"?P.dom.slice(0,2):p.coul==="nuance"?P.accent.slice(0,2):P.accent.concat(...P.pop.map(f=>f.slice(0,1)));
+    const ref=cpool[Math.floor(r()*cpool.length)],ref2=cpool[Math.floor(r()*cpool.length)],n=3+Math.floor(r()*5);
     for(let q=0,tt=0;q<n&&tt<60;tt++){const pr=1.5+r()*.9,qa=r()*6.28,qd=q?r()*5:0,qx=cx+Math.cos(qa)*qd,qy=cy+Math.sin(qa)*qd;
       if(poms.some(P2=>Math.hypot(P2.x-qx,P2.y-qy)<P2.r+pr+.15))continue;
       const qi=Math.floor(qx*G),qj=Math.floor(qy*G);if(qi<0||qj<0||qi>=w||qj>=h||lake[qj*w+qi]||dOutP[qj*w+qi]/G<pr+1.2||sdf[qj*w+qi]>-pr-1)continue;
-      poms.push({x:qx,y:qy,r:pr,ref});q++;}
+      poms.push({x:qx,y:qy,r:pr,ref:p.coul==="explosif"&&r()<.35?ref2:ref});q++;}
     c++;}
   // tamponnage des monticules (ordre = superposition)
   const zM=new Map();const zoneFor=(ref,tech,kind)=>{const key=ref+"|"+tech;if(!zM.has(key))zM.set(key,Z({ref,tech,kind}));return zM.get(key);};
-  for(const m of mounds){const z=zoneFor(m.ref,m.tech,"mousse"),b=Math.ceil(m.r*1.25*G),ci=m.x*G,cj=m.y*G,top=TH[m.tech];
+  for(const m of mounds){const fi=m.fam.indexOf(m.ref);m.core=(m.tech!=="loop3"&&m.r>=4.2&&m.fam.length>1&&r()<.75)?m.fam[fi>0?fi-1:fi+1]:null;
+    m.berries=[];if(p.coul!=="mono"&&m.r>=5&&r()<(p.coul==="explosif"?.45:.2)){const bp=p.coul==="explosif"?P.accent.concat(...P.pop.map(f=>f.slice(-1))):P.accent,bref=bp[Math.floor(r()*bp.length)];
+      for(let t=0;t<40&&m.berries.length<5;t++){const a=r()*6.28,d=r()*(m.r-2.4),bx=m.x+Math.cos(a)*d,by=m.y+Math.sin(a)*d,br=1+r()*.3;
+        if(m.berries.every(B=>Math.hypot(B.x-bx,B.y-by)>B.r+br+1))m.berries.push({x:bx,y:by,r:br,ref:bref});}}}
+  for(const m of mounds){const z=zoneFor(m.ref,m.tech,"mousse"),zc=m.core?zoneFor(m.core,m.tech,"mousse"):0,b=Math.ceil(m.r*1.25*G),ci=m.x*G,cj=m.y*G,top=TH[m.tech];
     for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){
       const o=y*w+x;if(lake[o]||dOutP[o]/G<1.3)continue;if(!organic&&!inRug[o])continue;
       const dx=x/G-m.x,dy=y/G-m.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx),rad=m.r*(1+.06*Math.sin(2*a+m.p1)+.05*Math.sin(5*a+m.p2))+(fbm(n3,x/G/2.2,y/G/2.2)-.5)*2.2;
       if(d>=rad)continue;const ins=rad-d,u=Math.min(1,d/rad);
-      zone[o]=z;if(m.tech==="loop3"){H[o]=1.5+(top-1.5)*sstep(0,.9,ins)+.4*(1-u*u);}
+      zone[o]=zc&&ins>Math.max(1.8,rad*.45)+(fbm(n1,x/G/2+m.p2,y/G/2)-.5)*1.4?zc:z;if(m.tech==="loop3"){H[o]=1.5+(top-1.5)*sstep(0,.9,ins)+.4*(1-u*u);}
       else{const dome=Math.sqrt(Math.max(0,1-u*u*u)),lump=(fbm(n2,x/G/1.6+m.p1,y/G/1.6)-.5)*(m.tech==="brush4"?.5:1.3);
         H[o]=1.5+(top-1.5)*sstep(0,1.2,ins)+dome*Math.min(2.4,m.r*.32)+lump*sstep(0,2,ins);}
-      inRug[o]=1;}}
+      inRug[o]=1;}
+    for(const B of m.berries){const zb=zoneFor(B.ref,"loop3","baie"),bb=Math.ceil(B.r*G)+1,bi=B.x*G,bj=B.y*G;
+      for(let y=Math.max(0,Math.floor(bj-bb));y<Math.min(h,bj+bb);y++)for(let x=Math.max(0,Math.floor(bi-bb));x<Math.min(w,bi+bb);x++){
+        const o=y*w+x;if(Math.hypot(x/G-B.x,y/G-B.y)<B.r&&zone[o]&&zones[zone[o]].kind==="mousse"){zone[o]=zb;H[o]=Math.max(1.5,H[o]-.8);}}}}
   for(const q of poms){const z=zoneFor(q.ref,"pompon","pompon"),b=Math.ceil(q.r*G)+1,ci=q.x*G,cj=q.y*G;
     for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){
       const o=y*w+x,d=Math.hypot(x/G-q.x,y/G-q.y);if(d>=q.r)continue;zone[o]=z;H[o]=Math.max(H[o],3.2+Math.sqrt(q.r*q.r-d*d)*1.1);inRug[o]=1;}}
