@@ -62,10 +62,13 @@ textarea{min-height:90px;resize:vertical}
 .chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
-.scape{display:grid;grid-template-columns:minmax(0,300px) 1fr;gap:28px;align-items:start}
+.scape{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:28px;align-items:start}
 @media (max-width:640px){.scape{grid-template-columns:1fr}}
 .canvas-wrap{display:flex;flex-direction:column;gap:8px;align-items:center}
-canvas{width:100%;max-width:300px;aspect-ratio:1;height:auto}
+canvas{width:100%;max-width:340px;aspect-ratio:7/10;height:auto}
+.rugbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.rugleg{display:flex;flex-direction:column;gap:4px;font-size:13px;max-width:340px;width:100%}
+.rugleg span.sw2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.15)}
 .layers{display:flex;flex-direction:column;gap:16px;min-width:0}
 .layer{display:flex;flex-direction:column;gap:6px;border-bottom:1px dashed var(--line);padding-bottom:14px}
 .layer:last-child{border-bottom:0}
@@ -109,6 +112,7 @@ details .chips{margin-top:8px}
   <main id="main"></main>
 </div>
 
+<script src="moteur.js"></script>
 <script>
 /* ---------- Couches du paysage ---------- */
 const LAYERS = {
@@ -183,7 +187,6 @@ function curPal(){
   const n={};["c1","c2","c3","c4","c5","c6","c7","c8"].forEach(k=>{const o=opt(k);if(o)n[o.p]=(n[o.p]||0)+1;});
   const b=Object.entries(n).sort((x,y)=>y[1]-x[1])[0];return b?b[0]:null;
 }
-function sceneC(){const k=curPal();return Object.assign({},C0,k?PALS[k].scene:{});}
 const itemLayer={};Object.entries(LAYERS).forEach(([L,o])=>Object.keys(o.items).forEach(k=>{if(k!=="aucune")itemLayer[k]=L;}));
 
 /* ---------- Questions ---------- */
@@ -371,88 +374,28 @@ function compose(){
 }
 function answeredCount(){return Object.keys(S.a).filter(k=>Q[k]&&Q[k].opts).length;}
 
-/* ---------- Dessin du paysage vu du dessus ---------- */
-function rng(seed){let h=2166136261;for(const c of seed)h=Math.imul(h^c.charCodeAt(0),16777619);return()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
-const C0={ground:"#DCCFB3",groundD:"#C7B898",line:"#A8956F",water:"#8FB5BF",waterL:"#B9D3D8",waterD:"#6E98A4",green:"#7E9468",greenD:"#5F7550",stone:"#A29C90",stoneD:"#7F7A70",path:"#F2EADA",sun:"#E8C16A",moon:"#EFE8D2",lava:"#B5523A",white:"#FFFFFF"};
-
-function drawScape(cv,comp){
-  const C=sceneC();
-  const dpr=window.devicePixelRatio||1,S0=600;cv.width=S0*dpr;cv.height=S0*dpr;
-  const x=cv.getContext("2d");x.scale(dpr,dpr);
-  const r=rng(JSON.stringify(comp)+(window.__name||"")),R=(a,b)=>a+r()*(b-a);
-  const d=(opt("t3")&&opt("t3").d)||1, N=k=>Math.max(1,Math.round(k*d));
-  const sh=opt("t4")||{shape:"organic"};
-  const cx=300,cy=300,rad=sh.shape==="organic"?250:276;
-  const ph1=R(0,6),ph2=R(0,6);
-  const outline=(dy=0)=>{x.beginPath();
-    if(sh.shape==="round")x.arc(cx,cy+dy,rad,0,7);
-    else if(sh.shape==="rect")x.rect(cx-rad,cy-rad*.72+dy,rad*2,rad*1.44);
-    else{for(let a=0;a<=Math.PI*2+.01;a+=.05){const rr=rad*(1+.09*Math.sin(a*3+ph1)+.06*Math.sin(a*5+ph2)+.03*Math.sin(a*9+ph1));x.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a)*.86+dy);}x.closePath();}};
-  // touffe de laine en relief (style mousse)
-  const tuft=(px,py,s,col)=>{x.beginPath();x.arc(px,py,s,0,7);x.fillStyle=col;x.fill();
-    for(let k=0;k<s*2.2;k++){const a=R(0,7),q=Math.sqrt(r())*s;x.beginPath();x.arc(px+q*Math.cos(a),py+q*Math.sin(a),R(1.2,2.6),0,7);x.fillStyle=r()<.5?"rgba(255,255,255,.22)":"rgba(0,0,0,.12)";x.fill();}
-    x.strokeStyle="rgba(0,0,0,.14)";x.lineWidth=1.5;x.beginPath();x.arc(px,py,s,0,7);x.stroke();};
-  const tcol=(curPal()&&PALS[curPal()].tufts)||["#CDBE9C","#BFAF8C","#D6C9A9","#B5A27E"];
-  x.clearRect(0,0,S0,S0);
-  // ombre + bord du tapis
-  x.save();outline(6);x.fillStyle="rgba(0,0,0,.14)";x.filter="blur(8px)";x.fill();x.restore();
-  x.save();outline(0);x.clip();
-  const isle=comp.eau==="ile";
-  x.fillStyle=isle?C.water:C.ground;x.fillRect(0,0,S0,S0);
-  if(isle){ // vagues + île
-    x.strokeStyle=C.waterL;x.lineWidth=2;for(let i=0;i<5;i++){x.beginPath();x.arc(cx,cy,250-i*14,0,7);x.setLineDash([10,14]);x.stroke();}x.setLineDash([]);
-    x.beginPath();for(let a=0;a<=Math.PI*2+.01;a+=.1){const rr=175+18*Math.sin(a*3+1)+10*Math.sin(a*5);x.lineTo(cx+rr*Math.cos(a),cy+rr*Math.sin(a));}x.closePath();x.fillStyle=C.ground;x.fill();x.save();x.clip();
-  }
-  // mer sur un bord
-  if(comp.eau==="mer"){x.beginPath();x.moveTo(0,600);for(let X=0;X<=600;X+=10)x.lineTo(X,430+18*Math.sin(X/45));x.lineTo(600,600);x.fillStyle=C.water;x.fill();
-    x.strokeStyle=C.waterL;x.lineWidth=2.5;for(let i=1;i<5;i++){x.beginPath();for(let X=0;X<=600;X+=10)x.lineTo(X,430+i*26+14*Math.sin(X/40+i));x.stroke();}}
-  // relief
-  const rings=(px,py,n,step,col,w,wob)=>{x.strokeStyle=col;x.lineWidth=w;const ph=R(0,6);for(let i=1;i<=n;i++){x.beginPath();for(let a=0;a<=Math.PI*2+.05;a+=.08){const rr=i*step*(1+wob*Math.sin(a*3+ph)+wob*.6*Math.sin(a*5+ph*2));x.lineTo(px+rr*Math.cos(a),py+rr*Math.sin(a));}x.stroke();}};
-  if(comp.relief==="plat"){x.strokeStyle=C.groundD;x.lineWidth=1.5;for(let i=0;i<4;i++){x.beginPath();const y=140+i*95;for(let X=0;X<=600;X+=20)x.lineTo(X,y+6*Math.sin(X/90+i));x.stroke();}}
-  if(comp.relief==="doux"){rings(200,210,6,16,C.groundD,2,.12);rings(400,330,5,17,C.groundD,2,.14);}
-  if(comp.relief==="marque"){rings(220,200,11,10,C.line,1.6,.18);rings(390,260,9,10,C.line,1.6,.2);}
-  if(comp.relief==="volcan"){rings(300,260,10,12,C.line,1.8,.1);x.beginPath();x.arc(300,260,22,0,7);x.fillStyle=C.lava;x.fill();x.beginPath();x.arc(300,260,10,0,7);x.fillStyle="#E08A52";x.fill();}
-  if(comp.relief==="dunes"){x.strokeStyle=C.groundD;x.lineWidth=2.2;for(let i=0;i<14;i++){x.beginPath();for(let X=0;X<=600;X+=8)x.lineTo(X,40+i*40+16*Math.sin(X/60+i*.7));x.stroke();}}
-  if(comp.relief==="vallee"){rings(110,260,9,14,C.line,1.6,.15);rings(500,330,9,14,C.line,1.6,.15);}
-  // touffes en relief, plus nombreuses quand le relief est marqué
-  const reliefK={plat:3,doux:9,marque:16,volcan:10,dunes:6,vallee:12}[comp.relief]||8;
-  for(let i=0;i<N(reliefK);i++){const a=R(0,7),q=Math.sqrt(r())*rad*.85;tuft(cx+q*Math.cos(a),cy+q*Math.sin(a)*.86,R(14,34),tcol[i%tcol.length]);}
-  // eau
-  const river=()=>{const p=[[40,170],[200,240],[300,330],[440,330],[560,470]];x.lineCap="round";
-    [[24,C.waterD],[18,C.water],[4,C.waterL]].forEach(([w,c])=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(...p[0]);x.bezierCurveTo(130,150,180,330,300,330);x.bezierCurveTo(400,330,470,300,560,470);x.stroke();});};
-  if(comp.eau==="riviere")river();
-  if(comp.eau==="lac"){x.beginPath();for(let a=0;a<=Math.PI*2+.01;a+=.1){const rr=78+12*Math.sin(a*2+1)+8*Math.sin(a*3);x.lineTo(320+rr*1.2*Math.cos(a),340+rr*Math.sin(a));}x.closePath();x.fillStyle=C.water;x.fill();x.strokeStyle=C.waterD;x.lineWidth=3;x.stroke();
-    x.strokeStyle=C.waterL;x.lineWidth=2;[40,22].forEach(q=>{x.beginPath();x.ellipse(330,335,q*1.4,q,0,0,7);x.stroke();});}
-  if(comp.eau==="source"){x.beginPath();x.arc(330,330,20,0,7);x.fillStyle=C.water;x.fill();x.strokeStyle=C.waterD;x.lineWidth=1.6;[32,44,56].forEach(q=>{x.beginPath();x.arc(330,330,q,0,7);x.stroke();});}
-  if(comp.eau==="cascade"){x.lineCap="round";[[18,C.waterD],[13,C.water]].forEach(([w,c])=>{x.strokeStyle=c;x.lineWidth=w;x.beginPath();x.moveTo(180,40);x.bezierCurveTo(200,120,250,180,290,250);x.stroke();});
-    x.beginPath();x.ellipse(310,320,70,52,0,0,7);x.fillStyle=C.water;x.fill();x.strokeStyle=C.white;x.lineWidth=3;for(let i=0;i<7;i++){x.beginPath();x.moveTo(275+i*9,252);x.lineTo(278+i*9,285);x.stroke();}
-    x.strokeStyle=C.waterL;x.lineWidth=2;x.beginPath();x.ellipse(315,330,40,28,0,0,7);x.stroke();}
-  // pierre
-  if(comp.mineral==="galets"){for(let i=0;i<N(16);i++){const px=R(330,520),py=R(380,520),w=R(7,15);x.beginPath();x.ellipse(px,py,w,w*.7,R(0,3),0,7);x.fillStyle=C.stone;x.fill();x.beginPath();x.ellipse(px-w*.25,py-w*.2,w*.35,w*.2,0,0,7);x.fillStyle="rgba(255,255,255,.35)";x.fill();}}
-  if(comp.mineral==="rochers"){for(let i=0;i<N(5);i++){const px=R(360,500),py=R(390,500),s=R(20,36);x.beginPath();for(let k=0;k<7;k++){const a=k/7*Math.PI*2,rr=s*R(.75,1.1);x.lineTo(px+rr*Math.cos(a),py+rr*Math.sin(a));}x.closePath();x.fillStyle=C.stone;x.fill();x.strokeStyle=C.stoneD;x.lineWidth=2;x.stroke();}}
-  if(comp.mineral==="falaise"){x.beginPath();x.moveTo(600,0);for(let y=0;y<=600;y+=18)x.lineTo(500+R(-18,18)+20*Math.sin(y/80),y);x.lineTo(600,600);x.fillStyle=C.stone;x.fill();x.strokeStyle=C.stoneD;x.lineWidth=2;for(let i=0;i<8;i++){x.beginPath();const y=R(40,560);x.moveTo(520,y);x.lineTo(590,y+R(-10,10));x.stroke();}}
-  // végétation
-  const tree=(px,py,s)=>{x.beginPath();x.arc(px,py,s,0,7);x.fillStyle=C.green;x.fill();x.beginPath();x.arc(px-s*.25,py-s*.25,s*.45,0,7);x.fillStyle="rgba(255,255,255,.12)";x.fill();x.strokeStyle=C.greenD;x.lineWidth=1.5;x.beginPath();x.arc(px,py,s,0,7);x.stroke();};
-  if(comp.vegetation==="arbre"){x.beginPath();x.arc(175,330,64,0,7);x.fillStyle="rgba(0,0,0,.08)";x.fill();tree(170,320,56);x.strokeStyle=C.greenD;x.lineWidth=2;[38,22].forEach(q=>{x.beginPath();x.arc(170,320,q,0,7);x.stroke();});}
-  if(comp.vegetation==="foret"){for(let i=0;i<N(46);i++){const a=R(0,7),rr=Math.sqrt(r())*110;tree(170+rr*Math.cos(a)*1.1,190+rr*Math.sin(a)*.9,R(9,16));}}
-  if(comp.vegetation==="clairiere"){for(let i=0;i<N(34);i++){const a=i/N(34)*Math.PI*2+R(-.1,.1),rr=R(70,100);tree(200+rr*Math.cos(a),220+rr*Math.sin(a),R(10,15));}}
-  if(comp.vegetation==="prairie"){x.strokeStyle=C.green;x.lineWidth=1.8;x.lineCap="round";for(let i=0;i<N(260);i++){const px=R(40,560),py=R(60,560),a=R(-.5,.5);x.beginPath();x.moveTo(px,py);x.lineTo(px+7*Math.sin(a),py-9*Math.cos(a));x.stroke();}}
-  if(comp.vegetation==="fleurs"){const fc=["#E3A6B5","#F0D27A","#FFFFFF","#C7A3D9","#E58E6B"];for(let i=0;i<N(70);i++){const px=R(50,330),py=R(80,560);x.beginPath();x.arc(px,py,R(3,6),0,7);x.fillStyle=fc[Math.floor(r()*fc.length)];x.fill();}}
-  if(comp.vegetation==="mousse"){for(let i=0;i<N(9);i++){const px=R(80,320),py=R(120,480);for(let k=0;k<6;k++){x.beginPath();x.arc(px+R(-20,20),py+R(-14,14),R(10,20),0,7);x.fillStyle="rgba(126,148,104,.35)";x.fill();}}}
-  // chemin
-  if(comp.chemin==="sentier"){x.strokeStyle=C.path;x.lineWidth=5;x.lineCap="round";x.setLineDash([2,12]);x.beginPath();x.moveTo(300,590);x.bezierCurveTo(240,470,380,420,300,330);x.bezierCurveTo(240,260,320,170,290,60);x.stroke();x.setLineDash([]);}
-  // ciel (posé en haut du tapis)
-  if(comp.ciel==="soleil"){x.beginPath();x.arc(385,175,30,0,7);x.fillStyle=C.sun;x.fill();x.strokeStyle=C.sun;x.lineWidth=2;[44,56].forEach(q=>{x.beginPath();x.arc(385,175,q,0,7);x.stroke();});}
-  if(comp.ciel==="lune"){x.beginPath();x.arc(385,175,30,0,7);x.fillStyle=C.moon;x.fill();x.beginPath();x.arc(399,165,26,0,7);x.fillStyle=isle?C.water:C.ground;x.fill();}
-  if(comp.ciel==="etoiles"){x.fillStyle=C.white;for(let i=0;i<N(26);i++){const px=R(300,540),py=R(40,190),s=R(3,7);x.beginPath();x.moveTo(px,py-s);x.lineTo(px+s*.3,py);x.lineTo(px,py+s);x.lineTo(px-s*.3,py);x.closePath();x.fill();x.beginPath();x.moveTo(px-s,py);x.lineTo(px,py+s*.3);x.lineTo(px+s,py);x.lineTo(px,py-s*.3);x.closePath();x.fill();}}
-  if(comp.ciel==="brume"){x.strokeStyle="rgba(255,255,255,.55)";x.lineCap="round";for(let i=0;i<N(6);i++){x.lineWidth=R(10,20);x.beginPath();const y=R(70,230),x0=R(60,250);x.moveTo(x0,y);x.lineTo(x0+R(140,260),y+R(-8,8));x.stroke();}}
-  if(comp.ciel==="nuages"){for(let i=0;i<N(3);i++){const px=R(330,500),py=R(70,170);for(let k=0;k<5;k++){x.beginPath();x.arc(px+k*13-26,py+R(-6,6),R(12,20),0,7);x.fillStyle="rgba(255,255,255,.85)";x.fill();}}}
-  if(isle)x.restore();
-  x.restore();
-  // bordure tuftée
-  outline(0);x.strokeStyle="rgba(0,0,0,.14)";x.lineWidth=6;x.stroke();
+/* ---------- Le tapis : réponses → réglages du moteur ---------- */
+let VIEW="client";
+function rugParams(){
+  const c=compose(),t4=opt("t4"),t3=opt("t3"),cx=opt("cx"),sc=scores();
+  // l'élément signature : celui que les réponses portent le plus (un seul par tapis)
+  const sigs=["sentier","soleil","lune","etoiles","nuages","rochers","falaise"].filter(k=>c.chemin===k||c.ciel===k||c.mineral===k);
+  sigs.sort((a,b)=>(S.ov.chemin===a||S.ov.ciel===a||S.ov.mineral===a?-99:-(sc[a]||0))-(S.ov.chemin===b||S.ov.ciel===b||S.ov.mineral===b?-99:-(sc[b]||0)));
+  return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx:cx?cx.cx:"nuance",
+    shape:t4?{organic:"organique",round:"rond",rect:"rect"}[t4.shape]:"organique",
+    dens:t3?(t3.d>1.2?"foisonnant":t3.d<.8?"epure":"equilibre"):"equilibre",
+    relief:["lisse","doux","sculpte"][S.a.t1]||"doux",texture:["mousse","galet","ecorce","sable","eau"][S.a.t2]||"mousse",
+    avoid:S.a.eviter||"",layers:c,signature:sigs[0]||null};
 }
-
+function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;
+  const g=Moteur.generate(rugParams(),(window.devicePixelRatio||1)>1.4?7:5.5);
+  Moteur.render(cv,g,VIEW,getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#ECEEE8");
+  const leg=document.getElementById("rugleg");if(!leg)return;
+  const rows=Moteur.legend(g);
+  leg.innerHTML=VIEW==="atelier"
+    ?`<span class="eyebrow">Plan atelier · ${new Set(rows.map(r=>r.ref)).size} laines · courbes tous les 0,5 cm</span>`+rows.map(r=>`<span><span class="sw2" style="background:${r.hex}"></span>${r.nom} · ${r.ref} · ${r.techFr} · ${Math.max(1,Math.round(r.part*100))} %</span>`).join("")+`<span class="note">${g.info.join(" · ")}</span>`
+    :`<span class="note">Ton tapis vu du dessus, en vraies laines. ${g.signature?"":""}</span>`;
+}
 /* ---------- Textes ---------- */
 function promptText(lang){
   const c=compose(),name=(S.a.prenom||"").trim();
@@ -522,7 +465,9 @@ function renderScape(final){
     return `<div class="layer"><div class="head"><span class="eyebrow">${LAYERS[L].label}</span>${S.ov[L]?'<span class="note">choisi par toi</span>':""}</div>
       <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
       ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
-  return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Esquisse du paysage vu du dessus"></canvas><p class="note">${curPal()?"Esquisse vue du dessus, dans les couleurs de ta palette.":"Esquisse vue du dessus. Les couleurs viendront de ta palette."}</p></div>
+  return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Ton tapis vu du dessus"></canvas>
+      <div class="rugbar"><button type="button" class="chip" data-rugv>Autre proposition</button><button type="button" class="chip" data-rview="client" aria-pressed="${VIEW==="client"}">Vue client</button><button type="button" class="chip" data-rview="atelier" aria-pressed="${VIEW==="atelier"}">Vue atelier</button></div>
+      <div class="rugleg" id="rugleg"></div></div>
     <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
 }
 /* ---------- Portrait : ce que les réponses disent de la personne ---------- */
@@ -631,7 +576,7 @@ function render(){
   }else{
     m.innerHTML=`<section class="panel"><div class="panel-head"><span class="eyebrow">Étape ${S.step+1} sur ${STEPS.length}</span><h2>${st.title}</h2><p class="lede">${st.intro}</p></div>${st.qs.map(renderQ).join("")}${st.colors?renderPal():""}</section>${nav}`;
   }
-  const cv=document.getElementById("cv");if(cv)drawScape(cv,compose());
+  drawRug();
   const db=document.getElementById("dlbtn");if(db)db.hidden=!DL;
 }
 function go(i){S.step=Math.max(0,Math.min(STEPS.length-1,i));save();render();window.scrollTo({top:0,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});}
@@ -644,6 +589,8 @@ document.addEventListener("click",e=>{
   if(t.hasAttribute("data-prev"))return go(S.step-1);
   if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
   if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
+  if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
+  if(t.dataset.rview){VIEW=t.dataset.rview;return keep(()=>{});}
   if(t.hasAttribute("data-dl")&&DL){const cv=document.getElementById("cv"),toast=document.getElementById("toast");
     cv.toBlob(blob=>{DL.save({filename:"esquisse-tapis"+((S.a.prenom||"").trim()?"-"+S.a.prenom.trim():"")+".png",data:blob})
       .then(()=>{toast.textContent="Esquisse enregistrée";setTimeout(()=>toast.textContent="",2500);})
