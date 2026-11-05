@@ -213,8 +213,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       </div>
       <p class="mic-status" id="mic-status" hidden></p>
       <div class="sendbox" id="share-box" hidden>
-        <p class="muted" style="margin:0 0 4px;font-size:.8rem">Ce qui sera partagé, sans ton nom ni ta question :</p>
-        <p id="share-prev" class="share-prev"></p>
+        <p id="share-prev" class="share-prev" hidden></p>
         <a class="btn" id="share" href="#" target="_blank" rel="noopener" style="width:100%;text-decoration:none">Partager mon retour anonyme ↗</a>
         <p class="muted" style="margin:6px 0 0;font-size:.78rem">Facultatif : ton retour aide à affiner les prochains tirages.</p>
       </div>
@@ -579,8 +578,8 @@ async function prepareLesson(){
   const sig = JSON.stringify([chat.length, rating]);
   if (sig === lessonSig || shared) return;
   lessonSig = sig; $("#share-box").hidden = false;
-  $("#share-prev").className = "share-prev wait"; $("#share-prev").textContent = "Préparation de ton retour…"; setShare(null);
-  if (AI_ENDPOINT){ $("#share-prev").className = "share-prev"; $("#share-prev").textContent = "Ton ressenti et ta note, résumés sans ton nom ni ta question."; setShare("relay"); return; }
+  setShare(null);
+  if (AI_ENDPOINT){ setShare("relay"); return; }
   try {
     const ex = chat.slice(-16).map(m => (m.role === "assistant" ? "Guide : " : "Personne : ") + m.content).join("\n");
     const r = await sampleFn.json("Tu résumes un retour d'expérience de façon strictement anonyme : aucun prénom, lieu, date, détail identifiant ni élément de vie privée, et sans reprendre la question de la personne. " +
@@ -591,7 +590,6 @@ async function prepareLesson(){
     const t = String((r && r.lecon) || "").trim().slice(0, 400);
     if (!t){ $("#share-box").hidden = true; return; }
     lesson = { tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon: t, note: rating || 3, date: new Date().toISOString().slice(0, 10) };
-    $("#share-prev").className = "share-prev"; $("#share-prev").textContent = "« " + nb(t) + " »";
     setShare(directStore() ? "store" : "link");
   } catch { $("#share-box").hidden = true; lessonSig = ""; }
 }
