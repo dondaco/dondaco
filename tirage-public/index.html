@@ -140,12 +140,15 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .ess .ess-r{font-family:var(--sans);font-size:.84rem;color:var(--muted);margin-top:6px}
 .ess .ess-r b{color:var(--ink);font-weight:600}
 .trend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px;font-size:.9rem;color:var(--muted)}
-.tr-chip{font-weight:600;border-radius:99px;padding:4px 12px;color:#fff}
-.tr-elan{background:#2e8b57}.tr-equilibre{background:#b7791f}.tr-prudence{background:#4b6cb7}
+/* tendance : même reflet irisé que les dos de cartes */
+.tr-chip{font-weight:600;border-radius:99px;padding:5px 14px;color:#2a2445;border:1px solid rgba(255,255,255,.7);
+  background:linear-gradient(110deg,#ffc3e1,#ffe6b5 22%,#c2f2dc 45%,#b3e1ff 65%,#cdbcff 85%,#ffc3e1);background-size:200% 100%;animation:sheenChip 8s ease-in-out infinite alternate}
+@keyframes sheenChip{to{background-position:100% 0}}
 .verdict{border-radius:16px;padding:14px 16px;margin:0 0 14px;background:var(--soft);border-left:5px solid var(--accent)}
 .verdict b{display:block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
 .verdict p{margin:0;font-family:var(--serif);font-size:1.12rem;line-height:1.5}
-.verdict.v-elan{border-left-color:#2e8b57}.verdict.v-equilibre{border-left-color:#b7791f}.verdict.v-prudence{border-left-color:#4b6cb7}
+.verdict{border-left:0;position:relative;padding-left:20px}
+.verdict::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:5px;background:linear-gradient(180deg,#ffc3e1,#ffe6b5,#c2f2dc,#b3e1ff,#cdbcff)}
 .rate-top{margin-top:6px;padding:12px;border-radius:12px;background:var(--soft)}
 .sheet{position:fixed;inset:0;background:rgba(20,16,35,.45);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding:12px max(12px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px))}
 .sheet-in{background:var(--surface);border-radius:20px;padding:16px;width:100%;max-width:520px;max-height:92vh;overflow:auto}
@@ -172,10 +175,10 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .card .col small{font-weight:400;font-size:.8rem;opacity:.85}
 .c-ess{margin:0;font-size:1rem;line-height:1.45}
 .c-place{margin:4px 0 0;color:var(--muted);font-size:.88rem}
-.c-hint{margin:14px 0 2px;color:var(--muted);font-size:.85rem}
+.c-hint{margin:14px 0 0;color:var(--accent);font-size:.85rem;font-weight:600}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
-@media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none;background-position:40% 40%, 0 0, 40% 50%}}
+@media (prefers-reduced-motion:reduce){.tr-chip{animation:none}.fd,.card{animation:none}.fd{transition:none;background-position:40% 40%, 0 0, 40% 50%}}
 </style>
 </head>
 <body>
@@ -204,9 +207,11 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
     <p class="muted" id="d-desc" style="margin:0 0 14px"></p>
     <div class="panel">
       <label for="q">Ta question</label>
-      <textarea id="q" placeholder="Pose-la sur toi : ta part, ton regard, tes choix…"></textarea>
+      <div class="composer"><textarea id="q" rows="2" placeholder="Pose-la sur toi : ta part, ton regard, tes choix…"></textarea><button type="button" class="cp-btn" id="q-mic" aria-label="Dicter ta question"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+      <p class="mic-status" id="q-mic-status" hidden></p>
       <label for="ctx" style="margin-top:12px">Ce qui se passe pour toi en ce moment <span style="opacity:.7">(facultatif)</span></label>
-      <textarea id="ctx" style="min-height:56px" placeholder="Quelques mots sur ta situation : plus tu en dis, plus la lecture te parlera."></textarea>
+      <div class="composer"><textarea id="ctx" rows="2" placeholder="Quelques mots sur ta situation : plus tu en dis, plus la lecture te parlera."></textarea><button type="button" class="cp-btn" id="ctx-mic" aria-label="Dicter ce qui se passe pour toi"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+      <p class="mic-status" id="ctx-mic-status" hidden></p>
       <details style="margin-top:6px"><summary class="muted">Besoin d'aide pour la formuler ?</summary>
         <p class="muted" style="margin:8px 0 0">Une bonne question parle de toi plutôt que des autres, et cherche à comprendre plutôt qu'à prédire.</p>
         <div class="tips" id="tips"></div>
@@ -226,7 +231,6 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
     <div class="reading" id="cards"></div>
     <div class="panel ai" style="margin-top:14px">
       <h2 style="font-size:1.15rem">✨ Ton interprétation</h2>
-      <p class="muted" id="ai-intro" style="margin:2px 0 10px">Claude lit tes couleurs, leur place dans le tirage et les phrases qui t'ont parlé, en lien avec ta question.</p>
       <div id="trend" class="trend" hidden></div>
       <div id="ai-out"></div>
       <button class="btn" id="b-ai" hidden style="width:100%">Recevoir mon interprétation</button>
@@ -508,6 +512,7 @@ function renderReading(){
       <div class="col" style="background:${c.c};color:${textOn(c.c)}"><span>${esc(c.n)}</span></div>
       <div class="in">
         <p class="c-ess">${esc(ESSENCE[c.n] || "")}</p>
+        <p class="c-hint">♡ Touche les phrases qui te parlent</p>
         <div class="ph">${ph.slice(1).map((x, j) => `<button type="button" data-i="${i}" data-j="${j + 1}"><i>♡</i><span>${esc(x)}</span></button>`).join("")}</div>
       </div></article>`;
   }).join("");
@@ -693,32 +698,37 @@ function renderStars(){
 // Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
-function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; } $("#chat-mic").classList.remove("on"); $("#mic-status").hidden = true; syncComposer(); }
-// Micro quand le champ est vide, flèche d'envoi dès qu'il y a du texte (comme dans Messages)
+// Dictée : le même micro dans chaque champ (question, complément, retour)
+const MICS = { chat: ["#chat-txt", "#chat-mic", "#mic-status"], q: ["#q", "#q-mic", "#q-mic-status"], ctx: ["#ctx", "#ctx-mic", "#ctx-mic-status"] };
+let micKey = null;
+const MIC_HELP = "Touche le micro de ton clavier pour parler : ce que tu dis s'écrira ici.";
+function stopMic(){
+  if (rec){ try { rec.stop(); } catch {} rec = null; }
+  for (const [, b, st] of Object.values(MICS)){ const bb = $(b), ss = $(st); if (bb) bb.classList.remove("on"); if (ss && micKey) ss.hidden = true; }
+  micKey = null; syncComposer();
+}
 function syncComposer(){
-  const t = $("#chat-txt"), has = !!t.value.trim();
-  $("#chat-mic").hidden = false;
-  t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px";
+  for (const [t] of Object.values(MICS)){ const el = $(t); if (el){ el.style.height = "auto"; el.style.height = Math.min(Math.max(el.scrollHeight, 24), 160) + "px"; } }
 }
 $("#chat-txt").addEventListener("input", () => { syncComposer(); scheduleLesson(); });
-$("#chat-mic").onclick = () => {
-  if (rec) return stopMic();
-  if (!SR){ // pas de dictée intégrée ici : on ouvre le clavier, dont le micro sait dicter
-    $("#chat-txt").focus();
-    $("#mic-status").hidden = false; $("#mic-status").textContent = "Touche le micro de ton clavier pour parler : ce que tu dis s'écrira ici.";
-    return;
-  }
-  startMic();
-};
-function startMic(){
+["#q", "#ctx"].forEach(s => $(s).addEventListener("input", syncComposer));
+for (const [key, [t, b, st]] of Object.entries(MICS)){
+  $(b).onclick = () => {
+    if (rec){ const was = micKey; stopMic(); if (was === key) return; }
+    if (!SR){ $(t).focus(); $(st).hidden = false; $(st).textContent = MIC_HELP; return; }
+    startMic(key);
+  };
+}
+function startMic(key){
+  const [t, b, st] = MICS[key];
   try {
-    rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true;
-    const base = $("#chat-txt").value ? $("#chat-txt").value + " " : "";
-    rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; syncComposer(); scheduleLesson(); };
-    rec.onerror = () => { rec = null; stopMic(); $("#chat-txt").focus(); $("#mic-status").hidden = false; $("#mic-status").textContent = "Touche le micro de ton clavier pour parler : ce que tu dis s'écrira ici."; };
+    rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true; micKey = key;
+    const base = $(t).value ? $(t).value + " " : "";
+    rec.onresult = e => { let x = ""; for (const r of e.results) x += r[0].transcript; $(t).value = base + x; syncComposer(); if (key === "chat") scheduleLesson(); };
+    rec.onerror = () => { rec = null; stopMic(); $(t).focus(); $(st).hidden = false; $(st).textContent = MIC_HELP; };
     rec.onend = () => { rec = null; stopMic(); };
-    rec.start(); $("#chat-mic").classList.add("on"); $("#chat-mic").hidden = false;
-    $("#mic-status").hidden = false; $("#mic-status").textContent = "● Je t'écoute… touche le micro pour arrêter";
+    rec.start(); $(b).classList.add("on");
+    $(st).hidden = false; $(st).textContent = "● Je t'écoute… touche le micro pour arrêter";
   } catch { rec = null; stopMic(); }
 }
 /* Partage : une image soignée du tirage et un lien pour faire le sien */
