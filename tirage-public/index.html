@@ -109,6 +109,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 #stars button.on{color:#e8b04a}
 .consent{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:var(--muted);margin-top:10px}
 .consent input{margin-top:3px}
+.sendbox{margin-top:10px;padding:12px;border:1px dashed var(--accent);border-radius:12px;background:var(--soft)}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -385,6 +386,15 @@ $("#b-ai-copy").onclick = async () => {
   try { await navigator.clipboard.writeText(text); toast("Demande copiée : colle-la dans Claude"); }
   catch { $("#ai-out").innerHTML = `<p class="muted">Copie ce texte et colle-le dans Claude :</p><textarea id="ai-txt" readonly style="min-height:140px">${esc(text)}</textarea>`; $("#ai-txt").select(); }
 };
+// Visiteurs sans droit d'écriture : leur retour part par la page « retour » du site (recueil quotidien)
+const RETOUR_PAGE = "https://dondaco.github.io/dondaco/tirage-public/retour.html";
+function showSendLink(item){
+  const raw = btoa(unescape(encodeURIComponent(JSON.stringify(item)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const box = document.createElement("div"); box.className = "sendbox";
+  box.innerHTML = `<p style="margin:0 0 8px">Ton retour est prêt. Touche le bouton pour l'envoyer : une page s'ouvre, vérifie et confirme.</p><a class="btn" style="width:100%;text-decoration:none" target="_blank" rel="noopener" href="${RETOUR_PAGE}#d=${raw}">Envoyer mon retour ↗</a>`;
+  const old = $("#chat .sendbox"); if (old) old.remove();
+  $("#chat-end").after(box);
+}
 /* Échange après l'interprétation, puis retour anonyme (si la personne l'accepte) */
 let chat = [], rating = 0, sending = false;
 const QUICK = ["Ça me parle beaucoup", "Une carte me touche plus que les autres", "Je ne me reconnais pas dans…", "Ça me fait penser à…"];
@@ -394,7 +404,7 @@ function conclusionText(){
 }
 function openChat(){
   chat = []; rating = 0; $("#chat").hidden = false; $("#chat-log").innerHTML = ""; $("#chat-txt").value = "";
-  const canStore = !!AI_ENDPOINT || (!!store && canShare !== false);
+  const canStore = !!AI_ENDPOINT || !!sampleFn; // contributeurs : base de la page ; autres : page de retour du site
   $("#consent-wrap").hidden = !canStore; $("#consent").checked = false;
   $("#chat-quick").innerHTML = QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("");
   $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); t.focus(); });
@@ -433,7 +443,7 @@ $("#chat-end").onclick = async () => {
     b.textContent = "Envoi…";
     try { const r = await relay("/retour", { conclusion: conclusionText(), messages: chat, note: rating || 3, consentement: true }); toast(r.enregistre ? "Merci, ton retour aidera les prochains tirages" : "Merci pour ton retour"); }
     catch { toast("Ton retour n'a pas pu être envoyé"); }
-  } else if (store && sampleFn && $("#consent").checked){
+  } else if (sampleFn && $("#consent").checked){
     b.textContent = "Envoi…";
     try {
       const ex = chat.slice(-16).map(m => (m.role === "assistant" ? "Guide : " : "Personne : ") + m.content).join("\n");
@@ -443,10 +453,13 @@ $("#chat-end").onclick = async () => {
         "\nTire en une ou deux phrases une leçon générale pour mieux interpréter ce tirage ou ces couleurs la prochaine fois (formulations qui ont touché, angle qui a manqué). Réponds en JSON {\"lecon\": \"...\"}.", { modelTier: "quick" });
       const lecon = String((r && r.lecon) || "").trim().slice(0, 400);
       if (lecon){
-        await store.collection("lecons").add({ tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon, note: rating || 3, date: new Date().toISOString().slice(0, 10) });
-        toast("Merci, ton retour aidera les prochains tirages");
+        const item = { tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon, note: rating || 3, date: new Date().toISOString().slice(0, 10) };
+        let saved = false;
+        if (store && canShare !== false){ try { await store.collection("lecons").add(item); saved = true; } catch {} }
+        if (saved) toast("Merci, ton retour aidera les prochains tirages");
+        else showSendLink(item);
       } else toast("Merci pour ton retour");
-    } catch (e) { toast(e && e.code === "invalid_argument" ? "Ton accès ne permet pas de partager ton retour (demande le rôle Contributeur)" : "Ton retour n'a pas pu être envoyé"); }
+    } catch (e) { toast("Ton retour n'a pas pu être préparé"); }
   } else toast("Merci pour ce tirage");
   b.textContent = "Merci !";
 };

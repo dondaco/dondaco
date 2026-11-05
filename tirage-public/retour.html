@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Envoyer mon retour</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Outfit:wght@400;600&display=swap">
+<style>
+:root{--bg:#f3f1f7;--surface:#fff;--ink:#221d33;--muted:#6c6680;--line:#e1dcec;--accent:#4b3a8f;--accent-ink:#fff;--soft:#ebe6f6;--serif:"Literata",Georgia,serif;--sans:"Outfit",system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root{--bg:#15121f;--surface:#1f1a2d;--ink:#efeaf9;--muted:#a39cb8;--line:#332b47;--accent:#b4a2f2;--accent-ink:#15121f;--soft:#2a2340;color-scheme:dark}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans)}
+.wrap{max-width:560px;margin:0 auto;padding:28px max(16px, env(safe-area-inset-left, 0px)) 48px}
+.band{height:8px;border-radius:8px;background:linear-gradient(90deg,#f9c6c9,#fbe5b6,#c5ecd9,#c9d7f8,#d9c9f3);margin-bottom:16px}
+h1{font-family:var(--serif);font-weight:600;font-size:1.7rem;margin:0 0 6px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+.lecon{font-family:var(--serif);font-size:1.12rem;line-height:1.45;margin:6px 0 0}
+.muted{color:var(--muted)}
+.btn{width:100%;border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn:disabled{opacity:.5}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stars{color:#e8b04a;letter-spacing:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="band" aria-hidden="true"></div>
+  <h1>Ton retour sur le tirage</h1>
+  <p class="muted">Voici ce qui sera partagé, de façon anonyme, pour aider les prochains tirages. Ni ton nom ni ta question ne sont envoyés.</p>
+  <div id="ok" hidden>
+    <div class="panel">
+      <span class="muted" id="t"></span>
+      <p class="lecon" id="l"></p>
+      <p class="muted" style="margin:10px 0 0"><span id="c"></span> · <span class="stars" id="n"></span></p>
+    </div>
+    <button class="btn" id="send">Envoyer mon retour</button>
+    <p class="muted" id="msg" style="margin-top:12px"></p>
+  </div>
+  <div id="ko" class="panel" hidden><p style="margin:0">Ce lien ne contient pas de retour. Ouvre-le depuis le bouton « Envoyer mon retour » à la fin d'un tirage.</p></div>
+</div>
+<script>
+"use strict";
+// Adresse du service gratuit de recueil des retours (Cloudflare Worker « retours.js »). Vide tant qu'il n'est pas installé.
+const RETOURS_ENDPOINT = "";
+const $ = s => document.querySelector(s);
+let data = null;
+try {
+  const raw = (location.hash.match(/[#&]d=([A-Za-z0-9_-]+)/) || [])[1];
+  if (raw){
+    const b64 = raw.replace(/-/g, "+").replace(/_/g, "/");
+    data = JSON.parse(decodeURIComponent(escape(atob(b64))));
+  }
+} catch { data = null; }
+if (!data || !data.lecon || !data.tirage){ $("#ko").hidden = false; }
+else {
+  $("#ok").hidden = false;
+  $("#t").textContent = "Tirage « " + data.tirage + " »";
+  $("#l").textContent = data.lecon;
+  $("#c").textContent = (data.couleurs || []).join(", ");
+  const n = Math.max(1, Math.min(5, parseInt(data.note) || 3));
+  $("#n").textContent = "★".repeat(n) + "☆".repeat(5 - n);
+  if (!RETOURS_ENDPOINT){ $("#send").disabled = true; $("#msg").textContent = "Le recueil des retours n'est pas encore activé. Merci quand même !"; }
+}
+$("#send").onclick = async () => {
+  const b = $("#send"); b.disabled = true; b.textContent = "Envoi…";
+  try {
+    const r = await fetch(RETOURS_ENDPOINT.replace(/\/+$/, "") + "/retour", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tirage: data.tirage, couleurs: data.couleurs, cotes: data.cotes, lecon: data.lecon, note: data.note, consentement: true }) });
+    if (!r.ok) throw r.status;
+    b.textContent = "Envoyé ✓";
+    $("#msg").textContent = "Merci ! Ton retour sera pris en compte lors de la prochaine mise à jour. Tu peux fermer cet onglet.";
+    history.replaceState(null, "", location.pathname);
+  } catch (e) {
+    b.disabled = false; b.textContent = "Réessayer";
+    $("#msg").textContent = e === 429 ? "Tu as déjà envoyé plusieurs retours aujourd'hui. Merci !" : "L'envoi n'a pas marché, réessaie dans un moment.";
+  }
+};
+</script>
+</body>
+</html>
