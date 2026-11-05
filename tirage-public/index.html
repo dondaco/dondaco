@@ -114,8 +114,9 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .cp-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .mic-status{margin:6px 4px 0;font-size:.82rem;color:var(--muted)}
 .rate{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
-#stars button{border:0;background:none;font-size:1.6rem;line-height:1;color:var(--line);cursor:pointer;padding:2px}
-#stars button.on{color:#e8b04a}
+#stars{display:flex;gap:4px}
+#stars button{border:0;background:none;font-size:2.1rem;line-height:1;color:var(--muted);cursor:pointer;padding:2px 3px}
+#stars button.on{color:#e8b04a;text-shadow:0 0 10px rgba(232,176,74,.45)}
 .consent{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:var(--muted);margin-top:10px}
 .consent input{margin-top:3px}
 .share-prev{font-family:var(--serif);margin:0 0 10px;line-height:1.4}
@@ -213,7 +214,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       <h2 style="font-size:1.15rem">Ton retour sur ce tirage</h2>
       <p class="muted" style="margin:2px 0 10px">Facultatif et anonyme : il aide Iris à mieux lire les prochains tirages.</p>
       <div class="rate rate-top">
-        <span>Ce tirage t'a-t-il aidé ?</span>
+        <span>Ce tirage t'a-t-il aidé ? <small class="muted" style="display:block;font-size:.8rem">Touche une étoile</small></span>
         <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
       </div>
       <p class="muted" style="margin:12px 0 6px">Ce qui est vrai pour toi :</p>
@@ -657,7 +658,7 @@ function openChat(){
   renderStars();
 }
 function renderStars(){
-  $("#stars").innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} sur 5" data-n="${n}" class="${n <= rating ? "on" : ""}">★</button>`).join("");
+  $("#stars").innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} sur 5" data-n="${n}" class="${n <= rating ? "on" : ""}">${n <= rating ? "★" : "☆"}</button>`).join("");
   $("#stars").querySelectorAll("[data-n]").forEach(b => b.onclick = () => { rating = +b.dataset.n; renderStars(); scheduleLesson(); });
 }
 // Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
