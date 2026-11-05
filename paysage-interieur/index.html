@@ -376,16 +376,34 @@ function answeredCount(){return Object.keys(S.a).filter(k=>Q[k]&&Q[k].opts).leng
 
 /* ---------- Le tapis : réponses → réglages du moteur ---------- */
 const VIEW="atelier"; // la vue client est mise de côté : le rendu réaliste viendra d’un générateur d’images guidé par ce plan
+const AMB={epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
+const SIGOK={epure:["lune","soleil","rochers","falaise"],mer:["rochers","soleil"],foret:["sentier","soleil","lune"],jardin:["sentier","rochers","soleil","lune"],
+  ciel:["lune","soleil","etoiles"],montagne:["sentier","soleil","lune"],lave:[],desert:["soleil","rochers","sentier"]};
+/* l'ambiance : le thème que les réponses portent le plus */
+function ambiance(){
+  const c=compose(),sc=scores(),t3=opt("t3"),cand=[];
+  if(c.eau==="mer"||c.eau==="ile")cand.push(["mer",sc[c.eau]||0]);
+  if(c.relief==="volcan")cand.push(["lave",sc.volcan||0]);
+  if(c.relief==="marque")cand.push(["montagne",sc.marque||0]);
+  if(c.relief==="dunes"||c.relief==="vallee")cand.push(["desert",sc[c.relief]||0]);
+  if(["lune","etoiles","nuages","brume"].includes(c.ciel))cand.push(["ciel",(sc[c.ciel]||0)*.9]);
+  if(["foret","arbre","clairiere","mousse"].includes(c.vegetation))cand.push(["foret",sc[c.vegetation]||0]);
+  if(["fleurs","prairie"].includes(c.vegetation))cand.push(["jardin",sc[c.vegetation]||0]);
+  cand.sort((a,b)=>b[1]-a[1]);const top=cand[0]?cand[0][0]:"jardin";
+  const auto=t3&&t3.d<.8?"epure":top;
+  return {theme:S.amb||auto,auto,tendance:top};
+}
 function rugParams(){
-  const c=compose(),t4=opt("t4"),t3=opt("t3"),cx=opt("cx"),sc=scores();
-  // l'élément signature : celui que les réponses portent le plus (un seul par tapis)
-  const sigs=["sentier","soleil","lune","etoiles","nuages","rochers","falaise"].filter(k=>c.chemin===k||c.ciel===k||c.mineral===k);
-  sigs.sort((a,b)=>(S.ov.chemin===a||S.ov.ciel===a||S.ov.mineral===a?-99:-(sc[a]||0))-(S.ov.chemin===b||S.ov.ciel===b||S.ov.mineral===b?-99:-(sc[b]||0)));
+  const c=compose(),t4=opt("t4"),t3=opt("t3"),cx=opt("cx"),sc=scores(),A=ambiance();
+  // un seul élément signature, compatible avec l'ambiance
+  const ok=SIGOK[A.theme]||[],picked=k=>S.ov.chemin===k||S.ov.ciel===k||S.ov.mineral===k;
+  const sigs=["sentier","soleil","lune","etoiles","rochers","falaise"].filter(k=>(c.chemin===k||c.ciel===k||c.mineral===k)&&ok.includes(k))
+    .sort((a,b)=>(picked(b)?99:sc[b]||0)-(picked(a)?99:sc[a]||0));
   return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx:cx?cx.cx:"nuance",
     shape:t4?{organic:"organique",round:"rond",rect:"rect"}[t4.shape]:"organique",
     dens:t3?(t3.d>1.2?"foisonnant":t3.d<.8?"epure":"equilibre"):"equilibre",
     relief:["lisse","doux","sculpte"][S.a.t1]||"doux",texture:["mousse","galet","ecorce","sable","eau"][S.a.t2]||"mousse",
-    avoid:S.a.eviter||"",layers:c,signature:sigs[0]||null};
+    avoid:S.a.eviter||"",layers:c,theme:A.theme,tendance:A.tendance,signature:sigs[0]||null};
 }
 function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;
   const g=Moteur.generate(rugParams(),(window.devicePixelRatio||1)>1.4?7:5.5);
@@ -467,6 +485,7 @@ function renderScape(final){
       ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
   return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
       <div class="rugbar"><button type="button" class="chip" data-rugv>Autre proposition</button></div>
+      <div class="rugbar" role="group" aria-label="Ambiance"><span class="note" style="width:100%;text-align:center">Ambiance${S.amb?" choisie par toi":" déduite de tes réponses"} :</span>${Object.entries(AMB).map(([k,l])=>`<button type="button" class="chip" data-amb="${k}" aria-pressed="${ambiance().theme===k}">${l}</button>`).join("")}${S.amb?'<button type="button" class="chip" data-amb="">Revenir à l’automatique</button>':""}</div>
       <div class="rugleg" id="rugleg"></div></div>
     <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
 }
@@ -590,6 +609,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
   if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
   if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
+  if(t.dataset.amb!==undefined)return keep(()=>{if(t.dataset.amb)S.amb=t.dataset.amb;else delete S.amb;});
   if(t.hasAttribute("data-dl")&&DL){const cv=document.getElementById("cv"),toast=document.getElementById("toast");
     cv.toBlob(blob=>{DL.save({filename:"esquisse-tapis"+((S.a.prenom||"").trim()?"-"+S.a.prenom.trim():"")+".png",data:blob})
       .then(()=>{toast.textContent="Esquisse enregistrée";setTimeout(()=>toast.textContent="",2500);})
