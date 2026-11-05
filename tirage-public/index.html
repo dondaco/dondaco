@@ -663,8 +663,8 @@ async function relay(path, extra){
 }
 $("#b-ai").onclick = async () => {
   if (!sampleFn && !AI_ENDPOINT) return;
-  const b = $("#b-ai"); b.disabled = true; b.textContent = "Claude réfléchit…";
-  $("#ai-out").innerHTML = `<p class="muted wait">Claude relie ton tirage à ta question…</p>`;
+  const b = $("#b-ai"); b.disabled = true; b.textContent = "Iris lit ton tirage…";
+  $("#ai-out").innerHTML = `<p class="muted wait">Iris relie tes couleurs à ta question…</p>`;
   try {
     const lessons = AI_ENDPOINT ? [] : await lessonsFor();
     const insp = lessons.length ? " Voici ce que d'autres personnes ont dit avoir bien ou mal reçu lors de tirages proches (anonyme) ; inspire-t'en sans le recopier : " + JSON.stringify(lessons.map(l => l.lecon)) + "." : "";
@@ -673,7 +673,7 @@ $("#b-ai").onclick = async () => {
     b.hidden = true; // une seule interprétation par tirage
     openChat(); $("#endbox").hidden = false;
   } catch (e) {
-    $("#ai-out").innerHTML = `<p class="muted">${e && e.code === "not_granted" ? "Autorise Claude pour cette page afin d'obtenir la conclusion." : e && e.code === "rate_limited" ? "Trop de demandes pour l'instant, réessaie dans un moment." : "Pas de réponse pour l'instant, réessaie."}</p>`;
+    $("#ai-out").innerHTML = `<p class="muted">${e && e.code === "not_granted" ? "Autorise l'accès demandé pour recevoir ton interprétation." : e && e.code === "rate_limited" ? "Trop de demandes pour l'instant, réessaie dans un moment." : "Pas de réponse pour l'instant, réessaie."}</p>`;
     b.textContent = "Recevoir mon interprétation";
   }
   b.disabled = false;
