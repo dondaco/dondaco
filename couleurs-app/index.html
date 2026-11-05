@@ -91,12 +91,12 @@ input[type=color]{padding:2px;height:44px}
 .linkbtn{border:0;background:none;color:var(--accent);font:inherit;font-weight:600;padding:0;cursor:pointer}
 .chips button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
 .cat h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 6px}
-.spread-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:6px;font:inherit;color:var(--text);cursor:pointer}
+.spread-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:6px;font:inherit;color:var(--text);cursor:pointer}
 .spread-row:focus-visible,.chips button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.spread-row .t{flex:1;min-width:0;font-weight:600}
+.spread-row .t{flex:1;min-width:0;font-weight:600;text-wrap:pretty}
 .spread-row .dots{display:flex;gap:3px;flex:none}
 .spread-row .dots i{width:8px;height:12px;border-radius:2px;background:var(--accent);opacity:.75}
-.spread-row .n{flex:none;font-size:.8rem;color:var(--muted);min-width:56px;text-align:right}
+.spread-row .n{flex:none;font-size:.85rem;font-weight:700;color:var(--muted);min-width:12px;text-align:right}
 .steps{display:flex;gap:6px;margin-bottom:10px}
 .step{flex:1;display:flex;align-items:center;gap:8px;border:0;border-bottom:3px solid var(--border);background:none;color:var(--muted);padding:6px 2px;font:inherit;font-size:.9rem;cursor:pointer}
 .step span{width:22px;height:22px;border-radius:50%;background:var(--chip);display:inline-grid;place-items:center;font-size:.8rem;font-weight:700}
@@ -537,7 +537,9 @@ load();
 
 /* ---------------- Utilitaires ---------------- */
 const $ = s => document.querySelector(s);
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Typographie française : « ? ! : ; » restent collés au mot précédent (espace insécable fine)
+const nb = s => String(s ?? "").replace(/[ \u00a0](?=[?!:;»])/g, "\u202f").replace(/« /g, "«\u202f");
+const esc = s => nb(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 // Remplace confirm()/prompt(), bloqués dans certains navigateurs intégrés
 function ask(msg, withInput){
   return new Promise(res => {
@@ -687,7 +689,7 @@ function renderHome(){
   $("#dh-cats").innerHTML = [`<button type="button" data-cat="" class="${homeCat && !q ? "" : "on"}">Tous</button>`, ...used.map(c => `<button type="button" data-cat="${esc(c)}" class="${homeCat === c && !q ? "on" : ""}">${esc(c)}</button>`)].join("");
   $("#dh-cats").querySelectorAll("[data-cat]").forEach(b => b.onclick = () => { homeCat = b.dataset.cat; $("#dh-search").value = ""; renderHome(); });
   const match = s => (q || !homeCat || catOf(s) === homeCat) && (!q || norm(s.name + " " + (s.desc || "") + " " + catOf(s)).includes(q));
-  const row = s => `<button type="button" class="spread-row" data-open="${s.id}"><span class="t">${esc(s.name)}</span><span class="dots" aria-hidden="true">${s.positions.slice(0, 7).map(() => "<i></i>").join("")}</span><span class="n">${s.positions.length} carte${s.positions.length > 1 ? "s" : ""}</span></button>`;
+  const row = s => `<button type="button" class="spread-row" data-open="${s.id}"><span class="t">${esc(s.name)}</span><span class="dots" aria-hidden="true">${s.positions.slice(0, 7).map(() => "<i></i>").join("")}</span><span class="n" aria-label="${s.positions.length} carte${s.positions.length > 1 ? "s" : ""}">${s.positions.length}</span></button>`;
   // Récents : les derniers tirages utilisés
   const recentIds = [...new Set(db.history.map(h => h.spread))].filter(id => db.spreads.some(s => s.id === id)).slice(0, 3);
   let html = "";
@@ -722,9 +724,9 @@ function renderDraw(){
   document.querySelectorAll("#dv-steps [data-step]").forEach(b => b.classList.toggle("on", +b.dataset.step === step));
   $("#step1").hidden = step !== 1; $("#step2").hidden = step !== 2;
   $("#dr-cat").textContent = catOf(sp);
-  $("#dr-title").textContent = sp.name;
+  $("#dr-title").textContent = nb(sp.name);
   $("#dr-count").textContent = "Tire " + sp.positions.length + " carte" + (sp.positions.length > 1 ? "s" : "");
-  $("#dr-desc").textContent = sp.desc || "";
+  $("#dr-desc").textContent = nb(sp.desc || "");
   $("#dr-desc-wrap").hidden = !sp.desc;
   const img = (db.spreadImages || {})[sp.id];
   $("#dr-photo-wrap").hidden = !img; if (img) $("#dr-photo").src = img;
