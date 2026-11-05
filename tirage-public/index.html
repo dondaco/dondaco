@@ -192,6 +192,8 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .further ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
 .further li{font-family:var(--serif);font-size:1.02rem;line-height:1.45}
 .sec-t{font-size:1.1rem;margin:18px 2px 10px}
+.more{margin-top:10px;width:100%;border:1px dashed var(--line);background:none;color:var(--accent);border-radius:12px;padding:10px;font:inherit;font-size:.88rem;font-weight:600;cursor:pointer}
+.more:disabled{color:var(--muted);cursor:default;border-style:solid}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.tr-chip{animation:none}.fd,.card{animation:none}.fd{transition:none;background-position:40% 40%, 0 0, 40% 50%}}
@@ -272,7 +274,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
         <a class="btn" id="share" href="#" target="_blank" rel="noopener" style="width:100%;text-decoration:none">Envoyer mon retour</a>
       </div>
     </div>
-    <div class="panel">
+    <div class="panel" id="endbox" hidden>
       <div class="kept" id="kept" hidden></div>
       <textarea id="avis" hidden aria-hidden="true"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
@@ -513,7 +515,48 @@ const PLACE_SENTENCE = {
   "etat+": "À cette place, elle décrit un moment porteur.",
   "etat-": "À cette place, elle décrit un moment qui te demande du travail sur toi."
 };
+/* Phrases proposées par carte : on garde celles choisies (5 au plus) et on peut demander d'autres propositions */
+const MAX_KEPT = 5;
+let shown = {}, seen = {};
+function renderPhr(i){
+  const k = kept[i] || [], box = $("#ph-" + i), more = $("#more-" + i); if (!box) return;
+  box.innerHTML = shown[i].map((x, j) => `<button type="button" data-j="${j}" class="${k.includes(x) ? "on" : ""}"><i>${k.includes(x) ? "♥" : "♡"}</i><span>${esc(x)}</span></button>`).join("");
+  box.querySelectorAll("button").forEach(b => b.onclick = () => {
+    const x = shown[i][+b.dataset.j], kk = kept[i] = kept[i] || [], at = kk.indexOf(x);
+    if (at >= 0) kk.splice(at, 1);
+    else if (kk.length >= MAX_KEPT) return toast("Tu as déjà choisi " + MAX_KEPT + " phrases pour cette carte");
+    else kk.push(x);
+    renderPhr(i); renderKept();
+  });
+  const full = k.length >= MAX_KEPT;
+  more.disabled = full; more.textContent = full ? "Tu as choisi le maximum de " + MAX_KEPT + " phrases" : "↻ Autres propositions";
+  more.onclick = () => morePhrases(i);
+}
+async function morePhrases(i){
+  const t = table[picked[i]], c = DECK[t.i], k = kept[i] || [], need = MAX_KEPT - k.length, more = $("#more-" + i);
+  if (need <= 0) return;
+  more.disabled = true; more.textContent = "Nouvelles propositions…";
+  let fresh = [];
+  if (sampleFn){
+    try {
+      const r = await sampleFn.json("Jeu de cartes de couleurs pour réfléchir sur soi. Couleur : « " + c.n + " » (" + (ESSENCE[c.n] || "") + "). Les phrases de cette carte décrivent " + (t.side === "l" ? "ce qui porte la personne, ses ressources" : "ce qui la freine, ce qui lui pèse") +
+        ". Position dans le tirage : « " + sp.pos[i].l + " » (" + sp.pos[i].m + "). Phrases déjà proposées : " + JSON.stringify([...seen[i]]) +
+        ". Propose " + (need + 2) + " nouvelles phrases-clés courtes (3 à 8 mots), dans le même esprit et le même style, toutes différentes des précédentes. Réponds en JSON {\"phrases\": [\"...\"]}.", { modelTier: "quick" });
+      fresh = ((r && r.phrases) || []).map(x => String(x).trim()).filter(x => x && !seen[i].has(x));
+    } catch {}
+  }
+  if (fresh.length < need){ // sans Claude : phrases des couleurs de la même famille, même côté
+    const pool = DECK.filter(d => d.n !== c.n && familyOf(d.n) === familyOf(c.n)).flatMap(d => (t.side === "l" ? d.l : d.d).slice(1)).filter(x => !seen[i].has(x) && !fresh.includes(x));
+    for (let n = pool.length - 1; n > 0; n--){ const m = rand(n + 1); [pool[n], pool[m]] = [pool[m], pool[n]]; }
+    fresh = fresh.concat(pool);
+  }
+  fresh = fresh.slice(0, need);
+  fresh.forEach(x => seen[i].add(x));
+  shown[i] = k.concat(fresh);
+  renderPhr(i);
+}
 function renderReading(){
+  $("#endbox").hidden = !(!sampleFn && !AI_ENDPOINT);
   aiResult = null; $("#ai-out").innerHTML = ""; $("#trend").hidden = true; $("#b-ai").textContent = "Recevoir mon interprétation"; $("#b-ai").hidden = !(sampleFn || AI_ENDPOINT); $("#chat").hidden = true; stopMic();
   const q = $("#q").value.trim();
   $("#r-q").innerHTML = q ? esc(q) : `<span class="muted">Sans question précise</span>`;
@@ -529,16 +572,11 @@ function renderReading(){
       <div class="in">
         <p class="c-ess">${esc(ESSENCE[c.n] || "")}</p>
         <p class="c-hint">${t.side === "l" ? "♡ Touche ce qui te porte en ce moment" : "♡ Touche ce qui te freine en ce moment"}</p>
-        <div class="ph">${ph.slice(1).map((x, j) => `<button type="button" data-i="${i}" data-j="${j + 1}"><i>♡</i><span>${esc(x)}</span></button>`).join("")}</div>
+        <div class="ph" id="ph-${i}"></div>
+        <button type="button" class="more" id="more-${i}">↻ Autres propositions</button>
       </div></article>`;
   }).join("");
-  $("#cards").querySelectorAll(".ph button").forEach(b => b.onclick = () => {
-    const i = +b.dataset.i, j = +b.dataset.j, t = table[picked[i]], c = DECK[t.i], x = (t.side === "l" ? c.l : c.d)[j];
-    const k = kept[i] = kept[i] || []; const at = k.indexOf(x);
-    if (at >= 0) k.splice(at, 1); else k.push(x);
-    b.classList.toggle("on", at < 0); b.querySelector("i").textContent = at < 0 ? "♥" : "♡";
-    renderKept();
-  });
+  sp.pos.forEach((_, i) => { const t = table[picked[i]], c = DECK[t.i]; shown[i] = (t.side === "l" ? c.l : c.d).slice(1); seen[i] = new Set(shown[i]); renderPhr(i); });
   renderKept();
 }
 function renderKept(){
@@ -633,7 +671,7 @@ $("#b-ai").onclick = async () => {
     aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"synthese\": \"...\", \"cartes\": [\"...\"], \"questions\": [\"...\", \"...\"], \"resume\": \"...\", \"tendance\": \"une des nuances\", \"pourquoi\": \"une phrase\"}.", { modelTier: "default" });
     showTrend(aiResult); $("#ai-out").innerHTML = aiHtml(aiResult);
     b.hidden = true; // une seule interprétation par tirage
-    openChat();
+    openChat(); $("#endbox").hidden = false;
   } catch (e) {
     $("#ai-out").innerHTML = `<p class="muted">${e && e.code === "not_granted" ? "Autorise Claude pour cette page afin d'obtenir la conclusion." : e && e.code === "rate_limited" ? "Trop de demandes pour l'instant, réessaie dans un moment." : "Pas de réponse pour l'instant, réessaie."}</p>`;
     b.textContent = "Recevoir mon interprétation";
