@@ -19,7 +19,10 @@
 *{box-sizing:border-box} [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--sans);margin:0}
 .wrap{max-width:640px;margin:0 auto;padding-block:20px 60px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
-.tag{font-family:var(--serif);font-style:italic;color:var(--accent);margin:-2px 0 10px;font-size:1.05rem}
+.brand{display:flex;align-items:center;gap:14px;margin-top:6px}
+.brand h1{margin:0}
+.logo{width:64px;height:auto;flex:none;color:var(--ink)}
+.tag{margin:10px 0 14px;font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 h1{font-family:var(--serif);font-weight:600;font-size:2rem;line-height:1.15;margin:8px 0 6px;text-wrap:balance}
 h2{font-family:var(--serif);font-weight:600;font-size:1.4rem;margin:0 0 4px;text-wrap:balance}
 .lead{color:var(--muted);margin:0 0 18px;max-width:34em}
@@ -169,8 +172,7 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 <div class="wrap">
   <!-- Accueil -->
   <section id="v-home">
-    <div class="band" aria-hidden="true"></div>
-    <h1>Iris</h1>
+    <div class="brand"><svg class="logo" viewBox="0 0 120 72" role="img" aria-label="Logo Iris"><path d="M6 36 C 30 6, 90 6, 114 36 C 90 66, 30 66, 6 36 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><g transform="translate(60 36)"><path d="M0 0 L0 -22 A22 22 0 0 1 19.05 -11 Z" fill="#f6a6c4"/><path d="M0 0 L19.05 -11 A22 22 0 0 1 19.05 11 Z" fill="#f2cf8a"/><path d="M0 0 L19.05 11 A22 22 0 0 1 0 22 Z" fill="#c9e88f"/><path d="M0 0 L0 22 A22 22 0 0 1 -19.05 11 Z" fill="#8fdcb8"/><path d="M0 0 L-19.05 11 A22 22 0 0 1 -19.05 -11 Z" fill="#93aaf2"/><path d="M0 0 L-19.05 -11 A22 22 0 0 1 0 -22 Z" fill="#c4a8f0"/><circle r="8" fill="currentColor"/><circle cx="3" cy="-3" r="2.4" fill="#fff"/></g></svg><h1>Iris</h1></div>
     <p class="tag">Ce que les couleurs éclairent en toi</p>
     <p class="lead">Pose une question, choisis tes cartes face cachée, et laisse les couleurs t'offrir des pistes de réflexion sur toi.</p>
     <div id="themes" class="themes"></div>
@@ -731,9 +733,17 @@ async function drawShareImage(withQ){
   [["#f9c6c9", 180, 220, 420], ["#c9d7f8", 900, 300, 380], ["#c5ecd9", 260, 1150, 420], ["#fbe5b6", 920, 1200, 340]].forEach(([col, cx, cy, r]) => {
     const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(246,242,250,0)"); x.fillStyle = g; x.fillRect(0, 0, W, H);
   });
-  x.fillStyle = "#221d33"; x.font = "600 110px Literata, Georgia, serif"; x.fillText("Iris", 90, 190);
-  x.fillStyle = "#4b3a8f"; x.font = "italic 400 40px Literata, Georgia, serif"; x.fillText("Ce que les couleurs éclairent en toi", 92, 250);
-  x.fillStyle = "#6c6680"; x.font = "600 30px Outfit, system-ui, sans-serif"; x.fillText(("Tirage « " + sp.name + " »").toUpperCase(), 92, 330);
+  try { // le logo, dessiné à partir du même SVG que sur le site
+    const svg = document.querySelector(".brand .logo").outerHTML.replace("currentColor", "#221d33").replace("currentColor", "#221d33").replace('class="logo"', 'xmlns="http://www.w3.org/2000/svg" width="240" height="144"');
+    const im = new Image(); im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+    await im.decode(); x.drawImage(im, 84, 92, 190, 114);
+  } catch {}
+  x.fillStyle = "#221d33"; x.font = "600 110px Literata, Georgia, serif"; x.fillText("Iris", 300, 190);
+  x.fillStyle = "#5b5480"; x.font = "500 30px Outfit, system-ui, sans-serif";
+  try { x.letterSpacing = "5px"; } catch {}
+  x.fillText("CE QUE LES COULEURS ÉCLAIRENT EN TOI", 92, 262);
+  try { x.letterSpacing = "0px"; } catch {}
+  x.fillStyle = "#6c6680"; x.font = "600 30px Outfit, system-ui, sans-serif"; x.fillText("Tirage « " + sp.name + " »", 92, 330);
   let y = 370;
   const q = $("#q").value.trim();
   if (withQ && q){ x.fillStyle = "#221d33"; x.font = "italic 400 38px Literata, Georgia, serif"; wrapLines(x, "« " + q + " »", 900, 2).forEach(l => { y += 50; x.fillText(l, 92, y); }); y += 20; }
