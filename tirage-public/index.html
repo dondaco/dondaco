@@ -253,10 +253,8 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       </div>
     </div>
     <div class="panel">
-      <h2 style="font-size:1.15rem">Ce qui me parle</h2>
-      <div class="kept" id="kept"></div>
-      <label for="avis" style="margin-top:12px">Mon avis, avec mes mots</label>
-      <textarea id="avis" placeholder="Qu'est-ce que ces phrases me disent par rapport à ma question ?"></textarea>
+      <div class="kept" id="kept" hidden></div>
+      <textarea id="avis" hidden aria-hidden="true"></textarea>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
         <button class="btn" id="b-share" style="flex:1 1 100%">Sauver ce tirage</button>
         <button class="btn ghost" id="b-new" style="flex:1 1 100%">Faire un autre tirage</button>
