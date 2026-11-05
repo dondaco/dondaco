@@ -123,6 +123,7 @@ dialog .dbody{padding:16px;overflow:auto}
       <button class="btn sec" id="sc-start">Allumer la caméra</button>
       <button class="btn" id="sc-shot">Analyser</button>
     </div>
+    <label class="btn sec" style="margin:8px 0 0;width:100%">📸 Prendre une photo de la carte<input type="file" id="sc-photo" accept="image/*" capture="environment" hidden></label>
     <canvas id="sc-canvas" hidden></canvas>
   </div>
   <div id="sc-result"></div>
@@ -238,6 +239,15 @@ dialog .dbody{padding:16px;overflow:auto}
   <button class="btn" id="cb-shot" style="margin-top:10px;width:100%">Capturer la couleur</button>
 </div></dialog>
 
+<dialog id="dlg-ask"><div class="dbody">
+  <p id="ask-msg" style="margin-top:0"></p>
+  <input id="ask-input" hidden>
+  <div class="row" style="margin-top:12px">
+    <button class="btn sec" id="ask-no">Annuler</button>
+    <button class="btn" id="ask-yes">OK</button>
+  </div>
+</div></dialog>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -296,15 +306,67 @@ function load(){
   const d = defaults();
   for (const k of Object.keys(d)) if (db[k] === undefined) db[k] = d[k];
 }
+let remote = null;           // collection privée de l'utilisateur sur claude.ai
+const sent = {};             // dernier contenu envoyé par document
 function save(){
-  try { localStorage.setItem(KEY, JSON.stringify(db)); }
-  catch { toast("Impossible d'enregistrer sur cet appareil"); }
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
+  if (remote) pushRemote();
+}
+function remoteDocs(){
+  const out = { meta: { fields: db.fields, spreads: db.spreads, history: db.history, theme: db.theme || "" } };
+  for (const c of db.cards) out["card-" + c.num] = c;
+  return out;
+}
+let pushing = Promise.resolve();
+function pushRemote(){
+  pushing = pushing.then(async () => {
+    for (const [k, v] of Object.entries(remoteDocs())){
+      const j = JSON.stringify(v);
+      if (sent[k] === j) continue;
+      try { await remote.doc(k).set(JSON.parse(j)); sent[k] = j; }
+      catch { toast("Synchronisation impossible pour l'instant"); return; }
+    }
+  });
+}
+function remoteDelete(k){ if (remote){ delete sent[k]; remote.doc(k).delete().catch(() => {}); } }
+async function connectRemote(){
+  const c = window.claude; if (!c || !c.use) return;
+  const timer = new Promise(r => setTimeout(() => r(null), 10000));
+  try {
+    const [store, user] = await Promise.all([c.use("db"), c.use("user")]);
+    if (!store || !user) return;
+    const col = store.collection("data/users/" + await user.id());
+    const snap = await Promise.race([col.get(), timer]);
+    if (!snap) return;
+    remote = col;
+    if (snap.empty){ pushRemote(); return; }   // première fois : envoie les données locales
+    const docs = {}; snap.docs.forEach(d => { if (d.exists) docs[d.id] = d.data(); });
+    const next = defaults();
+    if (docs.meta) Object.assign(next, JSON.parse(JSON.stringify(docs.meta)));
+    next.cards = Object.keys(docs).filter(k => k.startsWith("card-")).map(k => JSON.parse(JSON.stringify(docs[k])));
+    for (const [k, v] of Object.entries(docs)) sent[k] = JSON.stringify(v);
+    db = next; sortCards();
+    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
+    applyTheme(); renderLookup(); renderCards(); renderSettings();
+  } catch {}
 }
 load();
 
 /* ---------------- Utilitaires ---------------- */
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Remplace confirm()/prompt(), bloqués dans certains navigateurs intégrés
+function ask(msg, withInput){
+  return new Promise(res => {
+    const d = $("#dlg-ask"), inp = $("#ask-input");
+    $("#ask-msg").textContent = msg; inp.hidden = !withInput; inp.value = "";
+    const done = v => { d.close(); res(v); };
+    $("#ask-yes").onclick = () => done(withInput ? inp.value : true);
+    $("#ask-no").onclick = () => done(withInput ? null : false);
+    d.oncancel = () => done(withInput ? null : false);
+    d.showModal(); if (withInput) inp.focus();
+  });
+}
 function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2200); }
 const byNum = n => db.cards.find(c => String(c.num) === String(n).trim());
 const sortCards = () => db.cards.sort((a, b) => (parseFloat(a.num) || 0) - (parseFloat(b.num) || 0) || String(a.num).localeCompare(b.num));
@@ -402,10 +464,10 @@ function drawRes(sp, i){
 }
 $("#dr-spread").onchange = () => { current = {}; renderDraw(); };
 $("#dr-clear").onclick = () => { current = {}; renderDraw(); };
-$("#dr-save").onclick = () => {
+$("#dr-save").onclick = async () => {
   const sp = db.spreads.find(s => s.id === $("#dr-spread").value);
   if (!sp || !Object.values(current).some(v => v)) return toast("Tirage vide");
-  const q = prompt("Question ou intention du tirage (facultatif) :") ?? "";
+  const q = await ask("Question ou intention du tirage (facultatif) :", true); if (q === null) return;
   db.history.unshift({ id: uid(), date: new Date().toISOString(), spread: sp.id, spreadName: sp.name, nums: sp.positions.map((_, i) => current[i] || ""), q });
   db.history = db.history.slice(0, 200); save(); renderHistory(); toast("Tirage enregistré");
 };
@@ -456,7 +518,30 @@ $("#sc-start").onclick = () => startCam("#sc-video");
 $("#sc-shot").onclick = async () => {
   await startCam("#sc-video");
   const rgb = sampleCenter("#sc-video");
-  if (!rgb) return toast("Caméra pas encore prête");
+  if (!rgb) return toast("Caméra indisponible : utilise « Prendre une photo de la carte »");
+  showMatches(rgb);
+};
+$("#sc-photo").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  const rgb = await sampleFile(f); if (!rgb) return toast("Photo illisible");
+  showMatches(rgb, f);
+};
+// Couleur médiane du centre d'une photo (30 % central)
+async function sampleFile(file){
+  try {
+    const img = await createImageBitmap(file);
+    const side = Math.round(Math.min(img.width, img.height) * 0.3);
+    const c = $("#sc-canvas"); c.width = c.height = 120;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 120, 120);
+    const d = ctx.getImageData(0, 0, 120, 120).data, R = [], G = [], B = [];
+    for (let i = 0; i < d.length; i += 4){ R.push(d[i]); G.push(d[i + 1]); B.push(d[i + 2]); }
+    const med = a => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
+    return [med(R), med(G), med(B)];
+  } catch { return null; }
+}
+async function askClaude(){ return window.claude && window.claude.use ? await window.claude.use("sample") : null; }
+async function showMatches(rgb, photo){
   const cands = db.cards.filter(c => c.ref || c.hex).map(c => ({ c, d: dE(rgb, c.ref || hexToRgb(c.hex)) })).sort((a, b) => a.d - b.d).slice(0, 3);
   if (!cands.length){ $("#sc-result").innerHTML = `<div class="card empty">Aucune carte avec couleur enregistrée.</div>`; return; }
   const sp = scanTarget && db.spreads.find(s => s.id === scanTarget.spread);
@@ -465,7 +550,24 @@ $("#sc-shot").onclick = async () => {
     ${cands.map((x, k) => `<div class="list"><div class="item" data-pick="${esc(x.c.num)}"><div class="swatch" style="background:${esc(x.c.hex)}"></div>
       <div class="t">N° ${esc(x.c.num)} ${esc(x.c.name || "")}<small>${x.c.ref ? "calibrée" : "non calibrée"} · écart ${x.d.toFixed(1)}${k === 0 && x.d < 8 ? " · très probable" : ""}</small></div>
       <span class="pill">${sp ? "Placer en " + (scanTarget.i + 1) : "Voir"}</span></div></div>`).join("")}
+  ${photo ? `<button class="btn sec sm" id="sc-claude" hidden style="margin-top:10px">🔎 Faire lire le numéro de la carte par Claude</button>` : ""}
   </div><div id="sc-detail">${cardHtml(cands[0].c)}</div>`;
+  if (photo){
+    askClaude().then(sample => {
+      const b = $("#sc-claude"); if (!sample || !b) return; b.hidden = false;
+      b.onclick = async () => {
+        b.disabled = true; b.textContent = "Lecture…";
+        try {
+          const r = await sample.json("Photo d'une carte d'un jeu de couleurs numérotées de 1 à 96. Lis le numéro imprimé sur la carte. Réponds en JSON {\"num\": \"<numéro ou vide si illisible>\"}.", { images: [photo], modelTier: "quick" });
+          const n = String((r && r.num) || "").trim();
+          if (!n){ b.textContent = "Numéro illisible"; return; }
+          b.textContent = "Carte n° " + n;
+          if (sp){ current[scanTarget.i] = n; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
+          else $("#sc-detail").innerHTML = cardHtml(byNum(n));
+        } catch { b.textContent = "Lecture impossible"; }
+      };
+    });
+  }
   $("#sc-result").querySelectorAll("[data-pick]").forEach(el => el.onclick = () => {
     const n = el.dataset.pick;
     if (sp){ current[scanTarget.i] = n; $("#dr-spread").value = sp.id; scanTarget = null; showTab("draw"); }
@@ -513,8 +615,9 @@ $("#ce-save").onclick = () => {
   if (editing) Object.assign(editing, data); else db.cards.push(data);
   save(); $("#dlg-card").close(); renderCards(); showLookup(); toast("Carte enregistrée");
 };
-$("#ce-del").onclick = () => {
-  if (!editing || !confirm("Supprimer la carte n° " + editing.num + " ?")) return;
+$("#ce-del").onclick = async () => {
+  if (!editing || !(await ask("Supprimer la carte n° " + editing.num + " ?"))) return;
+  remoteDelete("card-" + editing.num);
   db.cards = db.cards.filter(c => c !== editing); save(); $("#dlg-card").close(); renderCards();
 };
 // Calibration
@@ -538,6 +641,20 @@ function loadTesseract(){
 $("#ce-ocr").onchange = async e => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
   const prog = $("#ce-ocr-prog"), bar = prog.firstElementChild; prog.hidden = false; bar.style.width = "3%";
+  const sample = await askClaude();
+  if (sample){
+    bar.style.width = "40%";
+    try {
+      const list = db.fields.map(f => JSON.stringify(f)).join(", ");
+      const r = await sample.json("Voici la photo d'une page de mon exemplaire d'un livre sur les couleurs (usage personnel). Transcris fidèlement le texte de la page en français, puis range-le dans ces rubriques : " + list + ". Mets dans \"autre\" ce qui ne va dans aucune rubrique. Réponds en JSON : {\"rubriques\": {<rubrique>: <texte>}, \"autre\": <texte>, \"numero\": <numéro de la couleur s'il est visible, sinon vide>}.", { images: [file], modelTier: "default" });
+      const rub = (r && r.rubriques) || {};
+      db.fields.forEach((f, i) => { const v = (rub[f] || "").trim(); if (v){ const t = $("#ce-f" + i); t.value = (t.value ? t.value + "\n" : "") + v; } });
+      if (r && r.autre){ const ta = $("#ce-ocr-text"); ta.hidden = false; ta.value = r.autre; }
+      if (r && r.numero && !$("#ce-num").value) $("#ce-num").value = r.numero;
+      toast("Page lue : vérifie les rubriques");
+    } catch { toast("Lecture impossible, réessaie avec une photo plus nette"); }
+    prog.hidden = true; return;
+  }
   try {
     await loadTesseract();
     const { data } = await Tesseract.recognize(file, "fra", { logger: m => { if (m.status === "recognizing text") bar.style.width = Math.round(m.progress * 100) + "%"; } });
@@ -572,8 +689,13 @@ $("#st-gen").onclick = () => {
   let n = 0; for (let i = a; i <= b; i++) if (!byNum(i)){ db.cards.push({ num: String(i), name: "", hex: "#888888", values: {}, notes: "", ref: null }); n++; }
   save(); toast(n + " carte(s) créée(s)");
 };
-$("#st-export").onclick = () => {
+$("#st-export").onclick = async () => {
   const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+  if (dl){
+    try { await dl.save({ filename: "tirage-couleurs-" + new Date().toISOString().slice(0, 10) + ".json", data: blob }); } catch {}
+    return;
+  }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
   a.download = "tirage-couleurs-" + new Date().toISOString().slice(0, 10) + ".json"; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
@@ -583,12 +705,13 @@ $("#st-import").onchange = async e => {
   try {
     const d = JSON.parse(await f.text());
     if (!Array.isArray(d.cards) || !Array.isArray(d.fields)) throw 0;
-    if (!confirm("Remplacer toutes les données actuelles par ce fichier ?")) return;
+    if (!(await ask("Remplacer toutes les données actuelles par ce fichier ?"))) return;
+    db.cards.forEach(c => remoteDelete("card-" + c.num));
     db = d; const def = defaults(); for (const k of Object.keys(def)) if (db[k] === undefined) db[k] = def[k];
     save(); applyTheme(); renderSettings(); renderLookup(); toast("Import réussi");
   } catch { toast("Fichier invalide"); }
 };
-$("#st-reset").onclick = () => { if (confirm("Effacer toutes les cartes, tirages et l'historique ?")){ db = defaults(); save(); renderSettings(); renderLookup(); toast("Données effacées"); } };
+$("#st-reset").onclick = async () => { if (await ask("Tout effacer et revenir aux 48 couleurs vides ?")){ db.cards.forEach(c => remoteDelete("card-" + c.num)); db = defaults(); save(); renderSettings(); renderLookup(); toast("Données effacées"); } };
 $("#st-theme").onchange = () => { db.theme = $("#st-theme").value; save(); applyTheme(); };
 function applyTheme(){ if (db.theme) document.documentElement.dataset.theme = db.theme; else delete document.documentElement.dataset.theme; }
 
@@ -620,13 +743,13 @@ $("#se-save").onclick = () => {
   if (editSpread) Object.assign(editSpread, data); else db.spreads.push({ id: uid(), ...data });
   save(); $("#dlg-spread").close(); renderSettings(); renderLookup();
 };
-$("#se-del").onclick = () => {
-  if (!editSpread || !confirm("Supprimer ce tirage ?")) return;
+$("#se-del").onclick = async () => {
+  if (!editSpread || !(await ask("Supprimer ce tirage ?"))) return;
   db.spreads = db.spreads.filter(s => s !== editSpread); save(); $("#dlg-spread").close(); renderSettings(); renderLookup();
 };
 
 /* ---------------- Démarrage ---------------- */
-applyTheme(); renderLookup();
+applyTheme(); renderLookup(); connectRemote();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
