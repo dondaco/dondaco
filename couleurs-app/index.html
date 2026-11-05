@@ -171,6 +171,17 @@ dialog .dbody{padding:16px;overflow:auto}
 <section id="tab-cards">
   <div class="card">
     <div class="row"><h2 style="margin:0">Mes cartes</h2><button class="btn sm" id="cd-add" style="flex:none">+ Ajouter</button></div>
+    <div class="card" style="background:var(--bg);margin:10px 0 0">
+      <b>Importer les pages du lexique en une fois</b>
+      <p class="muted">Sélectionne toutes tes photos des pages de couleurs, dans l'ordre du livre. Claude repère chaque couleur et range ses phrases-clés en Lumière et Matière. Tu peux le faire en plusieurs fois : ce qui est déjà rempli est conservé.</p>
+      <label class="btn sm" style="margin:0" id="bk-label">📚 Choisir les photos<input type="file" id="bk-files" accept="image/*" multiple hidden></label>
+      <div id="bk-run" hidden>
+        <div class="progress"><div id="bk-bar"></div></div>
+        <p class="muted" id="bk-status" style="margin:6px 0"></p>
+        <button class="btn sec sm" id="bk-stop">Arrêter</button>
+      </div>
+      <div id="bk-report"></div>
+    </div>
     <input id="cd-filter" placeholder="Rechercher (numéro, nom, texte)…" style="margin-top:10px">
     <div id="cd-list" class="list"></div>
   </div>
@@ -874,6 +885,76 @@ $("#dr-q-gen").onclick = async () => {
     $("#dr-q-props").querySelectorAll("[data-qp]").forEach(x => x.onclick = () => { $("#dr-q").value = qs[x.dataset.qp]; $("#dr-q").focus(); });
   } catch { toast("Pas de proposition pour l'instant, réessaie"); }
   b.disabled = false; b.textContent = "✨ Proposer des questions";
+};
+
+/* ---------------- Import en lot des pages du lexique ---------------- */
+let bkStop = false;
+$("#bk-stop").onclick = () => { bkStop = true; $("#bk-status").textContent = "Arrêt après la page en cours…"; };
+const wait = ms => new Promise(r => setTimeout(r, ms));
+// Ajoute des phrases à une rubrique sans créer de doublons
+function addLines(card, field, text){
+  const have = String((card.values || {})[field] || "").split("\n").map(l => l.trim()).filter(Boolean);
+  const norm = l => l.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+  const known = new Set(have.map(norm));
+  let added = 0;
+  for (const l of String(text || "").split("\n").map(x => x.trim()).filter(Boolean)){
+    if (!known.has(norm(l))){ have.push(l); known.add(norm(l)); added++; }
+  }
+  card.values = card.values || {}; card.values[field] = have.join("\n");
+  return added;
+}
+$("#bk-files").onchange = async e => {
+  const files = [...e.target.files]; e.target.value = ""; if (!files.length) return;
+  const sample = await askClaude();
+  if (!sample) return toast("L'import en lot n'est disponible que dans la version claude.ai");
+  bkStop = false; $("#bk-run").hidden = false; $("#bk-label").hidden = true; $("#bk-report").innerHTML = "";
+  const touched = new Map(), failed = [];
+  let lastNum = "", PER = 2;
+  const fields = db.fields.map(f => JSON.stringify(f)).join(", ");
+  for (let i = 0; i < files.length && !bkStop; i += PER){
+    const chunk = files.slice(i, i + PER);
+    $("#bk-bar").style.width = Math.round(100 * i / files.length) + "%";
+    $("#bk-status").textContent = "Photos " + (i + 1) + "–" + (i + chunk.length) + " sur " + files.length + "…";
+    let imgs;
+    try { imgs = await Promise.all(chunk.map(f => shrink(f, 1600, 0.85))); } catch { failed.push(...chunk.map((_, k) => i + k + 1)); continue; }
+    const prompt = "Ces photos viennent de mon exemplaire d'un livre de lexique de couleurs (usage personnel), dans l'ordre des pages. " +
+      "Chaque couleur a un numéro de 1 à 48 et un nom, et ses phrases-clés sont données en version Matière (jeu rouge) et en version Lumière (jeu or). " +
+      (lastNum ? "La page précédente parlait de la couleur n° " + lastNum + " : si le haut de la première photo continue cette couleur sans nouveau titre, rattache-le à ce numéro. " : "") +
+      "Transcris fidèlement, sans résumer ni reformuler, les phrases-clés de chaque couleur, réparties dans les rubriques " + fields + ". Une phrase-clé par ligne, dans l'ordre du livre (la première, en gras, en premier). " +
+      "Ignore les pages qui ne décrivent pas une couleur. Réponds en JSON : {\"couleurs\": [{\"numero\": \"\", \"nom\": \"\", \"rubriques\": {<rubrique>: \"lignes séparées par \\n\"}, \"autre\": \"texte de la couleur qui n'entre dans aucune rubrique\"}]}.";
+    let r = null;
+    for (let attempt = 0; attempt < 3 && !r; attempt++){
+      try { r = await sample.json(prompt, { images: imgs, modelTier: "default" }); }
+      catch (err){
+        if (err && err.code === "not_granted"){ bkStop = true; toast("Autorise l'envoi des photos à Claude pour continuer"); break; }
+        if (err && err.code === "rate_limited"){ $("#bk-status").textContent = "Pause (limite atteinte), reprise dans 30 s…"; await wait(30000); continue; }
+        break;
+      }
+    }
+    if (!r){ failed.push(...chunk.map((_, k) => i + k + 1)); continue; }
+    for (const c of (r.couleurs || [])){
+      const num = String(c.numero || "").replace(/\D/g, "");
+      if (!num) continue;
+      let card = byNum(num);
+      if (!card){ card = { num, name: String(c.nom || ""), hex: "#888888", values: {}, notes: "", ref: null }; db.cards.push(card); }
+      let n = 0;
+      for (const f of db.fields) n += addLines(card, f, (c.rubriques || {})[f]);
+      if (c.autre && String(c.autre).trim() && !String(card.notes || "").includes(String(c.autre).trim().slice(0, 40))) card.notes = ((card.notes ? card.notes + "\n" : "") + String(c.autre).trim());
+      touched.set(num, (touched.get(num) || 0) + n);
+      lastNum = num;
+    }
+    save();
+  }
+  $("#bk-bar").style.width = "100%";
+  $("#bk-run").hidden = true; $("#bk-label").hidden = false;
+  sortCards(); renderCards(); showLookup();
+  const nums = [...touched.keys()].sort((a, b) => a - b);
+  const missing = CATALOGUE.map(c => c[0]).filter(n => !db.fields.some(f => ((byNum(n) || {}).values || {})[f]));
+  $("#bk-report").innerHTML = `<div style="margin-top:10px">
+    <p><b>${nums.length} couleur(s) complétée(s)</b>${nums.length ? " : n° " + nums.join(", ") : ""}.</p>
+    ${failed.length ? `<p class="muted">Photos non lues : ${failed.join(", ")}. Reprends-les plus nettes.</p>` : ""}
+    ${missing.length ? `<p class="muted">Encore vides : n° ${missing.join(", ")}.</p>` : `<p>Toutes les couleurs ont du texte. Vérifie quelques fiches au hasard.</p>`}
+  </div>`;
 };
 
 /* ---------------- Tirages depuis des photos du livre ---------------- */
