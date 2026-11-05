@@ -300,12 +300,26 @@ const ALL = "__all__";
 // Les couleurs d'affichage (hex) sont approximatives : calibre avec tes cartes pour plus de précision.
 // Les deux paquets : dos Rouge = versions Matière, dos Or = versions Lumière
 const DECKS = { rouge: { label: "Rouge", field: "Matière", color: "#c62828" }, or: { label: "Or", field: "Lumière", color: "#d4af37" } };
+// Jeu rouge = mode de compréhension, jeu or = mode d'expérience (p. 29)
+const MODE = { "Matière": "jeu rouge, compréhension", "Lumière": "jeu or, expérience" };
 const deckField = d => d && DECKS[d] && db.fields.includes(DECKS[d].field) ? DECKS[d].field : null;
 function deckHtml(sel, attr){
   return `<div class="deck">${Object.entries(DECKS).map(([k, d]) => `<button type="button" ${attr}="${k}" class="${sel === k ? "on" : ""}"><i style="background:${d.color}"></i>${d.label} · ${d.field}</button>`).join("")}</div>`;
 }
 const LEXIQUE_URL = "https://williamberton.com/le-lexique-des-couleurs/";
-const G1 = "Arc-en-ciel (relationnelles)", G2 = "Transformation", G3 = "Paix", G4 = "Éveil";
+// Familles selon le livre (p. 29) : 21 relationnelles, 11 de transformation, 7 de la paix, 5 de l'éveil, 3 de la sagesse, la spirale
+const G1 = "Couleurs relationnelles", G2 = "Couleurs de transformation", G3 = "Couleurs de la paix", G4 = "Couleurs de l'éveil", G5 = "Couleurs de la sagesse", G6 = "La carte spirale";
+const GROUP_INFO = {
+  [G1]: "Les sept modes de relation que nous établissons avec le monde.",
+  [G2]: "Se détacher des schémas parentaux, quitter son histoire et le besoin de tout contrôler.",
+  [G3]: "Le chemin du lâcher-prise et du retour au temps présent.",
+  [G4]: "Voir le monde détaché des enjeux relationnels, vivre en pleine possession de ses moyens.",
+  [G5]: "L'effort à faire pour vivre ici et maintenant, en cherchant les solutions à partir du présent.",
+  [G6]: "Sa couleur associée à sa forme éveille l'imagination."
+};
+// Mode de relation de chaque couleur de l'arc-en-ciel (3 nuances chacune)
+const RELATION = ["la mère et le concret", "le corps et le plaisir", "l'intellect et la place", "l'affectif et le fait d'aimer", "la perception et l'authenticité", "le psychique et la motivation", "le père et la direction"];
+const relationOf = num => { const n = parseInt(num); return n >= 1 && n <= 21 ? RELATION[Math.floor((n - 1) / 3)] : ""; };
 const CATALOGUE = [
   ["1","Rouge clair / naissant",G1,"#f28b82"],["2","Rouge franc",G1,"#d62828"],["3","Rouge foncé / mature",G1,"#7f1d1d"],
   ["4","Orange clair / naissant",G1,"#ffc58f"],["5","Orange franc",G1,"#f77f00"],["6","Orange foncé / mature",G1,"#a84c00"],
@@ -320,8 +334,8 @@ const CATALOGUE = [
   ["33","Sable",G3,"#e3cfa3"],["34","Cuivre",G3,"#b8733a"],["35","Argent",G3,"#c0c4c8"],["36","Or",G3,"#d4af37"],
   ["37","Irisé",G3,"#e6e0f5"],["38","Transparent",G3,"#f2f6f8"],["39","Lilas",G3,"#c8a2c8"],
   ["40","Nacre",G4,"#f3ece2"],["41","Ocre",G4,"#c9862b"],["42","Safran",G4,"#f4a300"],["43","Caramel",G4,"#a8632a"],
-  ["44","Vert vif argent",G4,"#7fd1a8"],["45","Crème lait",G4,"#f6efd9"],["46","Cacao",G4,"#5a3a29"],["47","Café frappé",G4,"#a58a6e"],
-  ["48","Spirale",G4,"#9b7fd1"]
+  ["44","Vert vif argent",G4,"#7fd1a8"],["45","Crème lait",G5,"#f6efd9"],["46","Cacao",G5,"#5a3a29"],["47","Café frappé",G5,"#a58a6e"],
+  ["48","Spirale",G6,"#9b7fd1"]
 ];
 const catalogueCards = () => CATALOGUE.map(([num, name, group, hex]) => ({ num, name, group, hex, values: {}, notes: "", ref: null }));
 function mergeCatalogue(){
@@ -329,10 +343,12 @@ function mergeCatalogue(){
   for (const c of catalogueCards()){
     const e = byNum(c.num);
     if (!e){ db.cards.push(c); added++; }
-    else { if (!e.name) e.name = c.name; if (!e.group) e.group = c.group; if (!e.ref && (!e.hex || e.hex === "#888888")) e.hex = c.hex; }
+    else { if (!e.name) e.name = c.name; e.group = c.group; if (!e.ref && (!e.hex || e.hex === "#888888")) e.hex = c.hex; }
   }
+  db.catVersion = CAT_VERSION;
   return added;
 }
+const CAT_VERSION = 2;
 const defaults = () => ({
   fields: ["Lumière", "Matière"],
   cards: catalogueCards(),
@@ -359,7 +375,7 @@ function save(){
   if (remote) pushRemote();
 }
 function remoteDocs(){
-  const out = { meta: { fields: db.fields, spreads: db.spreads, history: db.history, theme: db.theme || "" } };
+  const out = { meta: { fields: db.fields, spreads: db.spreads, history: db.history, theme: db.theme || "", catVersion: db.catVersion || 0 } };
   for (const c of db.cards) out["card-" + c.num] = c;
   for (const [id, img] of Object.entries(db.spreadImages || {})) out["img-" + id] = { img };
   return out;
@@ -394,7 +410,7 @@ async function connectRemote(){
     next.spreadImages = {};
     Object.keys(docs).filter(k => k.startsWith("img-")).forEach(k => next.spreadImages[k.slice(4)] = docs[k].img);
     for (const [k, v] of Object.entries(docs)) sent[k] = JSON.stringify(v);
-    db = next; sortCards();
+    db = next; if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); pushRemote(); } sortCards();
     try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
     applyTheme(); renderLookup(); renderCards(); renderSettings();
   } catch {}
@@ -441,18 +457,20 @@ function cardHtml(c, field){
   const fields = field && field !== ALL ? [field] : db.fields;
   const body = fields.map(f => {
     const v = (c.values || {})[f];
-    return `<div class="field"><b>${esc(f)}</b><p>${v ? keyHtml(v) : '<span class="muted">— pas encore rempli —</span>'}</p></div>`;
+    return `<div class="field"><b>${esc(f)}${MODE[f] ? ` <span class="muted" style="text-transform:none;letter-spacing:0">· ${MODE[f]}</span>` : ""}</b><p>${v ? keyHtml(v) : '<span class="muted">— pas encore rempli —</span>'}</p></div>`;
   }).join("");
   const others = field && field !== ALL && db.fields.length > 1
     ? `<details style="margin-top:10px"><summary class="muted">Voir les autres rubriques</summary>${db.fields.filter(f => f !== field).map(f => `<div class="field"><b>${esc(f)}</b><p>${esc((c.values || {})[f] || "—")}</p></div>`).join("")}</details>` : "";
   const empty = !db.fields.some(f => (c.values || {})[f]);
   const quick = empty ? `<div class="row" style="margin-top:12px"><button class="btn sm" onclick="openCard('${esc(c.num)}', null, true)">📄 Remplir depuis la page du livre</button></div>` : "";
+  const rel = relationOf(c.num), gi = GROUP_INFO[c.group];
+  const ctx = rel || gi ? `<p class="muted" style="margin:10px 0 0">${rel ? "Mode de relation : " + esc(rel) + ". " : ""}${gi ? esc(gi) : ""}</p>` : "";
   const notes = c.notes ? `<div class="field"><b>Mes notes</b><p>${esc(c.notes)}</p></div>` : "";
-  return `<div class="card result">
+  return `<div class="card result">${""}
     <div class="row" style="flex-wrap:nowrap"><div class="swatch lg" style="background:${esc(c.hex || "#888")}"></div>
       <div><div style="font-size:1.4rem;font-weight:700">N° ${esc(c.num)}</div><div>${esc(c.name || "")}</div>${c.group ? `<div class="muted">${esc(c.group)}</div>` : ""}</div>
       <button class="btn sec sm" style="flex:none" onclick="openCard('${esc(c.num)}')">Modifier</button></div>
-    ${body}${others}${notes}${quick}<p class="muted" style="margin:10px 0 0"><a href="${LEXIQUE_URL}" target="_blank" rel="noopener" style="color:var(--accent)">Lexique des couleurs sur le site de l'auteur ↗</a></p></div>`;
+    ${ctx}${body}${others}${notes}${quick}<p class="muted" style="margin:10px 0 0"><a href="${LEXIQUE_URL}" target="_blank" rel="noopener" style="color:var(--accent)">Lexique des couleurs sur le site de l'auteur ↗</a></p></div>`;
 }
 
 /* ---------------- Navigation ---------------- */
@@ -913,6 +931,7 @@ document.querySelectorAll(".spread-photos").forEach(inp => inp.onchange = async 
 });
 
 /* ---------------- Démarrage ---------------- */
+if (db.catVersion !== CAT_VERSION){ mergeCatalogue(); try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {} }
 applyTheme(); renderLkDeck(); renderLookup(); connectRemote();
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
