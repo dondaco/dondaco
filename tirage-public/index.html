@@ -336,6 +336,23 @@ const AI_ENDPOINT = ""; // ex. "https://couleurs-ia.ton-nom.workers.dev"
 let sampleFn = null, aiResult = null;
 if (AI_ENDPOINT){ $("#b-ai").hidden = false; $("#b-ai-copy").hidden = true; $("#ai-help").hidden = true; }
 else if (window.claude && window.claude.use) window.claude.use("sample").then(s => { sampleFn = s; $("#b-ai").hidden = !s; if (s) $("#ai-help").textContent = "La conclusion utilise le compte Claude de la personne qui consulte la page."; }).catch(() => {});
+// Mémoire partagée des retours (version claude.ai) : leçons anonymes, lisibles par tous, écrites avec accord
+let store = null, canShare = null;
+if (!AI_ENDPOINT && window.claude && window.claude.use){
+  window.claude.use("db").then(d => { store = d; }).catch(() => {});
+  window.claude.use("user").then(u => u && u.can ? u.can("data.write") : null).then(v => { canShare = v; }).catch(() => {});
+}
+async function lessonsFor(){
+  if (!store) return [];
+  try {
+    const col = store.collection("lecons");
+    const cols = drawData().map(c => c.couleur);
+    const snaps = await Promise.all([col.where("tirage", "==", sp.name).limit(40).get(), ...cols.map(c => col.where("couleurs", "array-contains", c).limit(20).get())]);
+    const seen = new Set(), out = [];
+    for (const sn of snaps) for (const d of sn.docs){ const x = d.data(); if (x && x.lecon && !seen.has(x.lecon)){ seen.add(x.lecon); out.push(x); } }
+    return out.sort((a, b) => (b.note || 0) - (a.note || 0)).slice(0, 6);
+  } catch { return []; }
+}
 async function askEndpoint(){
   return relay("/interpretation", {});
 }
@@ -351,7 +368,9 @@ $("#b-ai").onclick = async () => {
   const b = $("#b-ai"); b.disabled = true; b.textContent = "Claude réfléchit…";
   $("#ai-out").innerHTML = `<p class="muted wait">Claude relie ton tirage à ta question…</p>`;
   try {
-    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + " Réponds en JSON {\"cartes\": [\"...\"], \"synthese\": \"...\", \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
+    const lessons = AI_ENDPOINT ? [] : await lessonsFor();
+    const insp = lessons.length ? " Voici ce que d'autres personnes ont dit avoir bien ou mal reçu lors de tirages proches (anonyme) ; inspire-t'en sans le recopier : " + JSON.stringify(lessons.map(l => l.lecon)) + "." : "";
+    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"cartes\": [\"...\"], \"synthese\": \"...\", \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
     $("#ai-out").innerHTML = aiHtml(aiResult);
     b.textContent = "Proposer une autre conclusion";
     openChat();
@@ -375,10 +394,11 @@ function conclusionText(){
 }
 function openChat(){
   chat = []; rating = 0; $("#chat").hidden = false; $("#chat-log").innerHTML = ""; $("#chat-txt").value = "";
-  $("#consent-wrap").hidden = !AI_ENDPOINT; $("#consent").checked = false;
+  const canStore = !!AI_ENDPOINT || (!!store && canShare !== false);
+  $("#consent-wrap").hidden = !canStore; $("#consent").checked = false;
   $("#chat-quick").innerHTML = QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("");
   $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); t.focus(); });
-  renderStars(); $("#chat-end").disabled = false; $("#chat-end").textContent = AI_ENDPOINT ? "Terminer et envoyer mon retour" : "Terminer";
+  renderStars(); $("#chat-end").disabled = false; $("#chat-end").textContent = canStore ? "Terminer et envoyer mon retour" : "Terminer";
 }
 function renderStars(){
   $("#stars").innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} sur 5" data-n="${n}" class="${n <= rating ? "on" : ""}">★</button>`).join("");
@@ -413,6 +433,20 @@ $("#chat-end").onclick = async () => {
     b.textContent = "Envoi…";
     try { const r = await relay("/retour", { conclusion: conclusionText(), messages: chat, note: rating || 3, consentement: true }); toast(r.enregistre ? "Merci, ton retour aidera les prochains tirages" : "Merci pour ton retour"); }
     catch { toast("Ton retour n'a pas pu être envoyé"); }
+  } else if (store && sampleFn && $("#consent").checked){
+    b.textContent = "Envoi…";
+    try {
+      const ex = chat.slice(-16).map(m => (m.role === "assistant" ? "Guide : " : "Personne : ") + m.content).join("\n");
+      const r = await sampleFn.json("Tu résumes un retour d'expérience de façon strictement anonyme : aucun prénom, lieu, date, détail identifiant ni élément de vie privée, et sans reprendre la question de la personne. " +
+        "Tirage « " + sp.name + " », cartes : " + JSON.stringify(drawData().map(c => ({ position: c.position, couleur: c.couleur, cote: c.cote }))) +
+        ". Conclusion proposée : " + conclusionText() + ". Note donnée : " + (rating || 3) + "/5. Échange :\n" + ex +
+        "\nTire en une ou deux phrases une leçon générale pour mieux interpréter ce tirage ou ces couleurs la prochaine fois (formulations qui ont touché, angle qui a manqué). Réponds en JSON {\"lecon\": \"...\"}.", { modelTier: "quick" });
+      const lecon = String((r && r.lecon) || "").trim().slice(0, 400);
+      if (lecon){
+        await store.collection("lecons").add({ tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon, note: rating || 3, date: new Date().toISOString().slice(0, 10) });
+        toast("Merci, ton retour aidera les prochains tirages");
+      } else toast("Merci pour ton retour");
+    } catch (e) { toast(e && e.code === "invalid_argument" ? "Ton accès ne permet pas de partager ton retour (demande le rôle Contributeur)" : "Ton retour n'a pas pu être envoyé"); }
   } else toast("Merci pour ce tirage");
   b.textContent = "Merci !";
 };
