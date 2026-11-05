@@ -190,74 +190,86 @@ const itemLayer={};Object.entries(LAYERS).forEach(([L,o])=>Object.keys(o.items).
 const STEPS=[
  {id:"toi",label:"Toi",title:"Pour commencer",intro:"Réponds au feeling. Il n’y a pas de bonne réponse, seulement la tienne.",qs:[
    {id:"prenom",type:"text",q:"Comment tu t’appelles ?",ph:"Ton prénom"}]},
- {id:"perso",label:"Qui tu es",title:"Qui tu es",intro:"Ta façon d’être avec les autres et avec toi-même.",qs:[
+ {id:"perso",label:"Qui tu es",title:"Qui tu es",intro:"Ta façon d’être avec les autres et avec toi-même. Choisis la réponse qui te ressemble le plus.",qs:[
    {id:"p1",q:"Dans un groupe d’ami·es, tu es souvent…",opts:[
-     {fr:"celle ou celui qui écoute, un peu en retrait",w:{rochers:2,clairiere:1,lac:1}},
-     {fr:"le lien entre tout le monde",w:{riviere:3,sentier:1}},
-     {fr:"celle ou celui qui entraîne les autres",w:{marque:2,soleil:1,cascade:1}},
-     {fr:"la présence qui apaise",w:{lac:2,prairie:1,plat:1}},
-     {fr:"l’électron libre",w:{fleurs:2,dunes:1,nuages:1}}]},
+     {fr:"celle ou celui sur qui on peut compter, un peu en retrait",w:{rochers:2,arbre:1}},
+     {fr:"celle ou celui qui sent tout de suite comment chacun va",w:{lac:2,source:1}},
+     {fr:"celle ou celui qui entraîne les autres",w:{marque:2,soleil:1}},
+     {fr:"celle ou celui qui prend soin de tout le monde",w:{doux:2,prairie:1}},
+     {fr:"dans ta bulle, la tête un peu ailleurs",w:{nuages:2,brume:1}},
+     {fr:"celle ou celui qui propose toujours d’aller voir ailleurs",w:{sentier:2,dunes:1}}]},
    {id:"p2",q:"Face à un obstacle, tu…",opts:[
-     {fr:"le contournes en douceur",w:{riviere:2,doux:1}},
+     {fr:"restes solide et attends que ça passe",w:{falaise:2,rochers:1}},
+     {fr:"as besoin de le ressentir et d’en parler avant d’agir",w:{source:2,lac:1}},
      {fr:"fonces",w:{cascade:2,marque:1}},
-     {fr:"restes solide et attends que ça passe",w:{rochers:2,falaise:1,arbre:1}},
+     {fr:"cherches un terrain d’entente, en douceur",w:{doux:2,clairiere:1}},
+     {fr:"imagines une solution à laquelle personne n’a pensé",w:{etoiles:2,lune:1}},
      {fr:"cherches un autre chemin",w:{sentier:3}}]},
    {id:"p3",q:"Ton rythme idéal",opts:[
-     {fr:"lent et régulier",w:{plat:2,lac:1,mousse:1}},
-     {fr:"par vagues, avec des hauts et des bas",w:{dunes:2,mer:2}},
-     {fr:"des élans, puis des pauses",w:{doux:2,cascade:1,clairiere:1}},
-     {fr:"intense, plein d’énergie",w:{marque:2,volcan:2}}]},
+     {fr:"lent et régulier",w:{plat:2,mousse:1}},
+     {fr:"par vagues, avec des hauts et des bas",w:{mer:2,lac:1}},
+     {fr:"intense, plein d’énergie",w:{volcan:2,marque:1}},
+     {fr:"tranquille, avec du temps pour profiter",w:{doux:2,prairie:1}},
+     {fr:"au gré de tes envies, sans horaires",w:{brume:2,vallee:1}},
+     {fr:"toujours en mouvement, d’un endroit à l’autre",w:{dunes:2,sentier:1}}]},
    {id:"p4",q:"Tes émotions ressemblent plutôt à…",opts:[
+     {fr:"un lac calme en surface, profond en dessous",w:{lac:3,plat:1}},
      {fr:"une source cachée, qu’on découvre en s’approchant",w:{source:3}},
-     {fr:"un fleuve qui coule sans s’arrêter",w:{riviere:3}},
-     {fr:"un lac calme en surface, profond en dessous",w:{lac:3}},
      {fr:"un volcan qui dort",w:{volcan:3}},
-     {fr:"la mer, avec ses marées",w:{mer:3}}]},
+     {fr:"une pluie douce qui fait tout pousser",w:{fleurs:2,prairie:1}},
+     {fr:"une brume, difficile à saisir",w:{brume:3}},
+     {fr:"un fleuve qui coule sans s’arrêter",w:{riviere:3,sentier:1}}]},
    {id:"p5",q:"Quand tout va trop vite, tu as besoin de…",opts:[
-     {fr:"te retirer dans un coin à toi",w:{clairiere:2,foret:1,vallee:1}},
-     {fr:"t’allonger et regarder le ciel",w:{prairie:2,plat:1,nuages:1}},
-     {fr:"marcher, bouger",w:{sentier:2,doux:1}},
-     {fr:"te plonger dans l’eau",w:{lac:1,mer:1,source:1}}]},
+     {fr:"retrouver un lieu connu, du concret",w:{arbre:2,plat:1}},
+     {fr:"te plonger dans l’eau",w:{mer:2,lac:1}},
+     {fr:"te défouler, bouger fort",w:{cascade:2,marque:1}},
+     {fr:"un plaid, un thé, quelqu’un de doux",w:{mousse:2,clairiere:1}},
+     {fr:"t’allonger et regarder le ciel",w:{nuages:2,etoiles:1}},
+     {fr:"marcher, partir un peu",w:{sentier:2,dunes:1}}]},
    {id:"p6",q:"Ce qui te fait te sentir protégé·e",opts:[
-     {fr:"une montagne dans ton dos",w:{marque:1,vallee:3}},
-     {fr:"un rocher solide sur lequel t’appuyer",w:{rochers:3}},
-     {fr:"des arbres tout autour",w:{foret:3}},
-     {fr:"de l’eau tout autour de toi",w:{ile:4}}]}
+     {fr:"un rocher solide dans ton dos",w:{rochers:3}},
+     {fr:"de l’eau tout autour de toi",w:{ile:4}},
+     {fr:"une hauteur d’où tu vois tout venir",w:{marque:2,falaise:1}},
+     {fr:"un nid, des bras qui t’entourent",w:{clairiere:2,doux:1}},
+     {fr:"un creux loin du bruit, que personne ne connaît",w:{vallee:3}},
+     {fr:"savoir que tu peux partir quand tu veux",w:{sentier:2,dunes:1}}]}
  ]},
  {id:"racines",label:"Tes racines",title:"Tes racines",intro:"Ce qui te nourrit, d’où tu viens, ce que tu laisses derrière toi.",qs:[
    {id:"r1",q:"Tes racines, c’est plutôt…",opts:[
      {fr:"un lieu, une famille, quelque chose de très ancré",w:{arbre:3}},
+     {fr:"les liens du cœur, les émotions partagées",w:{source:2,lac:1}},
+     {fr:"les défis que tu as relevés",w:{soleil:2,marque:1}},
      {fr:"un peu partout, plein de petites racines",w:{prairie:2,fleurs:1}},
-     {fr:"tu les cherches encore",w:{sentier:2,source:1}},
-     {fr:"la nature sauvage",w:{foret:3}}]},
+     {fr:"les histoires et l’imaginaire qui t’ont nourri·e",w:{lune:2,etoiles:1}},
+     {fr:"tu les cherches encore",w:{sentier:2,dunes:1}}]},
    {id:"r2",q:"Un souvenir de nature qui t’est resté",opts:[
+     {fr:"une forêt",w:{foret:3,mousse:1}},
      {fr:"le bord de mer",w:{mer:2,galets:2}},
-     {fr:"une forêt",w:{foret:2,mousse:1}},
      {fr:"la montagne",w:{marque:2,falaise:1}},
-     {fr:"un jardin",w:{fleurs:2,arbre:1}},
-     {fr:"les champs, la campagne",w:{prairie:2,plat:1}},
+     {fr:"un jardin en fleurs",w:{fleurs:3}},
+     {fr:"une nuit à la belle étoile",w:{etoiles:3}},
      {fr:"le désert, le sable",w:{dunes:3}}]},
-   {id:"r3",q:"Si tu étais une plante, tu serais…",opts:[
-     {fr:"un grand arbre seul",w:{arbre:3}},
-     {fr:"une forêt entière",w:{foret:3}},
-     {fr:"une herbe de prairie",w:{prairie:3}},
-     {fr:"une fleur sauvage",w:{fleurs:3}},
-     {fr:"de la mousse sur un rocher",w:{mousse:2,rochers:1}}]},
    {id:"r4",q:"Ce que tu laisses derrière toi",opts:[
+     {fr:"quelque chose de solide, sur quoi construire",w:{rochers:2,arbre:1}},
      {fr:"des petites traces, des souvenirs ramassés",w:{galets:3}},
+     {fr:"une impulsion, l’envie de se lancer",w:{soleil:2,cascade:1}},
      {fr:"des graines qui poussent après ton passage",w:{fleurs:2,prairie:1}},
-     {fr:"un chemin que d’autres peuvent suivre",w:{sentier:2}},
-     {fr:"rien, tu passes sur la pointe des pieds",w:{nuages:2,plat:1}}]},
+     {fr:"un peu de mystère",w:{brume:2,lune:1}},
+     {fr:"un chemin que d’autres peuvent suivre",w:{sentier:3}}]},
    {id:"r5",q:"Ton moment entre ciel et terre",opts:[
+     {fr:"un ciel immense au-dessus d’une plaine",w:{plat:2,nuages:1}},
+     {fr:"la pleine lune qui se reflète sur l’eau",w:{lune:2,lac:1}},
      {fr:"le soleil qui se lève",w:{soleil:3}},
-     {fr:"la pleine lune",w:{lune:3}},
-     {fr:"une nuit étoilée",w:{etoiles:3}},
-     {fr:"la brume du matin",w:{brume:3}},
-     {fr:"un ciel plein de gros nuages",w:{nuages:3}}]},
+     {fr:"un ciel rose de fin de journée, dans l’herbe",w:{nuages:1,prairie:2}},
+     {fr:"une nuit pleine d’étoiles",w:{etoiles:3}},
+     {fr:"la brume du matin, quand tout est encore possible",w:{brume:2,sentier:1}}]},
    {id:"r6",q:"Ton monde intérieur, il est…",opts:[
-     {fr:"grand ouvert",w:{plat:2,prairie:1}},
-     {fr:"entrouvert, il faut trouver l’entrée",w:{clairiere:2,vallee:1}},
-     {fr:"bien protégé, mais chaleureux quand on y entre",w:{vallee:2,volcan:1}}]}
+     {fr:"stable, on sait où on met les pieds",w:{plat:2,rochers:1}},
+     {fr:"profond, on y découvre toujours quelque chose",w:{source:2,lac:1}},
+     {fr:"bouillonnant, plein de projets",w:{volcan:2}},
+     {fr:"chaleureux, ouvert à qui veut entrer",w:{clairiere:2,prairie:1}},
+     {fr:"secret, il faut trouver l’entrée",w:{vallee:2,brume:1}},
+     {fr:"jamais pareil, il change tout le temps",w:{dunes:2}}]}
  ]},
  {id:"toucher",label:"Le toucher",title:"Le toucher",intro:"Ton tapis se lit aussi avec les mains. En tuftage, le relief vient des différentes hauteurs de laine.",qs:[
    {id:"t1",q:"Si tu parcourais ton paysage les yeux fermés, du bout des doigts, tu voudrais sentir…",opts:[
@@ -265,14 +277,9 @@ const STEPS=[
      {fr:"des courbes douces",w:{doux:4},tuft:"gentle relief with two pile heights",tuftfr:"léger relief, deux hauteurs"},
      {fr:"de vrais reliefs, des creux et des sommets, des touffes comme de la mousse",w:{marque:4},tuft:"sculptural high-pile mounds and moss-like clusters of many different heights, strong 3D relief",tuftfr:"relief sculpté, touffes de mousse de plusieurs hauteurs"}]},
    {id:"t4",q:"La forme de ton tapis",opts:[
-     {fr:"organique, avec des petits îlots détachés autour",shape:"organic",sat:true,en:"irregular organic silhouette with small detached satellite pieces scattered around it",frs:"forme organique irrégulière, avec des petits îlots détachés autour"},
      {fr:"organique, d’un seul tenant",shape:"organic",en:"irregular organic silhouette",frs:"forme organique irrégulière"},
      {fr:"ronde",shape:"round",en:"round shape",frs:"forme ronde"},
      {fr:"rectangulaire, comme un morceau de paysage découpé",shape:"rect",en:"rectangular shape",frs:"forme rectangulaire"}]},
-   {id:"taille",q:"La taille de ton tapis",hint:"Dimensions approximatives, la forme peut varier un peu. Le prix dépend de la taille : je te l’enverrai avec le visuel de ton tapis.",opts:[
-     {fr:"Petit · environ 60 × 40 cm",en:"small, about 60 x 40 cm",frs:"petit, environ 60 × 40 cm"},
-     {fr:"Moyen · environ 75 × 55 cm",en:"medium, about 75 x 55 cm",frs:"moyen, environ 75 × 55 cm"},
-     {fr:"Grand · environ 100 × 80 cm",en:"large, about 100 x 80 cm",frs:"grand, environ 100 × 80 cm"}]},
    {id:"t2",q:"La matière que tu aimes toucher",opts:[
      {fr:"la mousse",w:{mousse:2},tex:"soft cut pile",texfr:"velours coupé tout doux"},
      {fr:"un galet poli",w:{galets:2},tex:"smooth tight loop pile",texfr:"bouclé serré et lisse"},
@@ -311,10 +318,10 @@ const STEPS=[
      {fr:"la lumière, des plantes, les fenêtres ouvertes",p:"printemps"},
      {fr:"l’épure : peu d’objets, mais forts",p:"hiver"}]},
    {id:"c6",q:"La musique qui t’accompagne",opts:[
-     {fr:"folk, chanson à texte",p:"automne"},
-     {fr:"classique, piano",p:"ete"},
-     {fr:"pop, comédies musicales",p:"printemps"},
-     {fr:"jazz, électro, expérimental",p:"hiver"}]},
+     {fr:"soul, gospel, folk",p:"automne"},
+     {fr:"R&B, classique, piano",p:"ete"},
+     {fr:"pop, afrobeats, comédies musicales",p:"printemps"},
+     {fr:"rap, électro, jazz expérimental",p:"hiver"}]},
    {id:"c7",q:"Une amie ne va pas bien, tu…",opts:[
      {fr:"restes avec elle aussi longtemps qu’il le faut",p:"automne"},
      {fr:"l’écoutes calmement et cherches avec elle",p:"ete"},
@@ -329,13 +336,13 @@ const STEPS=[
  ]},
  {id:"paysage",label:"Ton paysage",title:"Ton paysage",scape:true},
  {id:"touche",label:"Ta touche",title:"Ta touche à toi",intro:"Cet espace est à toi. Tout est facultatif.",qs:[
-   {id:"ajout",type:"textarea",q:"Y a-t-il un élément que tu aimerais ajouter en plus sur ton tapis ?",ph:"Un animal, un symbole, un objet, un lieu, un souvenir…"}]},
+   {id:"ajout",type:"textarea",q:"Un détail qui compte pour toi ?",hint:"Un souvenir, un lieu, un objet, un animal… On ne le dessinera pas tel quel : on s’en inspirera pour une forme, une couleur ou un petit motif discret dans ton paysage.",ph:"Facultatif"}]},
  {id:"fiche",label:"Ton portrait",title:"Ton portrait",final:true}
 ];
 const Q={};STEPS.forEach(s=>(s.qs||[]).forEach(q=>Q[q.id]=q));
 
 /* ---------- État ---------- */
-const KEY="paysage-interieur-v1";
+const KEY="paysage-interieur-v2";
 let S={step:0,a:{},ov:{}};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.a)S={ov:{},...s};}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
@@ -370,8 +377,8 @@ function drawScape(cv,comp){
   const x=cv.getContext("2d");x.scale(dpr,dpr);
   const r=rng(JSON.stringify(comp)+(window.__name||"")),R=(a,b)=>a+r()*(b-a);
   const d=(opt("t3")&&opt("t3").d)||1, N=k=>Math.max(1,Math.round(k*d));
-  const sh=opt("t4")||{shape:"organic"},sat=!!sh.sat;
-  const cx=300,cy=300,rad=sh.shape==="organic"?(sat?212:250):276;
+  const sh=opt("t4")||{shape:"organic"};
+  const cx=300,cy=300,rad=sh.shape==="organic"?250:276;
   const ph1=R(0,6),ph2=R(0,6);
   const outline=(dy=0)=>{x.beginPath();
     if(sh.shape==="round")x.arc(cx,cy+dy,rad,0,7);
@@ -440,8 +447,6 @@ function drawScape(cv,comp){
   x.restore();
   // bordure tuftée
   outline(0);x.strokeStyle="rgba(0,0,0,.14)";x.lineWidth=6;x.stroke();
-  // îlots détachés autour
-  if(sat){for(let i=0;i<N(6);i++){const a=R(0,7),q=R(266,290);const px=Math.min(578,Math.max(22,cx+q*Math.cos(a))),py=Math.min(578,Math.max(22,cy+q*Math.sin(a)*.95));tuft(px,py,R(11,20),tcol[i%tcol.length]);}}
 }
 
 /* ---------- Textes ---------- */
@@ -449,7 +454,7 @@ function promptText(lang){
   const c=compose(),name=(S.a.prenom||"").trim();
   const parts=Object.keys(LAYERS).map(L=>c[L]!=="aucune"?LAYERS[L].items[c[L]][lang==="en"?"en":"fr"]:null).filter(Boolean);
   const t1=opt("t1"),t2=opt("t2"),t3=opt("t3");
-  const ajout=(S.a.ajout||"").trim(),ret=(S.a.retirer||"").trim(),pk=curPal(),P=pk?PALS[pk]:null,av=(S.a.eviter||"").trim(),tl=opt("taille");
+  const ajout=(S.a.ajout||"").trim(),pk=curPal(),P=pk?PALS[pk]:null,av=(S.a.eviter||"").trim();
   if(lang==="en"){
     const t4=opt("t4");
     const p=[`Top-down photograph of a handmade tufted wool meditation rug in the style of a sculptural moss landscape, ${t4?t4.en:"irregular organic silhouette"}, depicting a landscape seen from above: ${parts.join(", ")}.`];
@@ -458,9 +463,7 @@ function promptText(lang){
     if(t1)p.push(`Relief: ${t1.tuft}.`);
     if(t2)p.push(`Texture: ${t2.tex}.`);
     p.push(`Color palette: ${P?P.en:"harmonious natural colors"}${av?`, no ${av}`:""}.`);
-    if(tl)p.push(`Size: ${tl.en}.`);
-    if(ajout)p.push(`Also include: ${ajout}.`);
-    if(ret)p.push(`Avoid: ${ret}.`);
+    if(ajout)p.push(`Integrate one small, very stylized abstract motif subtly inspired by: ${ajout} (simple shape or color accent, not a literal depiction).`);
     p.push("Visible wool fibers, high-low tufting, soft natural light, rug lying on a light wooden floor, serene and meditative atmosphere, highly detailed.");
     return p.join(" ");
   }
@@ -471,9 +474,7 @@ function promptText(lang){
   if(t1)p.push(`Relief : ${t1.tuftfr}.`);
   if(t2)p.push(`Texture : ${t2.texfr}.`);
   p.push(`Palette : ${P?P.frl:"couleurs naturelles et harmonieuses"}${av?`, sans ${av}`:""}.`);
-  if(tl)p.push(`Taille : ${tl.frs}.`);
-  if(ajout)p.push(`À ajouter : ${ajout}.`);
-  if(ret)p.push(`À éviter : ${ret}.`);
+  if(ajout)p.push(`Intégrer un petit motif abstrait très stylisé, discrètement inspiré de : ${ajout} (une forme simple ou une touche de couleur, pas une représentation réaliste).`);
   p.push("Fibres de laine visibles, différentes hauteurs de laine, lumière naturelle douce, tapis posé sur un parquet clair, atmosphère sereine et méditative, très détaillé.");
   return p.join(" ");
 }
@@ -506,7 +507,7 @@ function renderSteps(){
 function renderQ(q){
   const v=S.a[q.id];
   if(q.type==="text")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label><input type="text" id="f-${q.id}" data-text="${q.id}" value="${esc(v)}" placeholder="${esc(q.ph)}"></div>`;
-  if(q.type==="textarea")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label><textarea id="f-${q.id}" data-text="${q.id}" placeholder="${esc(q.ph)}">${esc(v)}</textarea></div>`;
+  if(q.type==="textarea")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label>${q.hint?`<p class="note">${q.hint}</p>`:""}<textarea id="f-${q.id}" data-text="${q.id}" placeholder="${esc(q.ph)}">${esc(v)}</textarea></div>`;
   return `<fieldset class="q"><legend>${q.q}</legend>${q.hint?`<p class="note">${q.hint}</p>`:""}<div class="opts">${q.opts.map((o,i)=>`<button type="button" class="opt" data-q="${q.id}" data-v="${i}" aria-pressed="${v===i}">${o.fr}</button>`).join("")}</div></fieldset>`;
 }
 function renderScape(final){
@@ -547,26 +548,6 @@ const SEASON={
 };
 const T1M=["Tu cherches une surface calme, qui ne te demande rien, juste te poser.","Tu aimes ce qui est rond et enveloppant, un relief qui se devine plus qu’il ne se montre.","Tu as besoin de sentir, d’explorer, que la matière te réponde sous les mains."];
 const T2M=["la douceur absolue de la mousse","le lisse rassurant du galet","le côté brut et vivant de l’écorce","le grain fin et mouvant du sable","le fluide et le soyeux de l’eau"];
-function portrait(){
-  const n=scores();
-  const fs=Object.entries(FORCES).map(([k,f])=>[k,f.items.reduce((s,i)=>s+(n[i]||0),0)]).sort((a,b)=>b[1]-a[1]);
-  if(!fs[0][1])return "";
-  const f1=FORCES[fs[0][0]],f2=fs[1][1]>=3?FORCES[fs[1][0]]:null;
-  const pk=curPal(),name=(S.a.prenom||"").trim();
-  const sec=[];
-  sec.push(`<section><span class="eyebrow">Ce qui te guide</span>
-    <h3>Tu es surtout guidé·e par ${f1.name}${f2?`, et aussi par ${f2.name}`:""}.</h3>
-    <p>${f1.txt}</p>${f2?`<p>${f2.txt}</p>`:""}
-    <p class="soft">Pour ton tapis, ça veut dire ${f1.tapis}${f2?`, avec ${f2.tapis}`:""}.</p></section>`);
-  if(pk)sec.push(`<section><span class="eyebrow">Tes couleurs · ${PALS[pk].fr}</span><p>${SEASON[pk]}</p>
-    <p class="soft">${PALS[pk].desc}</p></section>`);
-  const t1=S.a.t1,t2=S.a.t2;
-  if(t1!=null||t2!=null)sec.push(`<section><span class="eyebrow">Ta matière</span><p>${t1!=null?T1M[t1]:""}${t2!=null?` Sous tes doigts, tu cherches ${T2M[t2]}.`:""}</p></section>`);
-  const it=opt("intention");
-  const mot=(S.a.mot||"").trim(),aj=(S.a.ajout||"").trim();
-  sec.push(`<section><span class="eyebrow">Ton refuge</span><p>Ce tapis est pensé comme un endroit à toi${name?", "+esc(name):""} : un paysage qui te ressemble, où tu peux venir te poser, respirer et te retrouver.${aj?` On y glissera aussi ${esc(aj)}, ta touche personnelle.`:""}</p></section>`);
-  return `<div class="portrait"><h3 class="ptitle">Ton portrait</h3>${sec.join("")}</div>`;
-}
 /* ---------- Fiche finale : portrait + paysage intérieur ---------- */
 const FX={
   ancrage:{adj:"enracinée",forces:["On peut compter sur toi : tu es fiable et constant·e.","Tu es patient·e, tu construis dans la durée.","Tu apportes de la stabilité à ceux qui t’entourent."],
@@ -612,8 +593,8 @@ function fiche(){
        <p>Pour toi, il aura ${FORCES[k1].tapis}${k2?`, avec ${FORCES[k2].tapis}`:""}.</p>
        <p class="soft"><strong>Un petit rituel pour toi :</strong> ${FX[k1].rituel}</p>`));
   }
-  const aj=(S.a.ajout||"").trim(),tl=opt("taille"),av=(S.a.eviter||"").trim();
-  if(aj||tl||av)out.push(card("Ta touche et ton format","",`${aj?`<p>En plus sur ton tapis : <strong>${esc(aj)}</strong>.</p>`:""}${tl?`<p>Taille : ${tl.fr}. Le prix te sera communiqué avec le visuel de ton tapis.</p>`:""}${av?`<p class="soft">Sans : ${esc(av)}.</p>`:""}`));
+  const aj=(S.a.ajout||"").trim(),av=(S.a.eviter||"").trim();
+  if(aj||av)out.push(card("Ta touche","",`${aj?`<p>Ton détail : <strong>${esc(aj)}</strong>. On s’en inspirera pour un motif discret, stylisé dans l’esprit de ton paysage.</p>`:""}${av?`<p class="soft">Sans : ${esc(av)}.</p>`:""}`));
   return `<div class="portrait">${out.join("")}</div>`;
 }
 function renderPal(){
