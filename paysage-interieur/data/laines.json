@@ -1,0 +1,438 @@
+{
+ "source": "https://tuftingshop.com/fr/collections/yarn",
+ "note": "Couleurs mesurées sur les photos produit (approximatives à l'écran). Laine 100 %, cônes de 500 g.",
+ "laines": [
+  {
+   "nom": "Noir",
+   "ref": "061",
+   "hex": "#131314",
+   "lien": "https://tuftingshop.com/fr/products/black-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Anthracite Grey",
+   "ref": "1B07",
+   "hex": "#36343D",
+   "lien": "https://tuftingshop.com/fr/products/antracyt-grey-100-wool-tufting-yarn-on-cone-1b07"
+  },
+  {
+   "nom": "Blanc",
+   "ref": "000",
+   "hex": "#EBDBC8",
+   "lien": "https://tuftingshop.com/fr/products/white-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Cloud Dancer",
+   "ref": "4N05",
+   "hex": "#E3CFBE",
+   "lien": "https://tuftingshop.com/fr/products/ecru-100-wool-tufting-yarn-on-cone-4n05"
+  },
+  {
+   "nom": "Écru",
+   "ref": "009",
+   "hex": "#EADACC",
+   "lien": "https://tuftingshop.com/fr/products/ecru-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Teal",
+   "ref": "3A17",
+   "hex": "#236F78",
+   "lien": "https://tuftingshop.com/fr/products/teal-new-zealand-wool-114030-260"
+  },
+  {
+   "nom": "Forest Green",
+   "ref": "205",
+   "hex": "#446748",
+   "lien": "https://tuftingshop.com/fr/products/forest-green-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Moss Green",
+   "ref": "1I06",
+   "hex": "#4F7739",
+   "lien": "https://tuftingshop.com/fr/products/moss-green-100-wool-tufting-yarn-on-cone-2c13"
+  },
+  {
+   "nom": "Sacramento",
+   "ref": "192",
+   "hex": "#354E37",
+   "lien": "https://tuftingshop.com/fr/products/sacramento-100-wool-tufting-yarn-on-cone-192"
+  },
+  {
+   "nom": "Granite Green",
+   "ref": "206",
+   "hex": "#7E9887",
+   "lien": "https://tuftingshop.com/fr/products/kopie-van-very-peri-100-wool-rug-yarn-on-cones-597"
+  },
+  {
+   "nom": "Vert Frêne",
+   "ref": "209",
+   "hex": "#B3BEA9",
+   "lien": "https://tuftingshop.com/fr/products/green-ash-new-zealand-wool-114030-262"
+  },
+  {
+   "nom": "Apple Green",
+   "ref": "1J08",
+   "hex": "#ACB64B",
+   "lien": "https://tuftingshop.com/fr/products/apple-green-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Vert néon",
+   "ref": "802C",
+   "hex": "#A1CE56",
+   "lien": "https://tuftingshop.com/fr/products/neon-green-100-wool-rug-yarn-on-cones-113"
+  },
+  {
+   "nom": "Mary Jane Green",
+   "ref": "153",
+   "hex": "#839A52",
+   "lien": "https://tuftingshop.com/fr/products/mary-jane-green-100-wool-rug-yarn-on-cones-205"
+  },
+  {
+   "nom": "Reflecting Green",
+   "ref": "803C",
+   "hex": "#BBCC54",
+   "lien": "https://tuftingshop.com/fr/products/reflecting-green-100-wool-rug-yarn-on-cones-113"
+  },
+  {
+   "nom": "Mojito",
+   "ref": "169",
+   "hex": "#CAC58E",
+   "lien": "https://tuftingshop.com/fr/products/mojito-100-wool-rug-yarn-on-cones-561"
+  },
+  {
+   "nom": "Château de sable",
+   "ref": "366",
+   "hex": "#CFA37E",
+   "lien": "https://tuftingshop.com/fr/products/sandcastle-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Light Yellow / Butter",
+   "ref": "429",
+   "hex": "#F5DAAC",
+   "lien": "https://tuftingshop.com/fr/products/light-yellow-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Illuminating Yellow",
+   "ref": "447",
+   "hex": "#F5D97C",
+   "lien": "https://tuftingshop.com/fr/products/illuminating-yelllow-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Jaune",
+   "ref": "3J01",
+   "hex": "#F8CC4C",
+   "lien": "https://tuftingshop.com/fr/products/yellow-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Miel",
+   "ref": "3H04",
+   "hex": "#F2B436",
+   "lien": "https://tuftingshop.com/fr/products/honey-100-wool-rug-yarn-on-cones-446"
+  },
+  {
+   "nom": "Mangue",
+   "ref": "423",
+   "hex": "#EFA721",
+   "lien": "https://tuftingshop.com/fr/products/mango-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Orange",
+   "ref": "313",
+   "hex": "#F48820",
+   "lien": "https://tuftingshop.com/fr/products/orange-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Pumpkin Orange",
+   "ref": "2C13",
+   "hex": "#F16D34",
+   "lien": "https://tuftingshop.com/fr/products/pumpkin-orange-100-wool-tufting-yarn-on-cone-264"
+  },
+  {
+   "nom": "Peach Fuzz",
+   "ref": "2024C",
+   "hex": "#E68F6B",
+   "lien": "https://tuftingshop.com/fr/products/copy-of-raw-salmon-100-wool-tufting-yarn-on-cone-805c"
+  },
+  {
+   "nom": "Abricot clair",
+   "ref": "325",
+   "hex": "#EEAD87",
+   "lien": "https://tuftingshop.com/fr/products/light-apricot-100-wool-rug-yarn-on-cones-325"
+  },
+  {
+   "nom": "Ivoire Chaud",
+   "ref": "368",
+   "hex": "#E7CCB4",
+   "lien": "https://tuftingshop.com/fr/products/warm-ivory-100-wool-rug-yarn-on-cones-368"
+  },
+  {
+   "nom": "Ivoire Pâle",
+   "ref": "499",
+   "hex": "#E8C3BA",
+   "lien": "https://tuftingshop.com/fr/products/pale-ivory100-wool-rug-yarn-on-cones-499"
+  },
+  {
+   "nom": "Rose Regina",
+   "ref": "498",
+   "hex": "#EAABAC",
+   "lien": "https://tuftingshop.com/fr/products/regina-pink-100-wool-rug-yarn-on-cones-471"
+  },
+  {
+   "nom": "Rose poussiéreux",
+   "ref": "336",
+   "hex": "#C99791",
+   "lien": "https://tuftingshop.com/fr/products/dusty-pink-100-wool-rug-yarn-on-cones-561"
+  },
+  {
+   "nom": "Rose coquillage",
+   "ref": "459",
+   "hex": "#F2A9B2",
+   "lien": "https://tuftingshop.com/fr/products/shell-pink-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Rose amarante",
+   "ref": "517",
+   "hex": "#DA96A9",
+   "lien": "https://tuftingshop.com/fr/products/amaranth-pink-100-wool-rug-yarn-on-cones-517"
+  },
+  {
+   "nom": "Rose Pink",
+   "ref": "485",
+   "hex": "#D883AB",
+   "lien": "https://tuftingshop.com/fr/products/rose-pink-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Rose bonbon",
+   "ref": "806C",
+   "hex": "#F691AA",
+   "lien": "https://tuftingshop.com/fr/products/candy-pink-100-wool-rug-yarn-on-cones-113"
+  },
+  {
+   "nom": "Strawberry",
+   "ref": "4E08",
+   "hex": "#F44E69",
+   "lien": "https://tuftingshop.com/fr/products/strawberry-100-wool-rug-yarn-on-cones-561"
+  },
+  {
+   "nom": "Saumon cru",
+   "ref": "805C",
+   "hex": "#F77164",
+   "lien": "https://tuftingshop.com/fr/products/kopie-van-salmon-100-wool-rug-yarn-on-cones-805c"
+  },
+  {
+   "nom": "Paprika",
+   "ref": "301",
+   "hex": "#DE4617",
+   "lien": "https://tuftingshop.com/fr/products/paprika-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Burnt Sienna",
+   "ref": "2A11",
+   "hex": "#BF3718",
+   "lien": "https://tuftingshop.com/fr/products/burnt-sienna-100-wool-tufting-yarn-on-cone-301-copy"
+  },
+  {
+   "nom": "Rouge",
+   "ref": "452",
+   "hex": "#E1132A",
+   "lien": "https://tuftingshop.com/fr/products/red-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Indian Red",
+   "ref": "4D05",
+   "hex": "#E57B79",
+   "lien": "https://tuftingshop.com/fr/products/indian-red-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Pink Doll",
+   "ref": "BRB 1530",
+   "hex": "#F169A0",
+   "lien": "https://tuftingshop.com/fr/products/pink-doll-100-wool-tufting-yarn-on-cone"
+  },
+  {
+   "nom": "Raspberry",
+   "ref": "464",
+   "hex": "#D23870",
+   "lien": "https://tuftingshop.com/fr/products/raspberry-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Deep Red",
+   "ref": "4A08",
+   "hex": "#B90526",
+   "lien": "https://tuftingshop.com/fr/products/deep-red-100-wool-tufting-yarn-on-cone-2c13"
+  },
+  {
+   "nom": "Rouge Écarlate",
+   "ref": "4A13",
+   "hex": "#A2102F",
+   "lien": "https://tuftingshop.com/fr/products/scarlet-red-100-wool-rug-yarn-on-cones-471"
+  },
+  {
+   "nom": "Cassis",
+   "ref": "502",
+   "hex": "#652F50",
+   "lien": "https://tuftingshop.com/fr/products/cassis-100-wool-rug-yarn-on-cones-502"
+  },
+  {
+   "nom": "Violet",
+   "ref": "585",
+   "hex": "#664BAA",
+   "lien": "https://tuftingshop.com/fr/products/purple-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Lavande",
+   "ref": "597",
+   "hex": "#B498B9",
+   "lien": "https://tuftingshop.com/fr/products/lavender-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Jordy Blue",
+   "ref": "278",
+   "hex": "#94A8CE",
+   "lien": "https://tuftingshop.com/fr/products/jordy-blue-100-wool-rug-yarn-on-cones-292"
+  },
+  {
+   "nom": "Pastel Blue",
+   "ref": "218",
+   "hex": "#B3CBD3",
+   "lien": "https://tuftingshop.com/fr/products/pastel-blue-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Aquamarine",
+   "ref": "300",
+   "hex": "#BBD8D0",
+   "lien": "https://tuftingshop.com/fr/products/aquamarine-100-wool-rug-yarn-on-cones-300"
+  },
+  {
+   "nom": "Bleu clair",
+   "ref": "ARS3F15",
+   "hex": "#94CFD9",
+   "lien": "https://tuftingshop.com/fr/products/light-blue-new-zealand-wool-114030-266"
+  },
+  {
+   "nom": "Cote d'Azur",
+   "ref": "274",
+   "hex": "#3873B3",
+   "lien": "https://tuftingshop.com/fr/products/cote-dazur-100-wool-tufting-yarn-on-cone"
+  },
+  {
+   "nom": "Bleu",
+   "ref": "ARS2K12",
+   "hex": "#2756A7",
+   "lien": "https://tuftingshop.com/fr/products/blue-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Cobalt Blue",
+   "ref": "3B15",
+   "hex": "#0A5A9D",
+   "lien": "https://tuftingshop.com/fr/products/cobalt-blue-100-wool-rug-yarn-on-cones-292"
+  },
+  {
+   "nom": "Atlantic Blue",
+   "ref": "264",
+   "hex": "#3F6691",
+   "lien": "https://tuftingshop.com/fr/products/atlantic-blue-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Navy",
+   "ref": "561",
+   "hex": "#1E1B5D",
+   "lien": "https://tuftingshop.com/fr/products/navy-new-zealand-wool-114030-264"
+  },
+  {
+   "nom": "Royal Indigo",
+   "ref": "2J10",
+   "hex": "#081D61",
+   "lien": "https://tuftingshop.com/fr/products/royal-indigo-100-wool-tufting-yarn-on-cone-2c13"
+  },
+  {
+   "nom": "Ombre de Fougère",
+   "ref": "1I11",
+   "hex": "#66600E",
+   "lien": "https://tuftingshop.com/fr/products/fern-shadow-100-wool-tufting-yarn-on-cone-1i06-copy"
+  },
+  {
+   "nom": "Branche d'olivier",
+   "ref": "381",
+   "hex": "#8D682E",
+   "lien": "https://tuftingshop.com/fr/products/olive-branch-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Green Olive",
+   "ref": "403",
+   "hex": "#90762C",
+   "lien": "https://tuftingshop.com/fr/products/green-olive-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Coffee",
+   "ref": "4H11",
+   "hex": "#44291C",
+   "lien": "https://tuftingshop.com/fr/products/coffee-100-wool-tufting-yarn-on-cone-ad10"
+  },
+  {
+   "nom": "Marron",
+   "ref": "351",
+   "hex": "#99622D",
+   "lien": "https://tuftingshop.com/fr/products/brown-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Mousse de moka",
+   "ref": "4L11",
+   "hex": "#A1775A",
+   "lien": "https://tuftingshop.com/fr/products/moccha-mousse-color-of-the-year-2025-100-wool-tufting-yarn-on-cone"
+  },
+  {
+   "nom": "Chameau",
+   "ref": "353",
+   "hex": "#C0812B",
+   "lien": "https://tuftingshop.com/fr/products/camel-100-wool-tufting-yarn-on-cone-351"
+  },
+  {
+   "nom": "Gris ancre",
+   "ref": "113",
+   "hex": "#75787D",
+   "lien": "https://tuftingshop.com/fr/products/anchor-grey-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Rhino Grey",
+   "ref": "096",
+   "hex": "#9D9596",
+   "lien": "https://tuftingshop.com/fr/products/rhino-grey-new-zealand-wool-114030-250"
+  },
+  {
+   "nom": "Gris tonnerre",
+   "ref": "056",
+   "hex": "#C1AFA6",
+   "lien": "https://tuftingshop.com/fr/products/thunder-grey-100-wool-rug-yarn-on-cones"
+  },
+  {
+   "nom": "Gris soie",
+   "ref": "AD10",
+   "hex": "#CCBEB2",
+   "lien": "https://tuftingshop.com/fr/products/silk-grey-100-wool-tufting-yarn-on-cone-ad10"
+  },
+  {
+   "nom": "Cloud",
+   "ref": "110",
+   "hex": "#CCC8CD",
+   "lien": "https://tuftingshop.com/fr/products/cloud-100-wool-rug-yarn-on-cones-561"
+  },
+  {
+   "nom": "Non teinté clair",
+   "ref": "",
+   "hex": "#C2B6AC",
+   "lien": "https://tuftingshop.com/fr/products/undyed-light-100-wool-tufting-yarn-500-g-cone"
+  },
+  {
+   "nom": "Moyen non teint",
+   "ref": "",
+   "hex": "#8C8784",
+   "lien": "https://tuftingshop.com/fr/products/undyed-medium-100-wool-tufting-yarn-500-g-cone"
+  },
+  {
+   "nom": "Foncé non teint",
+   "ref": "",
+   "hex": "#493D38",
+   "lien": "https://tuftingshop.com/fr/products/undyed-dark-100-wool-tufting-yarn-500-g-cone"
+  }
+ ]
+}
