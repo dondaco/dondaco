@@ -27,15 +27,15 @@ h1{font-family:var(--serif);font-weight:600;font-size:1.7rem;margin:0 0 6px}
 <body>
 <div class="wrap">
   <div class="band" aria-hidden="true"></div>
-  <h1>Ton retour sur le tirage</h1>
-  <p class="muted">Voici ce qui sera partagé, de façon anonyme, pour aider les prochains tirages. Ni ton nom ni ta question ne sont envoyés.</p>
+  <h1 id="h">Envoi de ton retour…</h1>
+  <p class="muted">Partagé de façon anonyme pour aider les prochains tirages. Ni ton nom ni ta question ne sont envoyés.</p>
   <div id="ok" hidden>
     <div class="panel">
       <span class="muted" id="t"></span>
       <p class="lecon" id="l"></p>
       <p class="muted" style="margin:10px 0 0"><span id="c"></span> · <span class="stars" id="n"></span></p>
     </div>
-    <button class="btn" id="send">Envoyer mon retour</button>
+    <button class="btn" id="send" hidden>Réessayer</button>
     <p class="muted" id="msg" style="margin-top:12px"></p>
   </div>
   <div id="ko" class="panel" hidden><p style="margin:0">Ce lien ne contient pas de retour. Ouvre-le depuis le bouton « Envoyer mon retour » à la fin d'un tirage.</p></div>
@@ -61,22 +61,25 @@ else {
   $("#c").textContent = (data.couleurs || []).join(", ");
   const n = Math.max(1, Math.min(5, parseInt(data.note) || 3));
   $("#n").textContent = "★".repeat(n) + "☆".repeat(5 - n);
-  if (!RETOURS_ENDPOINT){ $("#send").disabled = true; $("#msg").textContent = "Le recueil des retours n'est pas encore activé. Merci quand même !"; }
+  if (!RETOURS_ENDPOINT){ $("#h").textContent = "Merci pour ton retour"; $("#msg").textContent = "Le recueil des retours n'est pas encore activé. Merci quand même !"; }
+  else send();
 }
-$("#send").onclick = async () => {
-  const b = $("#send"); b.disabled = true; b.textContent = "Envoi…";
+async function send(){
+  const b = $("#send"); b.hidden = true;
   try {
     const r = await fetch(RETOURS_ENDPOINT.replace(/\/+$/, "") + "/retour", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tirage: data.tirage, couleurs: data.couleurs, cotes: data.cotes, lecon: data.lecon, note: data.note, consentement: true }) });
     if (!r.ok) throw r.status;
-    b.textContent = "Envoyé ✓";
-    $("#msg").textContent = "Merci ! Ton retour sera pris en compte lors de la prochaine mise à jour. Tu peux fermer cet onglet.";
+    $("#h").textContent = "Merci, c'est envoyé ✓";
+    $("#msg").textContent = "Ton retour sera pris en compte lors de la prochaine mise à jour. Tu peux fermer cet onglet.";
     history.replaceState(null, "", location.pathname);
   } catch (e) {
-    b.disabled = false; b.textContent = "Réessayer";
+    $("#h").textContent = "Ton retour n'est pas parti";
+    if (e !== 429) b.hidden = false;
     $("#msg").textContent = e === 429 ? "Tu as déjà envoyé plusieurs retours aujourd'hui. Merci !" : "L'envoi n'a pas marché, réessaie dans un moment.";
   }
-};
+}
+$("#send").onclick = send;
 </script>
 </body>
 </html>

@@ -109,6 +109,8 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 #stars button.on{color:#e8b04a}
 .consent{display:flex;gap:8px;align-items:flex-start;font-size:.85rem;color:var(--muted);margin-top:10px}
 .consent input{margin-top:3px}
+.share-prev{font-family:var(--serif);margin:0 0 10px;line-height:1.4}
+.share-prev.wait{color:var(--muted)}
 .sendbox{margin-top:10px;padding:12px;border:1px dashed var(--accent);border-radius:12px;background:var(--soft)}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
@@ -186,8 +188,12 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
         <span>Ce tirage t'a-t-il aidé ?</span>
         <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
       </div>
-      <label class="consent" id="consent-wrap"><input type="checkbox" id="consent"> Partager anonymement mon retour pour améliorer les prochains tirages (sans mon nom ni ma question)</label>
-      <button class="btn" id="chat-end" style="width:100%;margin-top:10px">Terminer et envoyer mon retour</button>
+      <div class="sendbox" id="share-box" hidden>
+        <p class="muted" style="margin:0 0 4px;font-size:.8rem">Ce qui sera partagé, sans ton nom ni ta question :</p>
+        <p id="share-prev" class="share-prev"></p>
+        <a class="btn" id="share" href="#" target="_blank" rel="noopener" style="width:100%;text-decoration:none">Partager mon retour anonyme ↗</a>
+        <p class="muted" style="margin:6px 0 0;font-size:.78rem">Facultatif : ton retour aide à affiner les prochains tirages.</p>
+      </div>
     </div>
     <div class="panel">
       <h2 style="font-size:1.15rem">Ce qui me parle</h2>
@@ -386,14 +392,58 @@ $("#b-ai-copy").onclick = async () => {
   try { await navigator.clipboard.writeText(text); toast("Demande copiée : colle-la dans Claude"); }
   catch { $("#ai-out").innerHTML = `<p class="muted">Copie ce texte et colle-le dans Claude :</p><textarea id="ai-txt" readonly style="min-height:140px">${esc(text)}</textarea>`; $("#ai-txt").select(); }
 };
-// Visiteurs sans droit d'écriture : leur retour part par la page « retour » du site (recueil quotidien)
+// Partage du retour en un seul geste : la leçon anonyme se prépare pendant l'échange, le bouton est prêt
 const RETOUR_PAGE = "https://dondaco.github.io/dondaco/tirage-public/retour.html";
-function showSendLink(item){
-  const raw = btoa(unescape(encodeURIComponent(JSON.stringify(item)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  const box = document.createElement("div"); box.className = "sendbox";
-  box.innerHTML = `<p style="margin:0 0 8px">Ton retour est prêt. Touche le bouton pour l'envoyer : une page s'ouvre, vérifie et confirme.</p><a class="btn" style="width:100%;text-decoration:none" target="_blank" rel="noopener" href="${RETOUR_PAGE}#d=${raw}">Envoyer mon retour ↗</a>`;
-  const old = $("#chat .sendbox"); if (old) old.remove();
-  $("#chat-end").after(box);
+let lesson = null, lessonSig = "", lessonTimer = null, shared = false;
+const directStore = () => store && canShare !== false; // invités Contributeurs : enregistrement direct
+function scheduleLesson(){
+  if (!sampleFn && !AI_ENDPOINT) return;
+  if (!chat.some(m => m.role === "user") && !rating) return;
+  clearTimeout(lessonTimer); lessonTimer = setTimeout(prepareLesson, 900);
+}
+async function prepareLesson(){
+  const sig = JSON.stringify([chat.length, rating]);
+  if (sig === lessonSig || shared) return;
+  lessonSig = sig; $("#share-box").hidden = false;
+  $("#share-prev").className = "share-prev wait"; $("#share-prev").textContent = "Préparation de ton retour…"; setShare(null);
+  if (AI_ENDPOINT){ $("#share-prev").className = "share-prev"; $("#share-prev").textContent = "Ton ressenti et ta note, résumés sans ton nom ni ta question."; setShare("relay"); return; }
+  try {
+    const ex = chat.slice(-16).map(m => (m.role === "assistant" ? "Guide : " : "Personne : ") + m.content).join("\n");
+    const r = await sampleFn.json("Tu résumes un retour d'expérience de façon strictement anonyme : aucun prénom, lieu, date, détail identifiant ni élément de vie privée, et sans reprendre la question de la personne. " +
+      "Tirage « " + sp.name + " », cartes : " + JSON.stringify(drawData().map(c => ({ position: c.position, couleur: c.couleur, cote: c.cote }))) +
+      ". Conclusion proposée : " + conclusionText() + ". Note donnée : " + (rating || "aucune") + "/5. Échange :\n" + (ex || "(pas d'échange)") +
+      "\nTire en une ou deux phrases une leçon générale pour mieux interpréter ce tirage ou ces couleurs la prochaine fois (formulations qui ont touché, angle qui a manqué). Réponds en JSON {\"lecon\": \"...\"}.", { modelTier: "quick" });
+    if (sig !== lessonSig) return; // l'échange a continué entre-temps
+    const t = String((r && r.lecon) || "").trim().slice(0, 400);
+    if (!t){ $("#share-box").hidden = true; return; }
+    lesson = { tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon: t, note: rating || 3, date: new Date().toISOString().slice(0, 10) };
+    $("#share-prev").className = "share-prev"; $("#share-prev").textContent = "« " + nb(t) + " »";
+    setShare(directStore() ? "store" : "link");
+  } catch { $("#share-box").hidden = true; lessonSig = ""; }
+}
+function setShare(mode){
+  const a = $("#share");
+  a.style.opacity = mode ? 1 : .5; a.style.pointerEvents = mode ? "" : "none";
+  a.textContent = "Partager mon retour anonyme" + (mode === "link" ? " ↗" : "");
+  if (mode === "link"){
+    const raw = btoa(unescape(encodeURIComponent(JSON.stringify(lesson)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    a.href = RETOUR_PAGE + "#d=" + raw; a.target = "_blank";
+    a.onclick = () => { shared = true; setTimeout(() => { a.textContent = "Merci ✓"; a.style.pointerEvents = "none"; }, 300); };
+  } else {
+    a.removeAttribute("target"); a.href = "#";
+    a.onclick = async e => {
+      e.preventDefault(); if (!mode || shared) return;
+      a.textContent = "Envoi…";
+      try {
+        if (mode === "relay") await relay("/retour", { conclusion: conclusionText(), messages: chat, note: rating || 3, consentement: true });
+        else await store.collection("lecons").add(lesson);
+        shared = true; a.textContent = "Merci ✓"; a.style.pointerEvents = "none";
+      } catch {
+        if (mode === "store"){ canShare = false; setShare("link"); a.click(); } // pas le droit d'écrire : on passe par la page du site
+        else { a.textContent = "Réessayer"; }
+      }
+    };
+  }
 }
 /* Échange après l'interprétation, puis retour anonyme (si la personne l'accepte) */
 let chat = [], rating = 0, sending = false;
@@ -404,15 +454,14 @@ function conclusionText(){
 }
 function openChat(){
   chat = []; rating = 0; $("#chat").hidden = false; $("#chat-log").innerHTML = ""; $("#chat-txt").value = "";
-  const canStore = !!AI_ENDPOINT || !!sampleFn; // contributeurs : base de la page ; autres : page de retour du site
-  $("#consent-wrap").hidden = !canStore; $("#consent").checked = false;
+  lesson = null; lessonSig = ""; shared = false; clearTimeout(lessonTimer); $("#share-box").hidden = true;
   $("#chat-quick").innerHTML = QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("");
   $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); t.focus(); });
-  renderStars(); $("#chat-end").disabled = false; $("#chat-end").textContent = canStore ? "Terminer et envoyer mon retour" : "Terminer";
+  renderStars();
 }
 function renderStars(){
   $("#stars").innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} sur 5" data-n="${n}" class="${n <= rating ? "on" : ""}">★</button>`).join("");
-  $("#stars").querySelectorAll("[data-n]").forEach(b => b.onclick = () => { rating = +b.dataset.n; renderStars(); });
+  $("#stars").querySelectorAll("[data-n]").forEach(b => b.onclick = () => { rating = +b.dataset.n; renderStars(); scheduleLesson(); });
 }
 function addMsg(role, text){
   chat.push({ role, content: text });
@@ -432,37 +481,11 @@ $("#chat-send").onclick = async () => {
       const r = await sampleFn([{ role: "user", content: ctx + "\n\nVoici ce que la personne te dit : " + chat[0].content }, ...chat.slice(1)].map((m, i) => i === 0 ? m : m), { modelTier: "default", cache: false });
       reply = r.text;
     }
-    wait.remove(); addMsg("assistant", (reply || "Merci pour ton retour.").trim());
+    wait.remove(); addMsg("assistant", (reply || "Merci pour ton retour.").trim()); scheduleLesson();
   } catch (e) { wait.remove(); toast(e && e.code === "rate_limited" ? "Trop de messages pour l'instant, réessaie dans un moment" : "Pas de réponse pour l'instant, réessaie"); }
   sending = false;
 };
 $("#chat-txt").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#chat-send").click(); } };
-$("#chat-end").onclick = async () => {
-  const b = $("#chat-end"); b.disabled = true;
-  if (AI_ENDPOINT && $("#consent").checked){
-    b.textContent = "Envoi…";
-    try { const r = await relay("/retour", { conclusion: conclusionText(), messages: chat, note: rating || 3, consentement: true }); toast(r.enregistre ? "Merci, ton retour aidera les prochains tirages" : "Merci pour ton retour"); }
-    catch { toast("Ton retour n'a pas pu être envoyé"); }
-  } else if (sampleFn && $("#consent").checked){
-    b.textContent = "Envoi…";
-    try {
-      const ex = chat.slice(-16).map(m => (m.role === "assistant" ? "Guide : " : "Personne : ") + m.content).join("\n");
-      const r = await sampleFn.json("Tu résumes un retour d'expérience de façon strictement anonyme : aucun prénom, lieu, date, détail identifiant ni élément de vie privée, et sans reprendre la question de la personne. " +
-        "Tirage « " + sp.name + " », cartes : " + JSON.stringify(drawData().map(c => ({ position: c.position, couleur: c.couleur, cote: c.cote }))) +
-        ". Conclusion proposée : " + conclusionText() + ". Note donnée : " + (rating || 3) + "/5. Échange :\n" + ex +
-        "\nTire en une ou deux phrases une leçon générale pour mieux interpréter ce tirage ou ces couleurs la prochaine fois (formulations qui ont touché, angle qui a manqué). Réponds en JSON {\"lecon\": \"...\"}.", { modelTier: "quick" });
-      const lecon = String((r && r.lecon) || "").trim().slice(0, 400);
-      if (lecon){
-        const item = { tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon, note: rating || 3, date: new Date().toISOString().slice(0, 10) };
-        let saved = false;
-        if (store && canShare !== false){ try { await store.collection("lecons").add(item); saved = true; } catch {} }
-        if (saved) toast("Merci, ton retour aidera les prochains tirages");
-        else showSendLink(item);
-      } else toast("Merci pour ton retour");
-    } catch (e) { toast("Ton retour n'a pas pu être préparé"); }
-  } else toast("Merci pour ce tirage");
-  b.textContent = "Merci !";
-};
 // Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
