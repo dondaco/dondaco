@@ -139,6 +139,9 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .sh-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sh-grid .btn{text-decoration:none;text-align:center}
 #sh-native{grid-column:1/-1}
+#fb-tags button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pour{margin:8px 0 0;padding-top:8px;border-top:1px solid var(--line);font-size:1rem;line-height:1.5}
+.pour b{display:block;font-family:var(--sans);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:2px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.fd,.card{animation:none}.fd{transition:none}}
@@ -172,6 +175,8 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
     <div class="panel">
       <label for="q">Ta question</label>
       <textarea id="q" placeholder="Pose-la sur toi : ta part, ton regard, tes choix…"></textarea>
+      <label for="ctx" style="margin-top:12px">Ce qui se passe pour toi en ce moment <span style="opacity:.7">(facultatif)</span></label>
+      <textarea id="ctx" style="min-height:56px" placeholder="Quelques mots sur ta situation : plus tu en dis, plus la lecture te parlera."></textarea>
       <details style="margin-top:6px"><summary class="muted">Besoin d'aide pour la formuler ?</summary>
         <p class="muted" style="margin:8px 0 0">Une bonne question parle de toi plutôt que des autres, et cherche à comprendre plutôt qu'à prédire.</p>
         <div class="tips" id="tips"></div>
@@ -198,24 +203,23 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
       <p class="note" id="ai-none" hidden style="margin-top:8px">Pour recevoir l'interprétation, ouvre Iris en étant connecté à ton compte Claude (un compte gratuit suffit).</p>
     </div>
     <div class="panel" id="chat" hidden>
-      <h2 style="font-size:1.15rem">💬 Comment reçois-tu ce tirage ?</h2>
+      <h2 style="font-size:1.15rem">Ton retour sur ce tirage</h2>
+      <p class="muted" style="margin:2px 0 10px">Facultatif et anonyme : il aide Iris à mieux lire les prochains tirages.</p>
       <div class="rate rate-top">
         <span>Ce tirage t'a-t-il aidé ?</span>
         <div id="stars" role="radiogroup" aria-label="Note de 1 à 5"></div>
       </div>
-      <p class="muted" style="margin:12px 0 8px">Si tu veux, dis avec tes mots ce qui te touche ou ne te parle pas, en l'écrivant ou en le dictant. Claude t'aide à préciser.</p>
-      <div class="chips" id="chat-quick"></div>
-      <div id="chat-log" class="chat-log"></div>
+      <p class="muted" style="margin:12px 0 6px">Ce qui est vrai pour toi :</p>
+      <div class="chips" id="fb-tags"></div>
+      <p class="muted" style="margin:12px 0 0">Tes mots, si tu veux :</p>
       <div class="composer" id="composer">
-        <textarea id="chat-txt" rows="1" placeholder="Ton ressenti…"></textarea>
+        <textarea id="chat-txt" rows="1" placeholder="Ce que tu ressens…"></textarea>
         <button type="button" class="cp-btn" id="chat-mic" aria-label="Parler au lieu d'écrire"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-        <button type="button" class="cp-btn send" id="chat-send" aria-label="Envoyer" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
       <p class="mic-status" id="mic-status" hidden></p>
-      <div class="sendbox" id="share-box" hidden>
+      <div id="share-box" style="margin-top:12px">
         <p id="share-prev" class="share-prev" hidden></p>
-        <a class="btn" id="share" href="#" target="_blank" rel="noopener" style="width:100%;text-decoration:none">Partager mon retour anonyme ↗</a>
-        <p class="muted" style="margin:6px 0 0;font-size:.78rem">Facultatif : ton retour aide à affiner les prochains tirages.</p>
+        <a class="btn" id="share" href="#" target="_blank" rel="noopener" style="width:100%;text-decoration:none">Envoyer mon retour</a>
       </div>
     </div>
     <div class="panel">
@@ -440,6 +444,7 @@ $("#b-home").onclick = () => theme ? openTheme(theme.n) : show("home");
 $("#b-reveal").onclick = () => { renderReading(); show("read"); };
 
 /* Lecture */
+let personal = [];
 function renderReading(){
   aiResult = null; $("#ai-out").innerHTML = ""; $("#trend").hidden = true; $("#b-ai").textContent = "Recevoir mon interprétation"; $("#b-ai").hidden = !(sampleFn || AI_ENDPOINT); $("#chat").hidden = true; stopMic();
   const q = $("#q").value.trim();
@@ -496,8 +501,10 @@ function aiPrompt(){
   const q = $("#q").value.trim();
   return "J'ai fait un tirage de cartes de couleurs pour réfléchir sur moi-même. Tirage : « " + sp.name + " » (" + sp.desc + "). Ma question : " + (q ? "« " + q + " »" : "pas de question précise") +
     ". Voici les cartes, le sens de leur position et les phrases qui m'ont parlé : " + JSON.stringify(drawData()) +
-    ". Thème : « " + sp.cat + " ». " + guideText() +
-    " Écris d'abord ta réponse à ma question (\"synthese\" : 3 ou 4 phrases claires, engagées, dans la tendance du guide, qui se suffisent à elles-mêmes), puis pour chaque carte 2 phrases qui disent ce que la couleur, à cette place et de ce côté, apporte à ma question (\"cartes\"), puis 2 questions à me poser pour avancer (\"questions\").";
+    ". Thème : « " + sp.cat + " »." + ($("#ctx").value.trim() ? " Ce que je vis : « " + $("#ctx").value.trim() + " »." : "") +
+    (personal.length ? " Lectures déjà proposées pour chaque carte (reste cohérent et va plus loin, sans les répéter) : " + JSON.stringify(personal) + "." : "") + " " + guideText() +
+    " C'est ici que tout se relie : pour chaque carte, dis ce que sa couleur, à cette place et de ce côté, signifie concrètement pour MA question et MA situation, avec mes mots et un exemple tiré de ma vie ; aucune phrase qui pourrait convenir à n'importe qui." +
+    " Écris d'abord ta réponse à ma question (\"synthese\" : 3 ou 4 phrases claires, engagées, dans la tendance du guide, qui se suffisent à elles-mêmes), puis pour chaque carte 2 phrases qui disent ce que la couleur, à cette place et de ce côté, apporte à ma question (\"cartes\"), puis 2 questions à me poser pour avancer (\"questions\"), et enfin ta réponse résumée en une seule phrase courte et claire de 15 mots maximum, pour une image à partager (\"resume\").";
 }
 function showTrend(){
   const g = currentGuide(), d = DIRECTION[g.direction];
@@ -555,7 +562,7 @@ $("#b-ai").onclick = async () => {
   try {
     const lessons = AI_ENDPOINT ? [] : await lessonsFor();
     const insp = lessons.length ? " Voici ce que d'autres personnes ont dit avoir bien ou mal reçu lors de tirages proches (anonyme) ; inspire-t'en sans le recopier : " + JSON.stringify(lessons.map(l => l.lecon)) + "." : "";
-    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"synthese\": \"...\", \"cartes\": [\"...\"], \"questions\": [\"...\", \"...\"]}.", { modelTier: "default" });
+    aiResult = AI_ENDPOINT ? await askEndpoint() : await sampleFn.json(aiPrompt() + insp + " Réponds en JSON {\"synthese\": \"...\", \"cartes\": [\"...\"], \"questions\": [\"...\", \"...\"], \"resume\": \"...\"}.", { modelTier: "default" });
     $("#ai-out").innerHTML = aiHtml(aiResult);
     b.hidden = true; // une seule interprétation par tirage
     openChat();
@@ -571,32 +578,32 @@ let lesson = null, lessonSig = "", lessonTimer = null, shared = false;
 const directStore = () => store && canShare !== false; // invités Contributeurs : enregistrement direct
 function scheduleLesson(){
   if (!sampleFn && !AI_ENDPOINT) return;
-  if (!chat.some(m => m.role === "user") && !rating) return;
-  clearTimeout(lessonTimer); lessonTimer = setTimeout(prepareLesson, 900);
+  if (!rating && !tags.size && !$("#chat-txt").value.trim()) return;
+  clearTimeout(lessonTimer); lessonTimer = setTimeout(prepareLesson, 1000);
 }
 async function prepareLesson(){
-  const sig = JSON.stringify([chat.length, rating]);
+  const sig = JSON.stringify([rating, [...tags], $("#chat-txt").value.trim()]);
   if (sig === lessonSig || shared) return;
-  lessonSig = sig; $("#share-box").hidden = false;
+  lessonSig = sig;
   setShare(null);
   if (AI_ENDPOINT){ setShare("relay"); return; }
   try {
-    const ex = chat.slice(-16).map(m => (m.role === "assistant" ? "Guide : " : "Personne : ") + m.content).join("\n");
+    const ex = "Cases cochées : " + ([...tags].join(" ; ") || "aucune") + "\nRessenti écrit : " + ($("#chat-txt").value.trim() || "(rien)");
     const r = await sampleFn.json("Tu résumes un retour d'expérience de façon strictement anonyme : aucun prénom, lieu, date, détail identifiant ni élément de vie privée, et sans reprendre la question de la personne. " +
       "Tirage « " + sp.name + " », cartes : " + JSON.stringify(drawData().map(c => ({ position: c.position, couleur: c.couleur, cote: c.cote }))) +
-      ". Conclusion proposée : " + conclusionText() + ". Note donnée : " + (rating || "aucune") + "/5. Échange :\n" + (ex || "(pas d'échange)") +
+      ". Conclusion proposée : " + conclusionText() + ". Note donnée : " + (rating || "aucune") + "/5. Retour de la personne :\n" + ex +
       "\nTire en une ou deux phrases une leçon générale pour mieux interpréter ce tirage ou ces couleurs la prochaine fois (formulations qui ont touché, angle qui a manqué). Réponds en JSON {\"lecon\": \"...\"}.", { modelTier: "quick" });
     if (sig !== lessonSig) return; // l'échange a continué entre-temps
     const t = String((r && r.lecon) || "").trim().slice(0, 400);
-    if (!t){ $("#share-box").hidden = true; return; }
+    if (!t){ lessonSig = ""; return; }
     lesson = { tirage: sp.name, couleurs: drawData().map(c => c.couleur), cotes: drawData().map(c => c.cote.split(" ")[0]), lecon: t, note: rating || 3, date: new Date().toISOString().slice(0, 10) };
     setShare(directStore() ? "store" : "link");
-  } catch { $("#share-box").hidden = true; lessonSig = ""; }
+  } catch { lessonSig = ""; }
 }
 function setShare(mode){
   const a = $("#share");
   a.style.opacity = mode ? 1 : .5; a.style.pointerEvents = mode ? "" : "none";
-  a.textContent = "Partager mon retour anonyme" + (mode === "link" ? " ↗" : "");
+  a.textContent = mode ? "Envoyer mon retour" : (rating || tags.size || $("#chat-txt").value.trim() ? "Préparation…" : "Envoyer mon retour");
   if (mode === "link"){
     const raw = btoa(unescape(encodeURIComponent(JSON.stringify(lesson)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
     a.href = RETOUR_PAGE + "#d=" + raw; a.target = "_blank";
@@ -607,7 +614,7 @@ function setShare(mode){
       e.preventDefault(); if (!mode || shared) return;
       a.textContent = "Envoi…";
       try {
-        if (mode === "relay") await relay("/retour", { conclusion: conclusionText(), messages: chat, note: rating || 3, consentement: true });
+        if (mode === "relay") await relay("/retour", { conclusion: conclusionText(), messages: [{ role: "user", content: [...tags].join(" ; ") + " — " + $("#chat-txt").value.trim() }], note: rating || 3, consentement: true });
         else await store.collection("lecons").add(lesson);
         shared = true; a.textContent = "Merci ✓"; a.style.pointerEvents = "none";
       } catch {
@@ -619,45 +626,23 @@ function setShare(mode){
 }
 /* Échange après l'interprétation, puis retour anonyme (si la personne l'accepte) */
 let chat = [], rating = 0, sending = false;
-const QUICK = ["Ça me parle beaucoup", "Une carte me touche plus que les autres", "Je ne me reconnais pas dans…", "Ça me fait penser à…"];
+const TAGS = ["Ça me ressemble", "La réponse m'a donné confiance", "Une carte m'a beaucoup parlé", "C'était trop général", "Ça ne colle pas à ma situation"];
+let tags = new Set();
 function conclusionText(){
   if (!aiResult) return "";
   return [...(aiResult.cartes || []), aiResult.synthese || "", ...(aiResult.questions || [])].filter(Boolean).join("\n");
 }
 function openChat(){
-  chat = []; rating = 0; $("#chat").hidden = false; $("#chat-log").innerHTML = ""; $("#chat-txt").value = "";
-  lesson = null; lessonSig = ""; shared = false; clearTimeout(lessonTimer); $("#share-box").hidden = true;
-  $("#chat-quick").innerHTML = QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("");
-  $("#chat-quick").querySelectorAll("[data-q]").forEach(b => b.onclick = () => { const t = $("#chat-txt"); t.value = QUICK[b.dataset.q] + (QUICK[b.dataset.q].endsWith("…") ? " " : ""); syncComposer(); t.focus(); });
+  chat = []; rating = 0; tags = new Set(); $("#chat").hidden = false; $("#chat-txt").value = ""; syncComposer();
+  lesson = null; lessonSig = ""; shared = false; clearTimeout(lessonTimer); setShare(null);
+  $("#fb-tags").innerHTML = TAGS.map((t, i) => `<button type="button" data-t="${i}" aria-pressed="false">${esc(t)}</button>`).join("");
+  $("#fb-tags").querySelectorAll("[data-t]").forEach(b => b.onclick = () => { const t = TAGS[b.dataset.t]; tags.has(t) ? tags.delete(t) : tags.add(t); b.classList.toggle("on", tags.has(t)); b.setAttribute("aria-pressed", tags.has(t)); scheduleLesson(); });
   renderStars();
 }
 function renderStars(){
   $("#stars").innerHTML = [1, 2, 3, 4, 5].map(n => `<button type="button" role="radio" aria-checked="${n === rating}" aria-label="${n} sur 5" data-n="${n}" class="${n <= rating ? "on" : ""}">★</button>`).join("");
   $("#stars").querySelectorAll("[data-n]").forEach(b => b.onclick = () => { rating = +b.dataset.n; renderStars(); scheduleLesson(); });
 }
-function addMsg(role, text){
-  chat.push({ role, content: text });
-  const el = document.createElement("div"); el.className = "msg " + (role === "user" ? "me" : "ai"); el.textContent = nb(text);
-  $("#chat-log").appendChild(el); el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  return el;
-}
-$("#chat-send").onclick = async () => {
-  const t = $("#chat-txt").value.trim(); if (!t || sending) return;
-  sending = true; $("#chat-txt").value = ""; stopMic(); syncComposer(); addMsg("user", t);
-  const wait = document.createElement("div"); wait.className = "msg ai wait"; wait.textContent = "…"; $("#chat-log").appendChild(wait);
-  try {
-    let reply;
-    if (AI_ENDPOINT){ reply = (await relay("/echange", { conclusion: conclusionText(), messages: chat })).reponse; }
-    else if (sampleFn){
-      const ctx = "Tu accompagnes une personne qui a fait un tirage de cartes de couleurs pour réfléchir sur elle-même. Tu tutoies, en français simple et chaleureux, 2 à 5 phrases, en reformulant ce qui la touche et en finissant souvent par une question ouverte. Pas de certitudes absolues, pas de conseil médical. Ne te dérobe jamais : donne toujours une piste engagée. Tirage : " + JSON.stringify({ tirage: sp.name, theme: sp.cat, question: $("#q").value.trim(), cartes: drawData() }) + ". " + guideText() + " Conclusion proposée : " + conclusionText();
-      const r = await sampleFn([{ role: "user", content: ctx + "\n\nVoici ce que la personne te dit : " + chat[0].content }, ...chat.slice(1)].map((m, i) => i === 0 ? m : m), { modelTier: "default", cache: false });
-      reply = r.text;
-    }
-    wait.remove(); addMsg("assistant", (reply || "Merci pour ton retour.").trim()); scheduleLesson();
-  } catch (e) { wait.remove(); toast(e && e.code === "rate_limited" ? "Trop de messages pour l'instant, réessaie dans un moment" : "Pas de réponse pour l'instant, réessaie"); }
-  sending = false;
-};
-$("#chat-txt").onkeydown = e => { if (e.key === "Enter" && !e.shiftKey){ e.preventDefault(); $("#chat-send").click(); } };
 // Dictée vocale quand le navigateur la propose (sinon, le micro du clavier fonctionne partout)
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
@@ -665,10 +650,10 @@ function stopMic(){ if (rec){ try { rec.stop(); } catch {} rec = null; } $("#cha
 // Micro quand le champ est vide, flèche d'envoi dès qu'il y a du texte (comme dans Messages)
 function syncComposer(){
   const t = $("#chat-txt"), has = !!t.value.trim();
-  $("#chat-send").hidden = !has; $("#chat-mic").hidden = has && !rec;
+  $("#chat-mic").hidden = false;
   t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 140) + "px";
 }
-$("#chat-txt").addEventListener("input", syncComposer);
+$("#chat-txt").addEventListener("input", () => { syncComposer(); scheduleLesson(); });
 $("#chat-mic").onclick = () => {
   if (rec) return stopMic();
   if (!SR){ // pas de dictée intégrée ici : on ouvre le clavier, dont le micro sait dicter
@@ -682,7 +667,7 @@ function startMic(){
   try {
     rec = new SR(); rec.lang = "fr-FR"; rec.interimResults = true; rec.continuous = true;
     const base = $("#chat-txt").value ? $("#chat-txt").value + " " : "";
-    rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; syncComposer(); };
+    rec.onresult = e => { let t = ""; for (const r of e.results) t += r[0].transcript; $("#chat-txt").value = base + t; syncComposer(); scheduleLesson(); };
     rec.onerror = () => { rec = null; stopMic(); $("#chat-txt").focus(); $("#mic-status").hidden = false; $("#mic-status").textContent = "Touche le micro de ton clavier pour parler : ce que tu dis s'écrira ici."; };
     rec.onend = () => { rec = null; stopMic(); };
     rec.start(); $("#chat-mic").classList.add("on"); $("#chat-mic").hidden = false;
@@ -727,15 +712,16 @@ async function drawShareImage(withQ){
     cx += cw + gap;
   });
   y += ch + 110;
-  // la réponse
-  const s = aiResult && aiResult.synthese ? aiResult.synthese : (kept && Object.values(kept).flat()[0]) || "";
+  // la réponse, résumée en une phrase, à une taille qui tient toujours dans le cadre
+  const s = aiResult ? (aiResult.resume || (aiResult.synthese || "").split(/(?<=[.!?])\s/)[0]) : ((kept && Object.values(kept).flat()[0]) || "");
   if (s){
-    x.font = "400 40px Literata, Georgia, serif";
-    const lines = wrapLines(x, s, 840, Math.max(3, Math.floor((H - 200 - y - 90) / 56)));
-    const bh = 80 + lines.length * 56;
+    const room = H - 200 - y - 40, maxW = 840;
+    let size = 46, lines;
+    for (; size >= 24; size -= 2){ x.font = "400 " + size + "px Literata, Georgia, serif"; lines = wrapLines(x, s, maxW, 99); if (90 + lines.length * size * 1.35 <= room) break; }
+    const lh = size * 1.35, bh = 90 + lines.length * lh;
     rr(x, 90, y, 900, bh, 28); x.fillStyle = "rgba(255,255,255,.82)"; x.fill();
-    x.fillStyle = "#4b3a8f"; x.font = "600 26px Outfit, system-ui, sans-serif"; x.fillText(aiResult && aiResult.synthese ? "MA RÉPONSE" : "CE QUI M'A PARLÉ", 130, y + 52);
-    x.fillStyle = "#221d33"; x.font = "400 40px Literata, Georgia, serif"; lines.forEach((l, k) => x.fillText(l, 130, y + 110 + k * 56));
+    x.fillStyle = "#4b3a8f"; x.font = "600 26px Outfit, system-ui, sans-serif"; x.fillText(aiResult ? "MA RÉPONSE" : "CE QUI M'A PARLÉ", 130, y + 52);
+    x.fillStyle = "#221d33"; x.font = "400 " + size + "px Literata, Georgia, serif"; lines.forEach((l, k) => x.fillText(l, 130, y + 52 + 22 + lh * (k + 0.8)));
   }
   x.fillStyle = "#221d33"; x.font = "600 32px Outfit, system-ui, sans-serif"; x.fillText("Fais ton propre tirage :", 90, H - 110);
   x.fillStyle = "#4b3a8f"; x.font = "400 30px Outfit, system-ui, sans-serif"; x.fillText(SHARE_LINK.replace("https://", ""), 90, H - 64);
