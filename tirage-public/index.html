@@ -730,9 +730,7 @@ async function drawShareImage(withQ){
   const W = 1080, H = 1350, c = document.createElement("canvas"); c.width = W; c.height = H;
   const x = c.getContext("2d");
   x.fillStyle = "#f6f2fa"; x.fillRect(0, 0, W, H);
-  [["#f9c6c9", 180, 220, 420], ["#c9d7f8", 900, 300, 380], ["#c5ecd9", 260, 1150, 420], ["#fbe5b6", 920, 1200, 340]].forEach(([col, cx, cy, r]) => {
-    const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, col); g.addColorStop(1, "rgba(246,242,250,0)"); x.fillStyle = g; x.fillRect(0, 0, W, H);
-  });
+
   try { // le logo, dessiné à partir du même SVG que sur le site
     const svg = document.querySelector(".brand .logo").outerHTML.replace("currentColor", "#221d33").replace("currentColor", "#221d33").replace('class="logo"', 'xmlns="http://www.w3.org/2000/svg" width="240" height="144"');
     const im = new Image(); im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
