@@ -43,3 +43,19 @@ Les images restent sur Pinterest (elles appartiennent à leurs auteurs) ; ici, s
 | Paysage onirique (grand disque) | 10 | rêve |
 | Strates et rivières | 8 | chemin |
 | Lichen (variante épurée, tous biomes) | 1 | composition « un élément fort, beaucoup de vide » |
+
+## Deuxième série (25 références), triée par contenu
+
+| Biome | Liens | À retenir |
+|-------|-------|-----------|
+| Coulée de lave | https://pin.it/3y5StNXFM, https://pin.it/2spwUWwGd | Grandes plaques de basalte sombres, fissures de lave qui s'éclaircissent vers le cœur (rouge → orange → jaune), une coulée principale plus large. |
+| Jardin zen / galets | https://pin.it/2zZj0V6kA, https://pin.it/1Aaq6I3vg, https://pin.it/1ui8pTLGf | Sable ratissé (cercles autour des galets, lignes parallèles ailleurs), galets sculptés, lisière de mousse ; version colorée : champ de galets vifs sur fond sable. |
+| Strates de mousse | https://pin.it/2W3gO4oL8, https://pin.it/5kh5KSqEE, https://pin.it/6uO87tHUo | Bandes concentriques de verts avec cailloux blancs ; collines et rivières vues d'avion ; forêt dense le long d'un fleuve. |
+| Océan / vagues | https://pin.it/49jK4qbMK, https://pin.it/7vgtDYoGH, https://pin.it/h3oGfbPDC, https://pin.it/31XuEpiIT(?) | Volutes de bleus et turquoises, écume blanche en liseré, plage de sable en bord. |
+| Montagne | https://pin.it/1wkm9vYuS | Facettes de gris (rochers) et mousse verte dans les creux. |
+| Nuit étoilée / cosmos | https://pin.it/4XKt3gWPK, https://pin.it/1nzKMQ2an, https://pin.it/NXC5mS7Z6, https://pin.it/2R3V4BUgi, https://pin.it/45q7K6qx6 | Fond bleu nuit, nébuleuses en volutes, lune (croissant ou pleine, cratères), étoiles en croix, planètes en pompons. |
+| Fonds marins | https://pin.it/iVq5RoByv, https://pin.it/21BNnp6a3 | Raies, coraux, coquillages : motifs figuratifs, à garder pour plus tard. |
+| Champs / patchwork | https://pin.it/5xOBca24S, https://pin.it/6XdfoU4g2 | Parcelles cultivées en bandes, aplats abstraits très colorés. |
+| Canyon / désert | https://pin.it/3RWFy0sW1, https://pin.it/1zVOGyk6M, https://pin.it/2u40g9OZ0 | Strates ondulées en terrasses qui suivent une rivière bordée de mousse ; dunes ratissées et oasis. |
+
+Les attributions de quelques liens sont approximatives (l'ordre des images Pinterest n'est pas garanti) ; le contenu des biomes, lui, vient de ce qu'on voit sur les images.

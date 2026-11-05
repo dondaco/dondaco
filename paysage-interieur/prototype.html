@@ -61,6 +61,12 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
 .var{border:1.5px solid transparent;background:transparent;border-radius:12px;padding:4px;cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:center;color:var(--muted);font:inherit;font-size:12.5px}
 .var canvas{width:100%;height:auto;aspect-ratio:7/10;display:block}
 .var[aria-pressed="true"]{border-color:var(--accent);color:var(--ink)}
+.exs{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.ex{font:inherit;color:var(--ink);text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.ex:hover{border-color:var(--accent)}
+.ex .pair{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ex canvas{width:100%;height:auto;aspect-ratio:7/10;display:block}
+.ex b{font-family:var(--display);font-weight:400;font-size:19px}
 .rules{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--muted);max-width:70ch}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
@@ -68,9 +74,9 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
 <body>
 <div class="wrap">
   <header>
-    <span class="eyebrow">Paysage intérieur · prototype 1 · biome</span>
-    <h1>Mousse et lagune</h1>
-    <p class="lede">Un étang en courbes de niveau bordé d’un rivage clair, entouré de monticules de mousse et de quelques pompons. Chaque zone est une vraie laine, un vrai point et une vraie hauteur. Change les réglages ou la graine pour voir à quel point les tapis diffèrent.</p>
+    <span class="eyebrow">Paysage intérieur · générateur · biome</span>
+    <h1 id="btitle">Mousse et lagune</h1>
+    <p class="lede"><span id="blede"></span> Chaque zone est une vraie laine, un vrai point et une vraie hauteur. Change les réglages ou la graine pour voir à quel point les tapis diffèrent.</p>
   </header>
 
   <div class="bench">
@@ -95,12 +101,13 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
         <div class="row"><input type="text" id="seed" value="Léa"><button type="button" class="btn" id="next">Autre variante</button></div>
         <p class="note" id="seedinfo"></p>
       </div>
+      <div class="group"><span class="lab">Biome</span><div class="chips" data-group="biome"></div></div>
       <div class="group"><span class="lab">Palette</span><div class="chips" data-group="pal"></div></div>
       <div class="group"><span class="lab">Couleurs</span><div class="chips" data-group="coul"></div></div>
       <div class="group"><span class="lab">Contour</span><div class="chips" data-group="shape"></div></div>
       <div class="group"><span class="lab">Densité</span><div class="chips" data-group="dens"></div></div>
       <div class="group"><span class="lab">Relief</span><div class="chips" data-group="relief"></div></div>
-      <div class="group"><span class="lab">L’eau</span><div class="chips" data-group="eau"></div></div>
+      <div class="group"><span class="lab">L’eau (étang, rivière)</span><div class="chips" data-group="eau"></div></div>
       <div class="group">
         <span class="lab">Règles d’atelier appliquées</span>
         <ul class="rules">
@@ -113,6 +120,11 @@ input[type=text]{font:inherit;flex:1;min-width:0;border:1.5px solid var(--line);
       </div>
     </section>
   </div>
+
+  <section class="panel" aria-label="Exemples">
+    <div class="row" style="justify-content:space-between"><h2>Exemples par biome</h2><span class="note">À gauche la vue client, à droite la vue atelier. Clique pour ouvrir en grand.</span></div>
+    <div class="exs" id="exs"></div>
+  </section>
 
   <section class="panel" aria-label="Variantes">
     <div class="row" style="justify-content:space-between"><h2>Six variantes, mêmes réglages</h2><span class="note">Clique sur une variante pour l’agrandir.</span></div>
@@ -142,6 +154,7 @@ const PALS={
     pop:[["4A13","4A08","452"],["BRB 1530","806C"],["585","502"],["3B15","2J10"],["3J01","447"]],accent:["000","4A13","3J01"]}
 };
 const OPTS={
+  biome:[["mousse","Mousse et lagune"],["lave","Coulée de lave"],["zen","Jardin zen"],["ocean","Océan"],["cosmos","Nuit étoilée"],["canyon","Canyon"]],
   pal:Object.entries(PALS).map(([k,p])=>[k,p.fr]),
   shape:[["rect","Rectangle"],["organique","Organique"],["ovale","Ovale"]],
   dens:[["epure","Épuré"],["equilibre","Équilibré"],["foisonnant","Foisonnant"]],
@@ -154,9 +167,9 @@ const TH={cut15:1.5,loop3:3,cut4:4,brush4:4,pompon:4};
 const lum=ref=>{const c=Y[ref].rgb;return .2126*c[0]+.7152*c[1]+.0722*c[2];};
 const fam=a=>a.filter(r=>Y[r]).sort((x,y)=>lum(y)-lum(x));
 Object.values(PALS).forEach(P=>{P.dom=fam(P.dom);P.ana=P.ana.map(fam);P.pop=P.pop.map(fam);P.accent=P.accent.filter(r=>Y[r]);});
-let ST={seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",view:"client"};
-try{const s=JSON.parse(localStorage.getItem("proto-mousse-v3"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
-const save=()=>{try{localStorage.setItem("proto-mousse-v3",JSON.stringify(ST))}catch(e){}};
+let ST={biome:"mousse",seed:"Léa",v:0,pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",view:"client"};
+try{const s=JSON.parse(localStorage.getItem("proto-tapis-v4"));if(s&&s.pal)ST=Object.assign(ST,s);}catch(e){}
+const save=()=>{try{localStorage.setItem("proto-tapis-v4",JSON.stringify(ST))}catch(e){}};
 
 /* ---------- Hasard reproductible et bruit ---------- */
 function rng(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}
@@ -187,7 +200,7 @@ function blur(src,w,h,r){if(r<1)return src.slice();const tmp=new Float32Array(w*
 
 /* ---------- Génération du biome ---------- */
 const RW=70,RH=100; // cm
-function generate(p,G){
+function genMousse(p,G){
   const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng(p.seed.trim().toLowerCase()+"|"+p.v),n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r);
   const P=PALS[p.pal];
@@ -284,6 +297,203 @@ function generate(p,G){
   return {w,h,G,zone,H,zones,counts:{mounds:mounds.length,poms:poms.length,rings}};
 }
 
+/* ---------- Autres biomes ---------- */
+const BIOMES={
+  mousse:{fr:"Mousse et lagune",lede:"Un étang en courbes de niveau bordé d’un rivage clair, entouré de monticules de mousse et de quelques pompons."},
+  lave:{fr:"Coulée de lave",lede:"Des plaques de basalte sculptées, séparées par des fissures de lave en cut 1,5 cm qui s’éclaircissent vers le cœur."},
+  zen:{fr:"Jardin zen",lede:"Du sable ratissé en lignes de loop autour de galets sculptés, avec parfois une lisière de mousse. En « Explosif », il devient un champ de galets colorés."},
+  ocean:{fr:"Océan",lede:"Des vagues en bandes ondulées, alternant creux, loop et crêtes sculptées, soulignées d’écume, avec parfois une plage."},
+  cosmos:{fr:"Nuit étoilée",lede:"Un ciel profond traversé d’une nébuleuse, une lune sculptée, des étoiles en loop et des planètes en pompons."},
+  canyon:{fr:"Canyon",lede:"Des strates en terrasses qui suivent une rivière sinueuse, bordée de mousse."}
+};
+const LAVE={
+  automne:{plates:["061","1B07","113"],lava:["4A08","2A11","313","3H04"],lava2:["502","464","806C","447"]},
+  printemps:{plates:["1B07","113","096"],lava:["464","806C","805C","447"],lava2:["2C13","313","3J01","429"]},
+  ete:{plates:["561","1B07","264"],lava:["502","517","459","4N05"],lava2:["585","597","218","000"]},
+  hiver:{plates:["061","1B07","113"],lava:["2J10","3B15","ARS3F15","000"],lava2:["4A13","452","806C","000"]}};
+const ZEN={
+  automne:{sand:"AD10",line:"4N05",stones:["113","096","056","1B07"],moss:["1I06","403","205"],pop:["301","423","3A17","264","2024C","4L11","3H04"]},
+  printemps:{sand:"429",line:"009",stones:["096","AD10","113","110"],moss:["803C","1J08","153"],pop:["806C","3J01","274","2C13","1J08","597","ARS2K12"]},
+  ete:{sand:"499",line:"4N05",stones:["278","096","336","110"],moss:["209","206","169"],pop:["517","278","597","218","169","464"]},
+  hiver:{sand:"110",line:"000",stones:["1B07","061","113","096"],moss:["205","192"],pop:["4A13","3B15","3J01","000","585","061"]}};
+const OCEAN={
+  printemps:{water:["300","ARS3F15","274","3B15","ARS2K12"],foam:"000",sand:"429",pop:["806C","597","3J01"]},
+  ete:{water:["300","218","278","264","561"],foam:"4N05",sand:"499",pop:["517","597","336"]},
+  automne:{water:["300","3A17","264","561","2J10"],foam:"009",sand:"366",pop:["423","2024C","301"]},
+  hiver:{water:["110","ARS3F15","3B15","561","2J10"],foam:"000",sand:"AD10",pop:["585","806C","4A13"]}};
+const COSMOS={
+  hiver:{sky:["561","2J10"],neb:["585","597","3B15"],moon:"000",star:["000","3J01"],planets:["3J01","4A13","ARS3F15"],pop:["802C","806C","300"]},
+  ete:{sky:["2J10","561"],neb:["502","517","597"],moon:"4N05",star:["4N05","459"],planets:["336","278","597"],pop:["806C","300","447"]},
+  automne:{sky:["561","2J10"],neb:["502","2A11","423"],moon:"3H04",star:["429","3J01"],planets:["423","301","3A17"],pop:["802C","806C","313"]},
+  printemps:{sky:["264","561"],neb:["806C","597","300"],moon:"447",star:["000","3J01"],planets:["806C","1J08","313"],pop:["802C","3J01","2C13"]}};
+const CANYON={
+  automne:{bands:["429","366","325","353","2A11","351"],river:["300","3A17"],bank:"009",moss:["1I06","205","403"],pop:["502","806C","3H04"]},
+  printemps:{bands:["429","2024C","325","805C","366","3H04"],river:["ARS3F15","274"],bank:"000",moss:["803C","1J08","153"],pop:["806C","597","1J08"]},
+  ete:{bands:["499","498","336","366","4L11"],river:["218","278"],bank:"4N05",moss:["209","206","169"],pop:["597","517","278"]},
+  hiver:{bands:["009","AD10","056","096","4L11","4H11"],river:["110","3B15"],bank:"000",moss:["205","192"],pop:["4A13","3B15","585"]}};
+Object.values(CANYON).forEach(P=>{P.bands=fam(P.bands);});
+
+function generate(p,G){
+  if(!p.biome||p.biome==="mousse"){const g=genMousse(p,G);g.info=`${g.counts.mounds} monticules, ${g.counts.poms} pompons, ${g.counts.rings} rides`;return g;}
+  return {lave:genLave,zen:genZen,ocean:genOcean,cosmos:genCosmos,canyon:genCanyon}[p.biome](p,G);
+}
+function baseCtx(p,G){
+  const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
+  const r=rng(p.biome+"|"+p.seed.trim().toLowerCase()+"|"+p.v),n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r);
+  const organic=p.shape==="organique";
+  const sdfF=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
+    if(p.shape==="ovale"){const a=RW/2-.6,b=RH/2-.6;return(Math.hypot(cx/a,cy/b)-1)*Math.min(a,b);}
+    const inset=organic?2.5:.6,rr=organic?16:3,qx=Math.abs(cx)-(RW/2-inset-rr),qy=Math.abs(cy)-(RH/2-inset-rr);
+    let s=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-rr;if(organic)s+=(fbm(n2,x/13,y/13)-.5)*9;return s;};
+  const sdf=new Float32Array(N),inRug=new Uint8Array(N);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const s=sdfF((i+.5)/G,(j+.5)/G);sdf[j*w+i]=s;inRug[j*w+i]=s<0?1:0;}
+  const zones=[null],zM=new Map();
+  const zoneFor=(ref,tech,kind)=>{const key=ref+"|"+tech+"|"+kind;if(!zM.has(key)){zones.push({ref,tech,kind});zM.set(key,zones.length-1);}return zM.get(key);};
+  return {p,w,h,N,G,r,n1,n2,n3,sdf,inRug,organic,zone:new Uint16Array(N),H:new Float32Array(N).fill(1.5),zones,zoneFor,
+    pick:a=>a[Math.floor(r()*a.length)]};
+}
+function finish(c,info){for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;return {w:c.w,h:c.h,G:c.G,zone:c.zone,H:c.H,zones:c.zones,info};}
+function heightFor(tech,ins,u,R,lumpN){
+  if(tech==="loop3")return 1.5+1.5*sstep(0,.7,ins);if(tech==="cut15")return 1.5;
+  const dome=Math.sqrt(Math.max(0,1-u*u*u)),lump=lumpN*(tech==="brush4"?.25:.55);
+  return Math.max(1.5,1.5+2.5*sstep(0,Math.min(R*.7,4.5),ins)*(.78+.22*dome)-lump*sstep(0,2,ins));}
+/* un monticule de mousse ; ok(o) dit si on peut poser sur ce pixel */
+function stampBlob(c,m,ok){const {w,h,G,zone,H,n2,n3,inRug}=c;const z=c.zoneFor(m.ref,m.tech,m.kind||"mousse"),b=Math.ceil(m.r*1.3*G),ci=m.x*G,cj=m.y*G;
+  const p1=m.p1??c.r()*6.28,p2=m.p2??c.r()*6.28;
+  for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){const o=y*w+x;
+    if(!inRug[o]||(ok&&!ok(o)))continue;const dx=x/G-m.x,dy=y/G-m.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
+    const rad=m.r*(1+.06*Math.sin(2*a+p1)+.05*Math.sin(5*a+p2))+(fbm(n3,x/G/2.2,y/G/2.2)-.5)*Math.min(2.2,m.r*.4);
+    if(d>=rad)continue;zone[o]=z;H[o]=heightFor(m.tech,rad-d,d/rad,m.r,fbm(n2,x/G/1.6+p1,y/G/1.6));}}
+const techFor=(c,u=c.r())=>{const rl=c.p.relief;if(rl==="lisse")return u<.75?"loop3":"cut4";if(rl==="doux")return u<.35?"loop3":u<.9?"cut4":"brush4";return u<.15?"loop3":u<.7?"cut4":"brush4";};
+const triIdx=(k,n)=>{if(n<2)return 0;const p=2*n-2,m=((k%p)+p)%p;return m<n?m:p-m;};
+
+/* --- Coulée de lave : diagramme de Voronoï, fissures de largeur variable --- */
+function genLave(p,G){const c=baseCtx(p,G),{w,h,r,n1,n2,n3,zone,H,inRug}=c,P=LAVE[p.pal];
+  const s={epure:17,equilibre:13,foisonnant:10}[p.dens],cols=Math.ceil(RW/s)+2,rows=Math.ceil(RH/s)+2,grid=[];
+  const plates=p.coul==="mono"?P.plates.slice(0,2):P.plates;
+  for(let gy=0;gy<rows;gy++)for(let gx=0;gx<cols;gx++)grid.push({x:(gx-1+.15+.7*r())*s,y:(gy-1+.15+.7*r())*s,ref:c.pick(plates),tech:techFor(c)});
+  const ph=r()*6.28,x0=RW*(.32+.36*r()),wide={epure:1,equilibre:1.15,foisonnant:1.3}[p.dens];
+  const xs=y=>x0+8*Math.sin(y/16+ph)+(fbm(n1,3.3,y/22)-.5)*14;
+  for(let j=0;j<h;j++){const y=(j+.5)/G,xm=xs(y),wm=(2.2+1.8*fbm(n2,y/15,3.1))*wide;
+    for(let i=0;i<w;i++){const o=j*w+i;if(!inRug[o])continue;const x=(i+.5)/G,gx=Math.floor(x/s)+1,gy=Math.floor(y/s)+1;
+      let d1=1e9,d2=1e9,b=null;
+      for(let a=-1;a<=1;a++)for(let bb=-1;bb<=1;bb++){const q=grid[(gy+bb)*cols+(gx+a)];if(!q)continue;const d=Math.hypot(x-q.x,y-q.y);if(d<d1){d2=d1;d1=d;b=q;}else if(d<d2)d2=d;}
+      const e=(d2-d1)/2,cw=(.6+.75*fbm(n3,x/11,y/11))*wide,depth=Math.max(cw-e,wm-Math.abs(x-xm));
+      if(depth>0){const band=depth<1?0:depth<2?1:depth<3?2:3,F=p.coul==="explosif"&&fbm(n1,x/25+9,y/25)>.56?P.lava2:P.lava;
+        zone[o]=c.zoneFor(F[Math.min(band,F.length-1)],"cut15","lave");H[o]=1.5;}
+      else{zone[o]=c.zoneFor(b.ref,b.tech,"plaque");H[o]=heightFor(b.tech,-depth,Math.min(1,d1/(s*.6)),s*.5,fbm(n2,x/1.8,y/1.8));}}}
+  return finish(c,`${grid.length} plaques de basalte, une grande coulée`);}
+
+/* --- Jardin zen : galets, cercles ratissés, lignes parallèles, lisière de mousse --- */
+function genZen(p,G){const c=baseCtx(p,G),{w,h,r,n1,n2,zone,H,inRug,sdf}=c,P=ZEN[p.pal],ex=p.coul==="explosif";
+  const n=ex?{epure:12,equilibre:22,foisonnant:34}[p.dens]:{epure:3,equilibre:6,foisonnant:10}[p.dens],stones=[];
+  for(let t=0;t<8000&&stones.length<n;t++){const rx=ex?3+r()*6:4+r()*6.5,ry=rx*(.62+r()*.35),x=r()*RW,y=r()*RH,a=r()*3.14;
+    const i=Math.floor(x*G),j=Math.floor(y*G);if(i<0||j<0||i>=w||j>=h||sdf[j*w+i]>-(rx+2))continue;
+    if(stones.some(S=>Math.hypot(S.x-x,S.y-y)<S.rx+rx+(ex?1.2:5)))continue;
+    const ref=ex?c.pick(P.pop):(p.coul==="nuance"&&r()<.2?c.pick(P.pop):c.pick(P.stones));
+    stones.push({x,y,rx,ry,a,ref,tech:ex&&r()<.3?"loop3":"cut4"});}
+  const ringN=ex?1:{epure:4,equilibre:3,foisonnant:2}[p.dens],gap=2.2,ph=r()*6.28,ang=r()*.6-.3;
+  const zS=c.zoneFor(P.sand,"cut15","sable"),zL=c.zoneFor(P.line,"loop3","ratissage");
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const o=j*w+i;if(!inRug[o])continue;const x=(i+.5)/G,y=(j+.5)/G;
+    let ds=1e9,st=null;for(const S of stones){const dx=x-S.x,dy=y-S.y,ca=Math.cos(S.a),sa=Math.sin(S.a),lx=dx*ca+dy*sa,ly=-dx*sa+dy*ca;
+      const d=(Math.hypot(lx/S.rx,ly/S.ry)-1)*Math.min(S.rx,S.ry);if(d<ds){ds=d;st=S;}}
+    if(ds<0){zone[o]=c.zoneFor(st.ref,st.tech,"galet");H[o]=heightFor(st.tech,-ds,1-Math.min(1,-ds/Math.min(st.rx,st.ry)),Math.min(st.rx,st.ry),fbm(n2,x/2,y/2)*.4);continue;}
+    let line=false;const ringR=gap*ringN+1.1;
+    if(ds<ringR){line=ds>1.1&&((ds-1.1)%gap)<1;}
+    else if(ds>ringR+1.1){const v=(y*Math.cos(ang)+x*Math.sin(ang)+2.5*Math.sin(x/10+ph)+(fbm(n1,x/14,y/14)-.5)*4)/gap;line=(v-Math.floor(v))<.45;}
+    if(line&&!ex){zone[o]=zL;H[o]=3;}else{zone[o]=zS;H[o]=1.5;}}
+  // lisière de mousse sur un côté
+  let moss=0;if(p.coul!=="mono"&&!ex&&r()<.75){const side=r()<.5?-1:1,band=12;
+    for(let t=0;t<900&&moss<{epure:6,equilibre:12,foisonnant:20}[p.dens];t++){const rad=2.4+r()*3.6,x=side<0?r()*band:RW-r()*band,y=r()*RH,i=Math.floor(x*G),j=Math.floor(y*G);
+      if(i<0||j<0||i>=w||j>=h||sdf[j*w+i]>-1)continue;
+      if(stones.some(S=>Math.hypot(S.x-x,S.y-y)<Math.max(S.rx,S.ry)+rad+1.2))continue;
+      stampBlob(c,{x,y,r:rad,ref:c.pick(P.moss),tech:techFor(c)},o=>c.zones[zone[o]].kind!=="galet");moss++;}}
+  return finish(c,`${stones.length} galets${moss?`, ${moss} touffes de mousse`:""}`);}
+
+/* --- Champ de bandes ondulées (océan, canyon) --- */
+function bandField(c,bw,warp,ang,xsFn){const {w,h,G,n1,n2,n3}=c,F=new Float32Array(c.N),ca=Math.cos(ang),sa=Math.sin(ang);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const x=(i+.5)/G,y=(j+.5)/G,qx=fbm(n2,x/34,y/34),qy=fbm(n3,x/34+5,y/34);
+    const base=xsFn?(x-xsFn(y)):(x*ca+y*sa);F[j*w+i]=base/bw+warp*(fbm(n1,x/26+2.2*qx,y/26+2.2*qy)-.5);}
+  const Gm=new Float32Array(c.N);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const o=j*w+i,R=i<w-1?o+1:o,L=i>0?o-1:o,D=j<h-1?o+w:o,U=j>0?o-w:o;
+    const a=(F[R]-F[L])/((R-L)||1),b=(F[D]-F[U])/(((D-U)/w)||1);Gm[o]=Math.max(1e-3,Math.hypot(a,b)*G);}
+  return {F,Gm};}
+
+/* --- Océan --- */
+function genOcean(p,G){const c=baseCtx(p,G),{w,h,r,zone,H,inRug}=c,P=OCEAN[p.pal];
+  let ramp=p.coul==="mono"?P.water.slice(1,4):P.water.slice();if(p.coul==="explosif"){ramp=[];P.water.forEach((q,i)=>{ramp.push(q);if(i%2)ramp.push(P.pop[(i>>1)%P.pop.length]);});}
+  const bw={epure:7,equilibre:5.5,foisonnant:4.2}[p.dens],{F,Gm}=bandField(c,bw,9,r()*3.14);
+  let fmin=1e9;for(let o=0;o<c.N;o++)if(inRug[o]&&F[o]<fmin)fmin=F[o];
+  const beach=r()<.55,fb=fmin+1.6;let foamN=0;
+  for(let o=0;o<c.N;o++){if(!inRug[o])continue;const f=F[o],g=Gm[o];
+    if(beach&&f<fb){zone[o]=c.zoneFor(P.sand,"cut15","plage");H[o]=1.5;continue;}
+    if(beach&&(f-fb)/g<1.2){zone[o]=c.zoneFor(P.foam,"loop3","écume");H[o]=3;continue;}
+    const k=Math.floor(f),dl=(f-k)/g,du=(k+1-f)/g,role=((k%4)+4)%4;
+    if(role===0&&dl<1.1){zone[o]=c.zoneFor(P.foam,"loop3","écume");H[o]=3;foamN++;continue;}
+    const ref=ramp[triIdx(k,ramp.length)];
+    if(role===1){zone[o]=c.zoneFor(ref,"cut4","vague");H[o]=heightFor("cut4",Math.min(dl,du),.5,2.5,0);}
+    else if(role===2){zone[o]=c.zoneFor(ref,"loop3","vague");H[o]=3;}
+    else if(role===3){zone[o]=c.zoneFor(ref,"cut4","vague");H[o]=heightFor("cut4",Math.min(dl,du),.5,2.5,0);}
+    else{zone[o]=c.zoneFor(ref,"cut15","vague");H[o]=1.5;}}
+  return finish(c,`vagues en bandes${beach?", avec une plage":""}`);}
+
+/* --- Nuit étoilée --- */
+function genCosmos(p,G){const c=baseCtx(p,G),{w,h,G:_g,r,n1,n2,n3,zone,H,inRug,sdf}=c,P=COSMOS[p.pal];
+  const neb=p.coul==="mono"?["3B15","264","278"]:P.neb,th={epure:.62,equilibre:.56,foisonnant:.5}[p.dens];
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++){const o=j*w+i;if(!inRug[o])continue;const x=(i+.5)/G,y=(j+.5)/G;
+    const m=fbm(n1,x/16+1.5*fbm(n2,x/25,y/25),y/16+1.5*fbm(n3,x/25,y/25));
+    if(m<th){zone[o]=c.zoneFor(fbm(n3,x/20+7,y/20)>.58?P.sky[1]:P.sky[0],"cut15","ciel");continue;}
+    const lvl=m<th+.05?0:m<th+.1?1:2,pal=p.coul==="explosif"&&fbm(n2,x/30+3,y/30)>.55?P.pop:neb;
+    zone[o]=c.zoneFor(pal[lvl],lvl===2?"brush4":lvl===1?"loop3":"cut15","nébuleuse");H[o]=lvl===2?3.6:lvl===1?3:1.5;}
+  // lune
+  const R={epure:13,equilibre:11,foisonnant:9.5}[p.dens],mx=RW*(.3+.4*r()),my=RH*(.18+.2*r()),full=r()<.3,ma=r()*6.28,off=R*.42,R2=R*.88;
+  const cx2=mx+Math.cos(ma)*off,cy2=my+Math.sin(ma)*off,zM=c.zoneFor(P.moon,"cut4","lune"),craters=[];
+  if(full)for(let t=0;t<60&&craters.length<4;t++){const a=r()*6.28,d=r()*(R-4),cr=1.3+r()*1,x=mx+Math.cos(a)*d,y=my+Math.sin(a)*d;
+    if(Math.hypot(x-mx,y-my)+cr<R-1.2&&craters.every(C=>Math.hypot(C.x-x,C.y-y)>C.r+cr+1))craters.push({x,y,r:cr});}
+  const b=Math.ceil((R+1)*G);
+  for(let y=Math.max(0,Math.floor(my*G-b));y<Math.min(h,my*G+b);y++)for(let x=Math.max(0,Math.floor(mx*G-b));x<Math.min(w,mx*G+b);x++){const o=y*w+x;if(!inRug[o])continue;
+    const X=x/G,Y2=y/G,d1=Math.hypot(X-mx,Y2-my);if(d1>=R)continue;let ins=R-d1;
+    if(!full){const d2=Math.hypot(X-cx2,Y2-cy2);if(d2<=R2)continue;if(ins+(d2-R2)<1.4)continue;ins=Math.min(ins,d2-R2);}
+    if(craters.some(C=>Math.hypot(X-C.x,Y2-C.y)<C.r)){zone[o]=c.zoneFor(P.moon,"cut15","cratère");H[o]=1.5;continue;}
+    zone[o]=zM;H[o]=heightFor("cut4",ins,d1/R,R*.5,fbm(n2,X/2,Y2/2)*.3);}
+  // planètes en pompons
+  const pl=[];const nP={epure:1,equilibre:2,foisonnant:3}[p.dens];
+  for(let t=0;t<300&&pl.length<nP;t++){const pr=1.8+r()*1.3,x=r()*RW,y=r()*RH,i=Math.floor(x*G),j=Math.floor(y*G);
+    if(i<0||j<0||i>=w||j>=h||sdf[j*w+i]>-(pr+2)||Math.hypot(x-mx,y-my)<R+pr+3||pl.some(q=>Math.hypot(q.x-x,q.y-y)<q.r+pr+4))continue;pl.push({x,y,r:pr,ref:c.pick(P.planets)});}
+  // étoiles en croix et points
+  const stars=[],nS={epure:9,equilibre:16,foisonnant:28}[p.dens];
+  for(let t=0;t<3000&&stars.length<nS;t++){const big=r()<.45,s=big?2+r()*1.6:.65,x=r()*RW,y=r()*RH,i=Math.floor(x*G),j=Math.floor(y*G);
+    if(i<0||j<0||i>=w||j>=h||sdf[j*w+i]>-(s+1.5)||Math.hypot(x-mx,y-my)<R+s+1.5)continue;
+    if(stars.some(S=>Math.hypot(S.x-x,S.y-y)<S.s+s+1.2)||pl.some(q=>Math.hypot(q.x-x,q.y-y)<q.r+s+1.2))continue;stars.push({x,y,s,big,ref:c.pick(P.star)});}
+  for(const S of stars){const z=c.zoneFor(S.ref,"loop3","étoile"),bb=Math.ceil((S.s+.6)*G);
+    for(let y=Math.max(0,Math.floor(S.y*G-bb));y<Math.min(h,S.y*G+bb);y++)for(let x=Math.max(0,Math.floor(S.x*G-bb));x<Math.min(w,S.x*G+bb);x++){const o=y*w+x;if(!inRug[o])continue;
+      const dx=Math.abs(x/G-S.x),dy=Math.abs(y/G-S.y),inS=S.big?((dx<.5&&dy<S.s)||(dy<.5&&dx<S.s)||Math.hypot(dx,dy)<.95):Math.hypot(dx,dy)<S.s;
+      if(inS){zone[o]=z;H[o]=3;}}}
+  for(const q of pl){const z=c.zoneFor(q.ref,"pompon","planète"),bb=Math.ceil(q.r*G)+1;
+    for(let y=Math.max(0,Math.floor(q.y*G-bb));y<Math.min(h,q.y*G+bb);y++)for(let x=Math.max(0,Math.floor(q.x*G-bb));x<Math.min(w,q.x*G+bb);x++){const o=y*w+x,d=Math.hypot(x/G-q.x,y/G-q.y);
+      if(d<q.r&&inRug[o]){zone[o]=z;H[o]=q.r*.9+Math.sqrt(q.r*q.r-d*d);}}}
+  return finish(c,`${full?"pleine lune":"croissant de lune"}, ${stars.length} étoiles, ${pl.length} planètes`);}
+
+/* --- Canyon --- */
+function genCanyon(p,G){const c=baseCtx(p,G),{w,h,r,zone,H,inRug,sdf}=c,P=CANYON[p.pal];
+  let ramp=p.coul==="mono"?P.bands.slice(0,4):P.bands.slice();if(p.coul==="explosif")ramp=ramp.concat(P.pop);
+  const ph=r()*6.28,x0=RW*(.38+.24*r()),A=6+r()*6,xs=y=>x0+A*Math.sin(y/15+ph)+3*Math.sin(y/7+ph*2);
+  const wr={petite:2.4,moyenne:3.4,grande:4.6}[p.eau],bw={epure:5,equilibre:3.8,foisonnant:2.9}[p.dens];
+  const {F,Gm}=bandField(c,bw,4,0,xs),off=r()*3;
+  for(let j=0;j<h;j++){const y=(j+.5)/G,xm=xs(y),sl=(xs(y+.5)-xs(y-.5)),cs=1/Math.sqrt(1+sl*sl);
+    for(let i=0;i<w;i++){const o=j*w+i;if(!inRug[o])continue;const x=(i+.5)/G,dr=Math.abs(x-xm)*cs;
+      if(dr<wr){zone[o]=c.zoneFor(dr<wr-1.2?P.river[1]:P.river[0],"cut15","rivière");H[o]=1.5;continue;}
+      if(dr<wr+1.1){zone[o]=c.zoneFor(P.bank,"cut15","berge");H[o]=1.5;continue;}
+      const f=Math.abs(F[o])+off,k=Math.floor(f),g=Gm[o],dl=(f-k)/g,du=(k+1-f)/g,role=((k%3)+3)%3,ref=ramp[triIdx(k,ramp.length)];
+      const tech=role===0?"cut15":role===1?"loop3":"cut4";zone[o]=c.zoneFor(ref,tech,"strate");
+      H[o]=tech==="cut4"?heightFor("cut4",Math.min(dl,du),.5,2.5,0):tech==="loop3"?3:1.5;}}
+  // mousse le long des berges
+  let moss=0;const nM={epure:.35,equilibre:.6,foisonnant:.85}[p.dens];
+  for(let y=2;y<RH-2;y+=3.2)for(const sd of[-1,1]){if(r()>nM)continue;const rad=2.2+r()*2.6,sl=(xs(y+.5)-xs(y-.5)),nx=1/Math.sqrt(1+sl*sl);
+    const x=xs(y)+sd*(wr+1.1+rad*.85)*nx,i=Math.floor(x*G),j=Math.floor(y*G);if(i<0||j<0||i>=w||j>=h||sdf[j*w+i]>-1)continue;
+    stampBlob(c,{x,y,r:rad,ref:c.pick(P.moss),tech:techFor(c)},o=>{const k=c.zones[zone[o]].kind;return k!=="rivière"&&k!=="berge";});moss++;}
+  return finish(c,`rivière et strates en terrasses, ${moss} touffes de mousse`);}
+
 /* ---------- Rendu ---------- */
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function hexRgb(h){h=h.replace("#","");if(h.length===3)h=h.split("").map(c=>c+c).join("");return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));}
@@ -365,18 +575,33 @@ function draw(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
   syncChips();document.getElementById("seed").value=ST.seed;
   const dpr=Math.min(2,window.devicePixelRatio||1),G=dpr>1.4?8:6;
   const g=generate(ST,G);render(document.getElementById("cv"),g,ST.view);legend(g);
-  document.getElementById("seedinfo").textContent=`Variante ${ST.v+1} · ${g.counts.mounds} monticules, ${g.counts.poms} pompons, ${g.counts.rings} rides`;
+  document.getElementById("seedinfo").textContent=`Variante ${ST.v+1} · ${g.info}`;document.getElementById("btitle").textContent=BIOMES[ST.biome].fr;document.getElementById("blede").textContent=BIOMES[ST.biome].lede;
   drawVars();save();});}
 function drawVars(){const box=document.getElementById("vars"),base=Math.floor(ST.v/6)*6;
   box.innerHTML=Array.from({length:6},(_,i)=>`<button type="button" class="var" data-var="${base+i}" aria-pressed="${base+i===ST.v}"><canvas></canvas>Variante ${base+i+1}</button>`).join("");
   box.querySelectorAll(".var").forEach((b,i)=>{const g=generate(Object.assign({},ST,{v:base+i}),2.6);render(b.querySelector("canvas"),g,"client");});}
+const EX=[
+  {biome:"mousse",pal:"printemps",shape:"rect",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",seed:"Léa"},
+  {biome:"lave",pal:"automne",shape:"organique",dens:"equilibre",relief:"sculpte",eau:"moyenne",coul:"nuance",seed:"Malik"},
+  {biome:"zen",pal:"automne",shape:"rect",dens:"epure",relief:"doux",eau:"moyenne",coul:"nuance",seed:"Inès"},
+  {biome:"zen",pal:"printemps",shape:"organique",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"explosif",seed:"Noé"},
+  {biome:"ocean",pal:"ete",shape:"organique",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"nuance",seed:"Sacha"},
+  {biome:"cosmos",pal:"hiver",shape:"ovale",dens:"equilibre",relief:"doux",eau:"moyenne",coul:"explosif",seed:"Yara"},
+  {biome:"canyon",pal:"automne",shape:"rect",dens:"equilibre",relief:"sculpte",eau:"moyenne",coul:"nuance",seed:"Tom"},
+  {biome:"lave",pal:"hiver",shape:"rect",dens:"foisonnant",relief:"sculpte",eau:"moyenne",coul:"explosif",seed:"Lou"}];
+const lbl=(k,v)=>OPTS[k].find(o=>o[0]===v)[1];
+function drawExs(){const box=document.getElementById("exs");
+  box.innerHTML=EX.map((e,i)=>`<button type="button" class="ex" data-ex="${i}"><b>${BIOMES[e.biome].fr}</b><div class="pair"><canvas></canvas><canvas></canvas></div><span class="note">${e.seed} · ${lbl("pal",e.pal)} · ${lbl("shape",e.shape)} · ${lbl("coul",e.coul)} · ${lbl("relief",e.relief)}</span></button>`).join("");
+  box.querySelectorAll(".ex").forEach((b,i)=>{const g=generate(Object.assign({v:0},EX[i]),3.4),cv=b.querySelectorAll("canvas");render(cv[0],g,"client");render(cv[1],g,"atelier");});}
 document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.ex!==undefined){ST=Object.assign(ST,EX[+b.dataset.ex],{v:0});draw();document.getElementById("cv").scrollIntoView({behavior:"smooth",block:"center"});return;}
   if(b.dataset.k){ST[b.dataset.k]=b.dataset.v;draw();return;}
   if(b.dataset.var!==undefined){ST.v=+b.dataset.var;draw();return;}
   if(b.id==="next"){ST.v++;draw();}});
 document.getElementById("seed").addEventListener("change",e=>{ST.seed=e.target.value||"Léa";ST.v=0;draw();});
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
 draw();
+setTimeout(drawExs,50);
 </script>
 </body>
 </html>
