@@ -183,6 +183,11 @@ textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1p
 .c-ess{margin:0;font-size:1rem;line-height:1.45}
 .c-place{margin:4px 0 0;color:var(--muted);font-size:.88rem}
 .c-hint{margin:14px 0 0;color:var(--accent);font-size:.85rem;font-weight:600}
+.further{margin-top:18px;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:var(--bg)}
+.further h3{margin:0;font-size:1rem;font-weight:600}
+#ai-out .further p{margin:2px 0 8px;font-size:.85rem;font-family:var(--sans);line-height:1.4}
+.further ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.further li{font-family:var(--serif);font-size:1.02rem;line-height:1.45}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom, 0px));max-width:calc(100% - 32px);text-align:center;z-index:5;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
 @media (prefers-reduced-motion:reduce){.tr-chip{animation:none}.fd,.card{animation:none}.fd{transition:none;background-position:40% 40%, 0 0, 40% 50%}}
@@ -577,7 +582,7 @@ function aiHtml(r){
   let h = r.synthese ? `<div class="verdict v-${dir}"><b>Ma réponse à ta question</b><p>${esc(r.synthese)}</p></div>` : "";
   const parts = (r.cartes || []).map((t, i) => sp.pos[i] ? `<div class="part"><b>${esc(sp.pos[i].l)} · ${esc(DECK[table[picked[i]].i].n)}</b><p>${esc(t)}</p></div>` : "").join("");
   if (parts) h += `<p class="muted" style="margin:0 0 6px;font-size:.8rem;text-transform:uppercase;letter-spacing:.08em">Le détail, carte par carte</p>` + parts;
-  if ((r.questions || []).length) h += `<div class="part"><b>Pour aller plus loin, demande-toi</b><p>${r.questions.map(q => "• " + esc(q)).join("\n")}</p></div>`;
+  if ((r.questions || []).length) h += `<section class="further"><h3>Pour aller plus loin</h3><p class="muted">Prends un moment pour te poser ces questions :</p><ol>${r.questions.map(q => `<li>${esc(q)}</li>`).join("")}</ol></section>`;
   return h;
 }
 // Adresse du service relais (Cloudflare Worker) qui interroge Claude avec ta clé, gardée secrète côté serveur.
