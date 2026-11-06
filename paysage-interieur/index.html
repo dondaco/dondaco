@@ -484,7 +484,7 @@ function renderScape(final){
       <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
       ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
   return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
-      <div class="rugbar"><button type="button" class="chip" data-rugv>Autre proposition</button></div>
+      <div class="rugbar"><button type="button" class="chip" data-rugv>Autre proposition</button><button type="button" class="chip" data-export>Exporter pour Blender</button></div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
       <div class="rugbar" role="group" aria-label="Ambiance"><span class="note" style="width:100%;text-align:center">Ambiance${S.amb?" choisie par toi":" déduite de tes réponses"} :</span>${Object.entries(AMB).map(([k,l])=>`<button type="button" class="chip" data-amb="${k}" aria-pressed="${ambiance().theme===k}">${l}</button>`).join("")}${S.amb?'<button type="button" class="chip" data-amb="">Revenir à l’automatique</button>':""}</div>
       <div class="rugleg" id="rugleg"></div></div>
     <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
@@ -608,6 +608,7 @@ document.addEventListener("click",e=>{
   if(t.hasAttribute("data-prev"))return go(S.step-1);
   if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
   if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
+  if(t.hasAttribute("data-export")){exporterBlender();return;}
   if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
   if(t.dataset.amb!==undefined)return keep(()=>{if(t.dataset.amb)S.amb=t.dataset.amb;else delete S.amb;});
   if(t.hasAttribute("data-dl")&&DL){const cv=document.getElementById("cv"),toast=document.getElementById("toast");
@@ -627,6 +628,58 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("input",e=>{const k=e.target.dataset&&e.target.dataset.text;if(!k)return;if(e.target.value)S.a[k]=e.target.value;else delete S.a[k];save();});
 let DL=null;
+/* ---------- export pour Blender : un .zip à décompresser, puis double-clic sur « lancer-le-rendu.command » ---------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0;};
+function zip(files){const enc=new TextEncoder(),parts=[],cen=[];let off=0;
+  for(const f of files){const name=enc.encode(f.name),d=f.data,crc=crc32(d),exe=f.exec;
+    const lh=new DataView(new ArrayBuffer(30));lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(8,0,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,d.length,true);lh.setUint32(22,d.length,true);lh.setUint16(26,name.length,true);
+    parts.push(new Uint8Array(lh.buffer),name,d);
+    const ch=new DataView(new ArrayBuffer(46));ch.setUint32(0,0x02014b50,true);ch.setUint16(4,0x031E,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);
+    ch.setUint32(16,crc,true);ch.setUint32(20,d.length,true);ch.setUint32(24,d.length,true);ch.setUint16(28,name.length,true);
+    ch.setUint32(38,((exe?0o100755:0o100644)<<16)>>>0,true);ch.setUint32(42,off,true);cen.push(new Uint8Array(ch.buffer),name);
+    off+=30+name.length+d.length;}
+  const cs=cen.reduce((a,b)=>a+b.length,0),end=new DataView(new ArrayBuffer(22));end.setUint32(0,0x06054b50,true);
+  end.setUint16(8,files.length,true);end.setUint16(10,files.length,true);end.setUint32(12,cs,true);end.setUint32(16,off,true);
+  return new Blob([...parts,...cen,new Uint8Array(end.buffer)],{type:"application/zip"});}
+const png=(rgba,w,h)=>new Promise(res=>{const cv=document.createElement("canvas");cv.width=w;cv.height=h;cv.getContext("2d").putImageData(new ImageData(rgba,w,h),0,0);
+  cv.toBlob(b=>b.arrayBuffer().then(a=>res(new Uint8Array(a))),"image/png");});
+async function exporterBlender(){const toast=document.getElementById("exptoast");toast.textContent="Préparation de l’export…";
+  try{const q=rugParams(),g=Moteur.generate(q,8),m=Moteur.maps(g),enc=new TextEncoder();
+    const cv=document.createElement("canvas");Moteur.render(cv,g,"atelier");
+    const plan=await new Promise(r=>cv.toBlob(b=>b.arrayBuffer().then(a=>r(new Uint8Array(a))),"image/png"));
+    let script;try{script=new Uint8Array(await (await fetch("rendu/rendu_blender.py")).arrayBuffer());}catch(e){script=null;}
+    if(!script||script.length<1000)throw new Error("script");
+    const nom=((S.a.prenom||"tapis").trim().toLowerCase().replace(/[^a-z0-9àâçéèêëîïôûùüÿñæœ-]+/g,"-")||"tapis");
+    const lancer=`#!/bin/bash
+# Double-clique sur ce fichier pour rendre ton tapis avec Blender.
+cd "$(dirname "$0")"
+B="/Applications/Blender.app/Contents/MacOS/Blender"
+if [ ! -x "$B" ]; then echo "Blender est introuvable dans Applications. Installe-le depuis https://www.blender.org/download/ puis relance."; read -p "Entrée pour fermer"; exit 1; fi
+echo "Rendu vu du dessus…"
+"$B" -b -P rendu_blender.py -- "$PWD" "$PWD/rendu-dessus.png" 70 100 128 dessus 60000 | grep "RENDU"
+echo "Rendu en photo de biais…"
+"$B" -b -P rendu_blender.py -- "$PWD" "$PWD/rendu-photo.png" 70 100 128 photo 60000 | grep "RENDU"
+open rendu-dessus.png rendu-photo.png
+`;
+    const lisez=`Tapis de ${S.a.prenom||"…"} · ${g.info.join(", ")}
+
+1. Installe Blender (gratuit) : https://www.blender.org/download/
+2. Décompresse ce dossier.
+3. Double-clique sur « lancer-le-rendu.command ».
+   La première fois, macOS peut le bloquer : clic droit > Ouvrir > Ouvrir.
+4. Les images rendu-dessus.png et rendu-photo.png s'ouvrent à la fin.
+
+Sans double-clic, dans le Terminal :
+  cd ce-dossier
+  /Applications/Blender.app/Contents/MacOS/Blender -b -P rendu_blender.py -- "$PWD" rendu.png 70 100 128 dessus 60000
+`;
+    const files=[{name:`${nom}/couleurs.png`,data:await png(m.col,m.w,m.h)},{name:`${nom}/hauteurs.png`,data:await png(m.hei,m.w,m.h)},{name:`${nom}/points.png`,data:await png(m.tec,m.w,m.h)},
+      {name:`${nom}/plan-atelier.png`,data:plan},{name:`${nom}/reglages.json`,data:enc.encode(JSON.stringify(q,null,1))},{name:`${nom}/rendu_blender.py`,data:script},
+      {name:`${nom}/lancer-le-rendu.command`,data:enc.encode(lancer),exec:true},{name:`${nom}/LISEZ-MOI.txt`,data:enc.encode(lisez)}];
+    await (DL||DL_LOCAL).save({filename:`tapis-${nom}-blender.zip`,data:zip(files)});toast.textContent="Export enregistré : décompresse-le, puis double-clic sur « lancer-le-rendu.command »";
+  }catch(e){toast.textContent=e&&e.code==="declined"?"":e&&e.message==="script"?"Impossible de joindre le script de rendu.":"Impossible d’exporter ici.";}}
 render();
 const DL_LOCAL={save:({filename,data})=>{const u=URL.createObjectURL(data),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);return Promise.resolve();}};
 (async()=>{try{DL=window.claude&&window.claude.use?await window.claude.use("downloads"):null;}catch(e){DL=null;}

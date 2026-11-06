@@ -21,11 +21,11 @@ const hash=(x,y)=>{let h=Math.imul(x,374761393)+Math.imul(y,668265263)|0;h=Math.
 const sstep=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
 function distT(mask,w,h){const INF=1e9,d=new Float32Array(w*h);for(let i=0;i<w*h;i++)d[i]=mask[i]?INF:0;
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(!d[i])continue;let v=d[i];
-    v=x>0?Math.min(v,d[i-1]+3):Math.min(v,3);
-    if(y>0){v=Math.min(v,d[i-w]+3);if(x>0)v=Math.min(v,d[i-w-1]+4);if(x<w-1)v=Math.min(v,d[i-w+1]+4);}else v=Math.min(v,3);d[i]=v;}
+    if(x>0)v=Math.min(v,d[i-1]+3);
+    if(y>0){v=Math.min(v,d[i-w]+3);if(x>0)v=Math.min(v,d[i-w-1]+4);if(x<w-1)v=Math.min(v,d[i-w+1]+4);}d[i]=v;}
   for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){const i=y*w+x;if(!d[i])continue;let v=d[i];
-    v=x<w-1?Math.min(v,d[i+1]+3):Math.min(v,3);
-    if(y<h-1){v=Math.min(v,d[i+w]+3);if(x<w-1)v=Math.min(v,d[i+w+1]+4);if(x>0)v=Math.min(v,d[i+w-1]+4);}else v=Math.min(v,3);d[i]=v;}
+    if(x<w-1)v=Math.min(v,d[i+1]+3);
+    if(y<h-1){v=Math.min(v,d[i+w]+3);if(x<w-1)v=Math.min(v,d[i+w+1]+4);if(x>0)v=Math.min(v,d[i+w-1]+4);}d[i]=v;}
   for(let i=0;i<w*h;i++)d[i]/=3;return d;}
 function blur(src,w,h,r){if(r<1)return src.slice();const tmp=new Float32Array(w*h),out=new Float32Array(w*h),k=2*r+1;
   for(let y=0;y<h;y++){let s=0;const o=y*w;for(let x=-r;x<=r;x++)s+=src[o+Math.min(w-1,Math.max(0,x))];
@@ -271,6 +271,17 @@ function chemin(c){const {r,P}=c,ph=r()*6.28,x0=RW*(.3+.4*r()),xs=y=>x0+10*Math.
     blob(c,{x,y,r:.8,ref:P.sand[0],tech:"loop3",kind:"sentier",flat:3},q=>!c.wet[q]&&!c.busy[q]);k++;}
   c.info.push("un sentier en pointillés");}
 
+/* ---------- règle : aucun liseré ne longe le bord du tapis ----------
+   Dans les 2 cm du bord, un liseré (rivage, berge, écume, bord de sentier, halo…) prend la couleur
+   de la zone voisine la plus proche vers l'intérieur. */
+const LISERE=new Set(["rivage","berge","écume","bord du sentier","halo","sable mouillé"]);
+function pasDeBordure(c){const {w,h,G,zone,inRug,sdf,zones}=c,R=Math.ceil(3*G);
+  const lis=o=>zone[o]&&LISERE.has(zones[zone[o]].kind);
+  for(let o=0;o<c.N;o++){if(!inRug[o]||sdf[o]<-2||!lis(o))continue;const i=o%w,j=(o-i)/w;let best=0,bd=1e9;
+    for(let dy=-R;dy<=R;dy+=2)for(let dx=-R;dx<=R;dx+=2){const x=i+dx,y=j+dy;if(x<0||y<0||x>=w||y>=h)continue;const q=y*w+x;
+      if(!inRug[q]||lis(q)||sdf[q]>sdf[o])continue;const d=dx*dx+dy*dy;if(d<bd){bd=d;best=zone[q];}}
+    if(best){zone[o]=best;c.H[o]=1.5;}}}
+
 /* ---------- nettoyage : aucun morceau de moins de 1 cm² ---------- */
 function clean(c){const {w,h,zone,inRug}=c,lab=new Int32Array(c.N).fill(-1),minA=Math.max(4,Math.round(1.2*c.G*c.G)),stack=[];
   for(let s=0;s<c.N;s++){if(lab[s]>=0||!inRug[s])continue;const z=zone[s],cells=[];stack.push(s);lab[s]=s;
@@ -410,7 +421,7 @@ function capYarns(c){const cap={mono:5,nuance:8,explosif:12}[c.q.cx]||8,area=new
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
     ({epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);
-    clean(c);capYarns(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
+    pasDeBordure(c);clean(c);capYarns(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";
   const riverWanted=L.eau==="riviere"||L.eau==="cascade";
@@ -428,7 +439,7 @@ function generate(q,G){
   const sig=(q.signature||["sentier","soleil","lune","etoiles","nuages","rochers","falaise"].filter(k=>L.chemin===k||L.ciel===k||L.mineral===k)[0])||null;
   if(sig==="sentier")chemin(c);else if(sig==="rochers"||sig==="falaise")pierre(c,sig);else if(sig)ciel(c,sig);
   c.signature=sig;
-  clean(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
+  pasDeBordure(c);clean(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
   return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,signature:c.signature};}
 
 /* ---------- rendu ---------- */

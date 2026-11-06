@@ -6,8 +6,9 @@ Entrées (dans un dossier) : couleurs.png, hauteurs.png, points.png exportés pa
   - points.png   : le point (40 = cut 1,5 · 80 = loop 3 · 120 = cut 4 · 160 = cut 4 brossé · 200 = pompon)
 
 Lancer :
-  blender -b -P rendu_blender.py -- DOSSIER SORTIE.png [largeur_cm hauteur_cm] [echantillons] [vue]
+  blender -b -P rendu_blender.py -- DOSSIER SORTIE.png [largeur_cm hauteur_cm] [echantillons] [vue] [fibres]
   vue = "photo" (de biais, comme une photo produit) ou "dessus" (vu du dessus)
+  fibres = nombre de touffes de laine 3D (60000 par défaut, 0 pour un rendu rapide sans fibres)
 """
 import sys, math, time
 import bpy
@@ -20,6 +21,7 @@ LARG_CM = float(argv[2]) if len(argv) > 2 else 70.0
 HAUT_CM = float(argv[3]) if len(argv) > 3 else 100.0
 SAMPLES = int(argv[4]) if len(argv) > 4 else 64
 VUE = argv[5] if len(argv) > 5 else "photo"
+FIBRES = int(argv[6]) if len(argv) > 6 else 60000  # nombre de touffes guides ; 0 = sans fibres
 t0 = time.time()
 
 # --- scène vide ---
@@ -134,6 +136,47 @@ bsdf.inputs["Sheen Roughness"].default_value = 0.6
 L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 L.new(bsdf.outputs["BSDF"], out.inputs["Surface"])
 tapis.data.materials.append(mat)
+
+# --- vraies fibres de laine (système de poils), couleur prise sur la laine de la zone ---
+if FIBRES > 0:
+    tec = np.array(img_tec.pixels[:], dtype=np.float32).reshape(H, W, 4)[:, :, 0] * 255
+    # point → (densité, longueur) : cut 1,5 · loop 3 · cut 4 · cut 4 brossé · pompon
+    REG = {1: (1.0, 0.5), 2: (0.12, 0.3), 3: (1.0, 0.72), 4: (1.0, 1.0), 5: (1.0, 0.6)}
+    gd = tapis.vertex_groups.new(name="densite"); gl = tapis.vertex_groups.new(name="longueur")
+    dens_v, long_v = {}, {}
+    for v in tapis.data.vertices:
+        u, w_ = v.co.x + 0.5, v.co.y + 0.5
+        code = int(round(tec[min(H - 1, max(0, int(w_ * H))), min(W - 1, max(0, int(u * W)))] / 40))
+        d, l = REG.get(code, (0.0, 0.0))
+        dens_v.setdefault(d, []).append(v.index); long_v.setdefault(l, []).append(v.index)
+    for d, idx in dens_v.items(): gd.add(idx, d, "REPLACE")
+    for l, idx in long_v.items(): gl.add(idx, l, "REPLACE")
+    mf = bpy.data.materials.new("Fibres"); mf.use_nodes = True
+    fn, fl = mf.node_tree.nodes, mf.node_tree.links
+    fb = fn["Principled BSDF"]; fuv = fn.new("ShaderNodeTexCoord"); fim = fn.new("ShaderNodeTexImage"); fim.image = img_col
+    fl.new(fuv.outputs["UV"], fim.inputs["Vector"])
+    # chaque brin un peu plus clair ou plus foncé : laine vivante
+    frnd = fn.new("ShaderNodeHairInfo"); fmr = fn.new("ShaderNodeMapRange")
+    fmr.inputs["To Min"].default_value = 0.82; fmr.inputs["To Max"].default_value = 1.08
+    fl.new(frnd.outputs["Random"], fmr.inputs["Value"])
+    fmul = fn.new("ShaderNodeMixRGB"); fmul.blend_type = "MULTIPLY"; fmul.inputs["Fac"].default_value = 1
+    fl.new(fim.outputs["Color"], fmul.inputs[1]); fl.new(fmr.outputs["Result"], fmul.inputs[2])
+    fl.new(fmul.outputs[0], fb.inputs["Base Color"])
+    fb.inputs["Roughness"].default_value = 0.85; fb.inputs["Sheen Weight"].default_value = 0.4
+    tapis.data.materials.append(mf)
+    psm = tapis.modifiers.new("fibres", "PARTICLE_SYSTEM")
+    ps = tapis.particle_systems[-1]; st = ps.settings
+    st.type = "HAIR"; st.use_advanced_hair = True; st.count = FIBRES; st.hair_length = 0.012
+    st.emit_from = "FACE"; st.use_even_distribution = True; st.distribution = "JIT"
+    st.normal_factor = 1.0; st.factor_random = 0.25
+    st.child_type = "INTERPOLATED"; st.child_percent = 1; st.rendered_child_count = 7; st.length_random = 0.3
+    st.child_radius = 0.0025; st.clump_factor = 0.35; st.roughness_1 = 0.0015; st.roughness_endpoint = 0.0025
+    st.radius_scale = 0.0006; st.root_radius = 1.0; st.tip_radius = 0.25
+    st.display_step = 2; st.render_step = 3; st.display_percentage = 1
+    st.material_slot = "Fibres"
+    ps.vertex_group_density = "densite"; ps.vertex_group_length = "longueur"
+    # les fibres poussent sur le dessus du tapis : l'épaisseur passe après
+    bpy.ops.object.modifier_move_to_index(modifier="épaisseur", index=len(tapis.modifiers) - 1)
 
 # --- le sol ---
 bpy.ops.mesh.primitive_plane_add(size=4, location=(0, 0, -0.0005))
