@@ -22,6 +22,7 @@ HAUT_CM = float(argv[3]) if len(argv) > 3 else 100.0
 SAMPLES = int(argv[4]) if len(argv) > 4 else 64
 VUE = argv[5] if len(argv) > 5 else "photo"
 FIBRES = int(argv[6]) if len(argv) > 6 else 60000  # nombre de touffes guides ; 0 = sans fibres
+RES = int(argv[7]) if len(argv) > 7 else 100  # taille de l'image en % (50 pour un essai rapide)
 t0 = time.time()
 
 # --- scène vide ---
@@ -166,9 +167,8 @@ if FIBRES > 0:
     tapis.data.materials.append(mf)
     psm = tapis.modifiers.new("fibres", "PARTICLE_SYSTEM")
     ps = tapis.particle_systems[-1]; st = ps.settings
-    st.type = "HAIR"; st.use_advanced_hair = True; st.count = FIBRES; st.hair_length = 0.012
+    st.type = "HAIR"; st.use_advanced_hair = False; st.count = FIBRES; st.hair_length = 0.012  # longueur réelle : 1,2 cm au plus
     st.emit_from = "FACE"; st.use_even_distribution = True; st.distribution = "JIT"
-    st.normal_factor = 1.0; st.factor_random = 0.25
     st.child_type = "INTERPOLATED"; st.child_percent = 1; st.rendered_child_count = 7; st.length_random = 0.3
     st.child_radius = 0.0025; st.clump_factor = 0.35; st.roughness_1 = 0.0015; st.roughness_endpoint = 0.0025
     st.radius_scale = 0.0006; st.root_radius = 1.0; st.tip_radius = 0.25
@@ -221,6 +221,7 @@ scene.cycles.samples = SAMPLES
 scene.cycles.use_denoising = True
 scene.render.film_transparent = False
 scene.view_settings.view_transform = "Standard"  # couleurs fidèles aux laines
+scene.render.resolution_percentage = RES
 scene.render.filepath = SORTIE
 bpy.ops.render.render(write_still=True)
 print(f"RENDU TERMINÉ en {time.time() - t0:.0f} s ({scene.cycles.device}, {SAMPLES} échantillons) → {SORTIE}")
