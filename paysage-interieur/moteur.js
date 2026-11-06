@@ -302,8 +302,24 @@ function disque(c,kind,fx,fy,R,overWet){const {w,h,G,r,zone,H,inRug,P}=c,ref=kin
     if(kind==="lune"){const d2=Math.hypot(X-cx2,Yy-cy2);if(d2<=R2||(R-d)+(d2-R2)<1.4)continue;ins=Math.min(ins,d2-R2);}
     zone[o]=c.Z(ref,"cut4",kind);H[o]=heightFor("cut4",ins,d/R,R*.5,fbm(c.n2,X/2,Yy/2)*.3);c.busy[o]=1;}
   c.info.push(kind==="lune"?"un croissant de lune":kind==="soleil"?"un soleil":"une planète");}
+/* massifs : une grosse touffe, une couronne de touffes plus petites et plus claires, une seule famille de couleur ; du calme entre les massifs */
+function massifs(c,{n,rBig,fams,gap=6,kind="bosquet",near}){const {r}=c,list=[];
+  for(let t=0;t<600&&list.length<n;t++){let x,y;
+    if(near&&near.length&&r()<.7){const m=c.pick(near),a=r()*6.28,dd=m.R+rBig*1.6+gap*.5;x=m.x+Math.cos(a)*dd;y=m.y+Math.sin(a)*dd;}else{x=RW*(.12+.76*r());y=RH*(.1+.8*r());}
+    const R=rBig*(.8+.4*r());if(!freeAt(c,x,y,R*.8)||c.busy[c.at(x,y)])continue;
+    if(list.concat(near||[]).some(m=>Math.hypot(m.x-x,m.y-y)<m.R*1.6+R*1.6+gap))continue;
+    const F=fams[list.length%fams.length],di=Math.min(F.length-1,Math.max(1,Math.floor(F.length*.6))),dark=F[di];
+    blob(c,{x,y,r:R,ref:dark,core:F[di-1],tech:"cut4",kind},dryOk(c));
+    const k=4+Math.floor(r()*4),a0=r()*6.28;
+    for(let i=0;i<k;i++){const a=a0+i*6.28/k+(r()-.5)*.5,s2=R*(.38+r()*.2),dd=R+s2*.55,x2=x+Math.cos(a)*dd,y2=y+Math.sin(a)*dd;
+      if(!freeAt(c,x2,y2,s2*.7))continue;blob(c,{x:x2,y:y2,r:s2,ref:F[Math.max(0,di-1-Math.floor(r()*2))],tech:techFor(c),kind},o=>!c.wet[o]&&!c.busy[o]);
+      if(r()<.55){const s3=1.4+r()*.8,d3=dd+s2+s3*.6,x3=x+Math.cos(a)*d3,y3=y+Math.sin(a)*d3;if(freeAt(c,x3,y3,s3))blob(c,{x:x3,y:y3,r:s3,ref:F[0],tech:"loop3",kind},o=>!c.wet[o]&&!c.busy[o]);}}
+    list.push({x,y,R});}
+  return list;}
+function famsFor(c){const P=c.P,two=f=>f.length>1?f:f.concat(P.dom.slice(0,1));
+  if(c.q.cx==="mono")return[P.dom];if(c.q.cx==="explosif")return[P.dom].concat(P.pop.map(two)).slice(0,4);return[P.dom,P.dom,two(P.ana[0])];}
 function grappes(c,n,fams){const {r}=c;let k=0,cl=0;
-  for(let t=0;t<500&&cl<n;t++){const cx=RW*(.12+.76*r()),cy=RH*(.1+.8*r());if(!freeAt(c,cx,cy,4)||c.busy[c.at(cx,cy)])continue;
+  for(let t=0;t<500&&cl<n;t++){let cx=RW*(.12+.76*r()),cy=RH*(.1+.8*r());if(c.anchors&&c.anchors.length&&t<300){const m=c.pick(c.anchors),a=r()*6.28;cx=m.x+Math.cos(a)*(m.R*1.8+6);cy=m.y+Math.sin(a)*(m.R*1.8+6);}if(!freeAt(c,cx,cy,4)||c.busy[c.at(cx,cy)])continue;
     const F=c.pick(fams),pts=[];
     for(let u=0;u<300&&pts.length<14+Math.floor(r()*12);u++){const a=r()*6.28,dd=Math.sqrt(r())*(4+r()*3),x=cx+Math.cos(a)*dd,y=cy+Math.sin(a)*dd,s2=1.1+r()*.7;
       if(!freeAt(c,x,y,s2+.3)||pts.some(q=>Math.hypot(q[0]-x,q[1]-y)<q[2]+s2+.05))continue;pts.push([x,y,s2]);
@@ -345,13 +361,15 @@ function themeForet(c){const {P,r}=c,L=c.q.layers||{},d=c.dens;
   groundCalm(c,[P.dom[P.dom.length-1],P.dom[P.dom.length-2]||P.dom[0]],"sous-bois");
   if(c.q.signature==="sentier")sentier(c);eauDouce(c,L.eau);
   const sh=c.q.cx==="mono"?P.dom:c.q.cx==="explosif"?c.pick(P.pop):c.pick(P.ana);poilsLongs(c,1+Math.floor(r()*2),sh);
-  const n=mounds(c,{cover:.5*Math.min(1.3,d),rMin:2.4,rMax:7.5}).length;c.info.push(`une forêt dense de ${n} touffes`);
+  const ms=c.anchors=massifs(c,{n:Math.round(3+2.5*d),rBig:6.5,fams:famsFor(c),gap:1.5,kind:"bosquet"});
+  mounds(c,{cover:.12*d,rMin:2.2,rMax:4.2,weight:(x,y)=>edgeW(c,x,y)});c.info.push(`${ms.length} bosquets denses`);
   grappes(c,c.q.cx==="explosif"?3:c.q.cx==="mono"?1:2,c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop:P.ana);
   if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6);}
   c.info.unshift("forêt luxuriante");}
 function themeJardin(c){const {P,r}=c,L=c.q.layers||{},d=c.dens;
   groundCalm(c,[P.ground[0],P.ground[1]||P.ground[0]]);if(c.q.signature==="sentier")sentier(c);eauDouce(c,L.eau);
-  mounds(c,{cover:.1*d,rMin:2.6,rMax:5,weight:(x,y)=>edgeW(c,x,y)});mounds(c,{cover:.08*d,rMin:1.5,rMax:2.4,tech:"loop3",base:P.ground.concat(P.dom.slice(0,2)),core:false});
+  const ms=c.anchors=massifs(c,{n:Math.round(1+1.5*d),rBig:5,fams:[P.dom],gap:9,kind:"massif"});c.info.push(`${ms.length} massif${ms.length>1?"s":""} de verdure`);
+  mounds(c,{cover:.04*d,rMin:1.5,rMax:2.3,tech:"loop3",base:P.ground.concat(P.dom.slice(0,2)),core:false});
   grappes(c,Math.max(2,Math.round(3*d)),c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop.concat(P.ana):P.ana);
   if(c.q.signature==="rochers")pierre(c,"rochers");else if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6.5);}
   c.info.unshift("jardin fleuri");}
@@ -374,13 +392,25 @@ function themeDesert(c){const L=c.q.layers||{},riv=L.eau==="riviere"||L.eau==="c
   if(riv){const ph=c.r()*6.28,x0=RW*(.3+.4*c.r()),A=6+c.r()*6;xs=y=>x0+A*Math.sin(y/15+ph)+3*Math.sin(y/7+ph*2);c.riverFn=xs;}
   c.q.layers=Object.assign({},L,{relief:L.relief==="vallee"?"vallee":"dunes"});baseStrates(c,xs);
   if(xs){eauRiviere(c,L.eau==="cascade");mounds(c,{cover:.07,rMin:2.2,rMax:4.2,weight:(x,y)=>Math.exp(-Math.pow((Math.abs(x-xs(y))-6)/3,2))});}
-  if(c.q.signature==="soleil"){const [fx,fy]=strongPoint(c);disque(c,"soleil",fx,fy,7);}else if(c.q.signature==="rochers")pierre(c,"rochers");else if(c.q.signature==="sentier"&&!xs)sentier(c);}
+  if(c.q.signature==="soleil"){let fx,fy;for(let t=0;t<200;t++){[fx,fy]=strongPoint(c);if(t>150)fx=c.r()*RW,fy=c.r()*RH;if(freeAt(c,fx,fy,8))break;}disque(c,"soleil",fx,fy,7);}else if(c.q.signature==="rochers")pierre(c,"rochers");else if(c.q.signature==="sentier"&&!xs)sentier(c);}
+
+/* végétation et matières : au plus 4 (ton sur ton), 6 (nuancé) ou 10 (explosif) laines, en plus de celles de l'eau, du sable et du ciel ;
+   les moins présentes prennent la couleur gardée la plus proche */
+function capYarns(c){const cap={mono:5,nuance:8,explosif:12}[c.q.cx]||8,area=new Map();
+  for(let o=0;o<c.N;o++){const z=c.zone[o];if(!z)continue;const ref=c.zones[z].ref;area.set(ref,(area.get(ref)||0)+1);}
+  if(area.size<=cap)return;
+  const prot=new Set(["eau","mer","écume","rivage","berge","sable","sable mouillé","sentier","bord du sentier","lune","soleil","nébuleuse","ciel","plage"]);
+  const forced=[...new Set(c.zones.filter(z=>z&&prot.has(z.kind)&&area.has(z.ref)).map(z=>z.ref))];
+  const capNP={mono:4,nuance:6,explosif:10}[c.q.cx]||6,keep=forced.concat([...area.entries()].sort((a,b)=>b[1]-a[1]).map(e=>e[0]).filter(r=>!forced.includes(r)).slice(0,capNP));
+  const npRefs=new Set(c.zones.filter(z=>z&&!prot.has(z.kind)).map(z=>z.ref)),keepNP=keep.filter(k=>npRefs.has(k));
+  const nearIn=(ref,pool)=>{const a=Y[ref].rgb;let best=pool[0],bd=1e9;for(const k of pool){const b=Y[k].rgb,d=(a[0]-b[0])**2*.3+(a[1]-b[1])**2*.59+(a[2]-b[2])**2*.11;if(d<bd){bd=d;best=k;}}return best;};
+  for(const zz of c.zones){if(zz&&!keep.includes(zz.ref))zz.ref=nearIn(zz.ref,!prot.has(zz.kind)&&keepNP.length?keepNP:keep);}}
 
 /* ---------- assemblage ---------- */
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
     ({epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);
-    clean(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
+    clean(c);capYarns(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";
   const riverWanted=L.eau==="riviere"||L.eau==="cascade";
@@ -409,11 +439,11 @@ function render(cv,g,view,floorHex){const {w,h,G,zone,H,zones}=g;cv.width=w;cv.h
     for(let o=0;o<w*h;o++){const z=zone[o],k=o*4,i=o%w;let col=z?Y[zones[z].ref].rgb:floor;
       if(z){const r1=i<w-1?o+1:o,d1=o+w<w*h?o+w:o,edge=(zone[r1]!==z&&zone[r1])||(zone[d1]!==z&&zone[d1]);
         const iso=zone[r1]&&zone[d1]&&(lv(Hc[o])!==lv(Hc[r1])||lv(Hc[o])!==lv(Hc[d1])),maj=iso&&(mj(Hc[o])!==mj(Hc[r1])||mj(Hc[o])!==mj(Hc[d1]));
-        if(edge)col=[30,30,30];else if(iso){const a=maj?.85:.5,ink=[92,52,24];col=col.map((v,q)=>v*(1-a)+ink[q]*a);
+        if(edge)col=[30,30,30];else if(iso){const a=maj?.75:.28,ink=[92,52,24];col=col.map((v,q)=>v*(1-a)+ink[q]*a);
           if(maj&&G>=4&&!(i%3)&&!(Math.floor(o/w)%3))cand.push([i,Math.floor(o/w),Math.max(mj(Hc[o]),mj(Hc[r1]),mj(Hc[d1]))]);}}
       D[k]=col[0];D[k+1]=col[1];D[k+2]=col[2];D[k+3]=255;}
     x.putImageData(img,0,0);cand.sort((A,B)=>B[2]-A[2]||hash(A[0],A[1])-hash(B[0],B[1]));const lab=[];
-    for(const q of cand){if(lab.length>=45)break;if(lab.every(([a,b])=>Math.hypot(a-q[0],b-q[1])>8*G))lab.push(q);}
+    for(const q of cand){if(lab.length>=16)break;if(lab.every(([a,b])=>Math.hypot(a-q[0],b-q[1])>13*G))lab.push(q);}
     if(G>=4){x.font=`600 ${Math.round(G*1.3)}px Figtree, system-ui, sans-serif`;x.textAlign="center";x.textBaseline="middle";x.lineJoin="round";
       for(const[lx,ly,v]of lab){const t=v+" cm";x.lineWidth=Math.max(2,G*.45);x.strokeStyle="rgba(255,255,255,.9)";x.strokeText(t,lx,ly);x.fillStyle="#5C3418";x.fillText(t,lx,ly);}}
     return;}
