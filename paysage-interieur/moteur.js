@@ -475,5 +475,10 @@ function render(cv,g,view,floorHex){const {w,h,G,zone,H,zones}=g;cv.width=w;cv.h
 function legend(g){const cnt=new Map();let tot=0;
   for(let o=0;o<g.zone.length;o++){const z=g.zone[o];if(!z)continue;tot++;const Zo=g.zones[z],key=Zo.ref+"|"+Zo.tech;cnt.set(key,(cnt.get(key)||0)+1);}
   return [...cnt.entries()].sort((a,b)=>b[1]-a[1]).map(([k,n])=>{const[ref,tech]=k.split("|");return {ref,nom:Y[ref].nom,hex:Y[ref].hex,tech,techFr:TECH[tech],part:n/tot};});}
-window.Moteur={generate,render,legend,Y,TECH,THEMES};
+/* cartes pour le rendu 3D (Blender) : couleurs des laines, hauteurs (0–6 cm), points */
+function maps(g){const {w,h,zone,H,zones}=g,N=w*h,col=new Uint8ClampedArray(N*4),hei=new Uint8ClampedArray(N*4),tec=new Uint8ClampedArray(N*4),code={cut15:1,loop3:2,cut4:3,brush4:4,pompon:5};
+  for(let o=0;o<N;o++){const z=zone[o],k=o*4;if(!z)continue;const Zo=zones[z],c=Y[Zo.ref].rgb,hv=Math.round(Math.min(1,H[o]/6)*255),t=code[Zo.tech]*40;
+    col[k]=c[0];col[k+1]=c[1];col[k+2]=c[2];col[k+3]=255;hei[k]=hei[k+1]=hei[k+2]=hv;hei[k+3]=255;tec[k]=tec[k+1]=tec[k+2]=t;tec[k+3]=255;}
+  return {w,h,col,hei,tec};}
+window.Moteur={generate,render,legend,maps,Y,TECH,THEMES};
 })();
