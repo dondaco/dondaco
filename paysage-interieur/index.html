@@ -68,6 +68,14 @@ textarea{min-height:90px;resize:vertical}
 .canvas-wrap{display:flex;flex-direction:column;gap:8px;align-items:center}
 canvas{width:100%;max-width:340px;aspect-ratio:7/10;height:auto}
 .rendubox{display:flex;flex-direction:column;gap:6px;align-items:center;width:100%;max-width:340px}
+.zoombtn{all:unset;cursor:zoom-in;display:block;width:100%}
+.zoombtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.loupe{position:fixed;inset:0;z-index:50;background:rgba(15,18,16,.92);overflow:auto;display:flex;align-items:center;justify-content:center;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.loupe img{max-width:100%;max-height:100%;cursor:zoom-in;border-radius:8px}
+.loupe.zoom{display:block}
+.loupe.zoom img{max-width:none;max-height:none;width:250%;cursor:zoom-out}
+.loupe .fermer{position:fixed;top:max(12px,env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));font:inherit;font-weight:600;border:0;border-radius:999px;padding:9px 16px;background:#F7F8F4;color:#22302A;cursor:pointer}
 .rendubox img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
 .rugbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .rugleg{display:flex;flex-direction:column;gap:4px;font-size:13px;max-width:340px;width:100%}
@@ -348,7 +356,7 @@ function afficheRendu(){const box=document.getElementById("rendubox"),cv=documen
   if(ATELIER){box.innerHTML="";if(cv)cv.style.display="";return;}
   const ici=RENDU.cle===cleRendu(),pret=ici&&RENDU.img&&RENDU.etat==="fini";
   if(cv)cv.style.display=pret?"none":"";
-  if(pret){box.innerHTML=`<img src="${RENDU.img}" alt="Ton tapis, en laine">`;return;}
+  if(pret){box.innerHTML=`<button type="button" class="zoombtn" data-agrandir aria-label="Voir le rendu en grand"><img src="${RENDU.img}" alt="Ton tapis, en laine"></button><span class="note">Touche l’image pour la voir en grand</span>`;return;}
   if(RENDU.etat==="calcul"){box.innerHTML=`<span class="note">Ton tapis prend forme en laine… ${Math.round((Date.now()-RENDU.t0)/1000)} s</span>`;return;}
   box.innerHTML=RENDU.etat==="erreur"&&ici?`<span class="note">${esc(RENDU.msg)}</span>`:"";}
 let autoT=0;
@@ -573,6 +581,13 @@ document.addEventListener("click",e=>{
   if(t.hasAttribute("data-prev"))return go(S.step-1);
   if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
   if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
+  if(t.hasAttribute("data-agrandir")&&RENDU.img){const L=document.createElement("div");L.className="loupe";L.setAttribute("role","dialog");L.setAttribute("aria-label","Rendu du tapis en grand");
+    L.innerHTML=`<img src="${RENDU.img}" alt="Ton tapis, en laine, en grand"><button type="button" class="fermer" data-fermer>Fermer</button>`;
+    L.addEventListener("click",ev=>{if(ev.target.closest("[data-fermer]")||ev.target===L&&!L.classList.contains("zoom")){L.remove();return;}
+      if(ev.target.tagName==="IMG"){const r=ev.target.getBoundingClientRect(),fx=(ev.clientX-r.left)/r.width,fy=(ev.clientY-r.top)/r.height;L.classList.toggle("zoom");
+        if(L.classList.contains("zoom")){const im=L.querySelector("img");L.scrollLeft=fx*im.offsetWidth-L.clientWidth/2;L.scrollTop=fy*im.offsetHeight-L.clientHeight/2;}}});
+    addEventListener("keydown",function k(ev){if(ev.key==="Escape"){L.remove();removeEventListener("keydown",k);}});
+    document.body.appendChild(L);L.querySelector("[data-fermer]").focus();return;}
   if(t.dataset.rendu){rendreReel(t.dataset.rendu);return;}
   if(t.hasAttribute("data-export")){exporterBlender();return;}
   if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
