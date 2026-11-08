@@ -104,7 +104,7 @@ function palette2(sp){
 
 /* ---------- contexte ---------- */
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
-  const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture,JSON.stringify(q.layers)].join("|"));
+  const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture].join("|"));
   const n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r),n4=makeNoise(r);
   const shape=q.shape||"organique",organic=shape==="organique";
   const sdfF=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
@@ -118,7 +118,7 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const Z=(ref,tech,kind)=>{if(!Y[ref]){(window.__badRefs=window.__badRefs||[]).push(kind+":"+ref);ref="056";}const key=ref+"|"+tech+"|"+kind;if(!zM.has(key)){zones.push({ref,tech,kind});zM.set(key,zones.length-1);}return zM.get(key);};
   const P=q.spec?palette2(Object.assign({avoid:q.avoid,season:q.season},q.spec)):palette(q.season,q.avoid);
   const c={q,P,w,h,N,G,r,n1,n2,n3,n4,sdf,inRug,zone:new Uint16Array(N),H:new Float32Array(N).fill(1.5),wet:new Uint8Array(N),busy:new Uint8Array(N),zones,Z,
-    pick:a=>a[Math.floor(r()*a.length)],info:[]};
+    pick:a=>a[Math.floor(r()*a.length)],info:[],ov:q.ov||{}};
   c.kind=o=>c.zone[o]?zones[c.zone[o]].kind:"";
   c.at=(x,y)=>{const i=Math.floor(x*G),j=Math.floor(y*G);return(i<0||j<0||i>=w||j>=h)?-1:j*w+i;};
   c.dens={epure:.55,equilibre:1,foisonnant:1.5}[q.dens]||1;
@@ -191,7 +191,7 @@ function baseLave(c){const {w,h,G,r,n1,n2,n3,zone,H,inRug,P}=c,s=13/Math.sqrt(c.
 /* ---------- eau ---------- */
 function waterBands(c,o,dIn,refs){const d=dIn,x=(o%c.w)/c.G,y=Math.floor(o/c.w)/c.G,wob=(fbm(c.n3,x/7,y/7)-.5)*1.1;
   const i=d<2.2+wob*.6?0:d<4.6+wob?1:d<8+wob?2:3;return refs[Math.min(i,refs.length-1)];}
-function eauEtang(c,size){const {w,h,G,r,n1,inRug,sdf,zone,H,wet,P}=c,R0=RW*size,k=3+Math.floor(r()*3),balls=[];
+function eauEtang(c,size){c.eauFaite=true;const {w,h,G,r,n1,inRug,sdf,zone,H,wet,P}=c,R0=RW*size,k=3+Math.floor(r()*3),balls=[];
   let px=RW/2+(r()-.5)*RW*.3,py=RH/2+(r()-.5)*RH*.32,ang=r()*6.283;
   for(let i=0;i<k;i++){const rad=R0*(i?(.4+r()*.5):1),m=rad+8;px=Math.min(RW-m,Math.max(m,px));py=Math.min(RH-m,Math.max(m,py));balls.push([px,py,rad]);
     ang+=(r()-.5)*2.4;const st=R0*(.8+r()*.5);px+=Math.cos(ang)*st;py+=Math.sin(ang)*st;}
@@ -203,7 +203,7 @@ function eauEtang(c,size){const {w,h,G,r,n1,inRug,sdf,zone,H,wet,P}=c,R0=RW*size
     if(lake[o]){zone[o]=c.Z(waterBands(c,o,dIn[o]/G,P.water),"cut15","eau");H[o]=1.5;wet[o]=1;}
     else if(dOut[o]/G<1.3+fbm(c.n3,(o%w)/G/6,o/w/G/6)*.6){zone[o]=c.Z(P.foam[0],"cut15","rivage");H[o]=1.5;wet[o]=2;}}
   c.lakeDist={dIn,dOut};c.info.push(size<.12?"une petite source":"un étang");}
-function eauRiviere(c,narrow){const {w,h,G,r,zone,H,inRug,wet,P}=c,ph=r()*6.28,x0=RW*(.3+.4*r()),A=6+r()*6;
+function eauRiviere(c,narrow){c.eauFaite=true;const {w,h,G,r,zone,H,inRug,wet,P}=c,ph=r()*6.28,x0=RW*(.3+.4*r()),A=6+r()*6;
   const xs=c.riverFn||(y=>x0+A*Math.sin(y/15+ph)+3*Math.sin(y/7+ph*2)),wr=narrow?2.2:3.4;
   for(let j=0;j<h;j++){const y=(j+.5)/G,xm=xs(y),sl=xs(y+.5)-xs(y-.5),cs=1/Math.sqrt(1+sl*sl);
     for(let i=0;i<w;i++){const o=j*w+i;if(!inRug[o])continue;const dr=Math.abs((i+.5)/G-xm)*cs;
@@ -271,7 +271,7 @@ function stone(c,S){const {w,h,G,zone,H,inRug,busy,n2}=c,b=Math.ceil(Math.max(S.
   for(let y=Math.max(0,Math.floor(S.y*G-b));y<Math.min(h,S.y*G+b);y++)for(let x=Math.max(0,Math.floor(S.x*G-b));x<Math.min(w,S.x*G+b);x++){const o=y*w+x;if(!inRug[o]||c.wet[o])continue;
     const dx=x/G-S.x,dy=y/G-S.y,lx=dx*ca+dy*sa,ly=-dx*sa+dy*ca,mr=Math.min(S.rx,S.ry),d=(Math.hypot(lx/S.rx,ly/S.ry)-1)*mr+(fbm(n2,x/G/3,y/G/3)-.5)*.8;
     if(d<0){zone[o]=z;H[o]=heightFor(S.tech,-d,1-Math.min(1,-d/mr),mr,0);busy[o]=1;}}}
-function pierre(c,m){const {r,P}=c,d=c.dens,list=[];
+function pierre(c,m){if(m!=="galets")c.sigFait=true;const {r,P}=c,d=c.dens,list=[];
   const place=(n,rMin,rMax,gap,cl)=>{for(let t=0;t<5000&&list.length<n;t++){let x,y;if(cl){const a=r()*6.28,dd=r()*cl.s;x=cl.x+Math.cos(a)*dd;y=cl.y+Math.sin(a)*dd;}else{x=r()*RW;y=r()*RH;}
     const rx=rMin+r()*(rMax-rMin),ry=rx*(.65+r()*.3);if(!freeAt(c,x,y,rx+1.2))continue;const o=c.at(x,y);if(c.busy[o])continue;
     if(list.some(S=>Math.hypot(S.x-x,S.y-y)<S.rx+rx+gap))continue;const F=famFor(c,P.stone);
@@ -297,7 +297,7 @@ function ciel(c,s){const {w,h,G,r,n1,n2,zone,H,inRug,P}=c;
         else if(d>R+1.1&&d<R+2.2){zone[o]=c.Z(ref,"loop3","halo");H[o]=3;c.busy[o]=1;}}
       else{if(d>=R)continue;const d2=Math.hypot(X-cx2,Yy-cy2);if(d2<=R2||(R-d)+(d2-R2)<1.4)continue;zone[o]=c.Z(ref,"cut4","lune");H[o]=heightFor("cut4",Math.min(R-d,d2-R2),d/R,R*.5,0);c.busy[o]=1;}}
     c.info.push(s==="soleil"?"un soleil levant":"un croissant de lune");}
-  else if(s==="etoiles"){let k=0;const n=Math.round(18*c.dens);
+  else if(s==="etoiles"){c.sigFait=true;let k=0;const n=Math.round(18*c.dens);
     for(let t=0;t<4000&&k<n;t++){const x=r()*RW,y=r()*RH*.7,big=r()<.25,sz=big?1.8+r()*1:.65;if(!freeAt(c,x,y,sz+1))continue;const o=c.at(x,y);if(c.busy[o])continue;
       blob(c,{x,y,r:sz,ref:P.star[0],tech:"loop3",kind:"étoile",flat:3},q=>overOk(q)&&!c.busy[q]);k++;}c.info.push(`${k} petites étoiles`);}
   else if(s==="brume"||s==="nuages"){const light=s==="brume"?P.dom[0]:(P.sand[0]||P.foam[0]);let k=0;
@@ -337,7 +337,7 @@ function groundCalm(c,refs,kind){const {w,h,G,n1,zone,H,inRug}=c;
 /* points forts de composition (règle des tiers), choisis au hasard */
 function strongPoint(c){const r=c.r;return[RW*(r()<.5?.36:.64)+(r()-.5)*4,RH*(r()<.5?.36:.64)+(r()-.5)*5];}
 /* un sentier continu d'un bord à l'autre ; les autres éléments le contournent */
-function sentier(c){const {w,h,G,r,zone,H,inRug,wet,P}=c,vert=r()<.6,L=vert?RH:RW,S=vert?RW:RH,x0=S*(.32+.36*r()),A=S*(.1+.08*r()),ph=r()*6.28,ph2=r()*6.28;
+function sentier(c){c.sigFait=true;const {w,h,G,r,zone,H,inRug,wet,P}=c,vert=r()<.6,L=vert?RH:RW,S=vert?RW:RH,x0=S*(.32+.36*r()),A=S*(.1+.08*r()),ph=r()*6.28,ph2=r()*6.28;
   const xs=t=>x0+A*Math.sin(t/(L*.32)+ph)+3*Math.sin(t/9+ph2),core=1.3,edge=1.05;
   for(let o=0;o<c.N;o++){if(!inRug[o]||wet[o]===1)continue;const x=(o%w+.5)/G,y=(Math.floor(o/w)+.5)/G,t=vert?y:x,s=vert?x:y;
     const sl=xs(t+.5)-xs(t-.5),d=Math.abs(s-xs(t))/Math.sqrt(1+sl*sl);
@@ -346,7 +346,7 @@ function sentier(c){const {w,h,G,r,zone,H,inRug,wet,P}=c,vert=r()<.6,L=vert?RH:R
 function anneauxAutour(c,fx,fy,R,n,gap){const {w,G,zone,H,inRug}=c;
   for(let o=0;o<c.N;o++){if(!inRug[o]||c.kind(o)!=="sol")continue;const x=(o%w+.5)/G,y=(Math.floor(o/w)+.5)/G,d=Math.hypot(x-fx,y-fy)-R+(fbm(c.n2,x/9,y/9)-.5)*1.4;
     if(d>1.2&&d<1.2+gap*n&&((d-1.2)%gap)<1){zone[o]=c.Z(c.zones[zone[o]].ref,"loop3","sol");H[o]=3;}}}
-function disque(c,kind,fx,fy,R,overWet){R*=c.q.sigScale||1;const {w,h,G,r,zone,H,inRug,P}=c,ref=kind==="lune"?P.disc[0]:kind==="soleil"?(c.q.cx==="mono"?P.disc[0]:P.lava[P.lava.length-1]):P.disc[0];
+function disque(c,kind,fx,fy,R,overWet){c.sigFait=true;R*=c.q.sigScale||1;const {w,h,G,r,zone,H,inRug,P}=c,ref=kind==="lune"?P.disc[0]:kind==="soleil"?(c.q.cx==="mono"?P.disc[0]:P.lava[P.lava.length-1]):P.disc[0];
   const ma=r()*6.28,off=R*.42,R2=R*.88,cx2=fx+Math.cos(ma)*off,cy2=fy+Math.sin(ma)*off,b=Math.ceil((R+3)*G);
   for(let y=Math.max(0,Math.floor(fy*G-b));y<Math.min(h,fy*G+b);y++)for(let x=Math.max(0,Math.floor(fx*G-b));x<Math.min(w,fx*G+b);x++){const o=y*w+x;if(!inRug[o]||(c.wet[o]&&!overWet))continue;
     const X=x/G,Yy=y/G,d=Math.hypot(X-fx,Yy-fy);if(d>=R)continue;let ins=R-d;
@@ -380,7 +380,7 @@ function grappes(c,n,fams){const {r}=c;let k=0,cl=0;
 function poilsLongs(c,n,fam){const {r}=c;let sh=0;
   for(let t=0;t<300&&sh<n;t++){const x=RW*(.15+.7*r()),y=RH*(.15+.7*r()),R=6+r()*4;if(!freeAt(c,x,y,R*.7))continue;blob(c,{x,y,r:R,ref:c.pick(fam),tech:"brush4",kind:"poils longs"},dryOk(c));sh++;}
   if(sh)c.info.push(`${sh} zone${sh>1?"s":""} à poils longs`);}
-function eauDouce(c,eau){if(eau==="lac")eauEtang(c,.15);else if(eau==="source")eauEtang(c,.09);else if(eau==="riviere"||eau==="cascade")eauRiviere(c,eau==="cascade");}
+function eauDouce(c,eau){if(eau&&eau!=="aucune")c.eauFaite=true;if(eau==="lac")eauEtang(c,.15);else if(eau==="source")eauEtang(c,.09);else if(eau==="riviere"||eau==="cascade")eauRiviere(c,eau==="cascade");}
 
 function themeEpure(c){const {P,r}=c,L=c.q.layers||{},tend=c.q.tendance||"foret";
   const refs=tend==="mer"?[P.sand[0],P.sand[1]]:tend==="ciel"?[P.night[0],P.night[0]]:[P.ground[0],P.ground[0]];
@@ -392,7 +392,8 @@ function themeEpure(c){const {P,r}=c,L=c.q.layers||{},tend=c.q.tendance||"foret"
   else{const F=P.dom;blob(c,{x:fx,y:fy,r:6,ref:F[Math.min(2,F.length-1)],core:F[1],tech:"cut4"});for(let k=0;k<3;k++){const a=r()*6.28;blob(c,{x:fx+Math.cos(a)*7.5,y:fy+Math.sin(a)*7.5,r:2.4+r()*1.2,ref:c.pick(F),tech:techFor(c)},o=>!c.busy[o]);}R=9;c.info.push("une touffe de mousse seule");}
   groundCalm(c,refs);if(R)anneauxAutour(c,fx,fy,R,4,2.6);if(sig==="sentier")c.info.push("(sentier omis : version épurée)");
   c.info.unshift("épuré : un seul élément et beaucoup de calme");}
-function themeMer(c){const {w,h,G,r,n1,zone,H,inRug,wet,P}=c,a=(Math.floor(r()*4)*Math.PI/2)+(r()-.5)*.8,nx=Math.cos(a),ny=Math.sin(a);
+function themeMer(c){if((c.q.layers||{}).eau==="ile"){eauIle(c);groundCalm(c,[c.P.ground[0],c.P.dom[1]||c.P.ground[0]]);c.eauFaite=true;c.info.unshift("une île");return;}
+const {w,h,G,r,n1,zone,H,inRug,wet,P}=c,a=(Math.floor(r()*4)*Math.PI/2)+(r()-.5)*.8,nx=Math.cos(a),ny=Math.sin(a);
   let umin=1e9,umax=-1e9;for(const[x,y]of[[0,0],[RW,0],[0,RH],[RW,RH]]){const u=x*nx+y*ny;umin=Math.min(umin,u);umax=Math.max(umax,u);}
   const s0=umin+(umax-umin)*(.38+.17*r()),bw=4.8/Math.sqrt(c.dens),sea=P.water,dry=P.sand[0],wetS=P.sand[1]||P.sand[0];
   for(let o=0;o<c.N;o++){if(!inRug[o])continue;const x=(o%w+.5)/G,y=(Math.floor(o/w)+.5)/G,u=x*nx+y*ny,t=-x*ny+y*nx,s=s0+(fbm(n1,t/16,3)-.5)*12,d=u-s;
@@ -411,17 +412,17 @@ function freeAt2(c,x,y,R){for(const[dx,dy]of[[R,0],[-R,0],[0,R],[0,-R]]){const o
 function themeForet(c){const {P,r}=c,L=c.q.layers||{},d=c.dens;
   groundCalm(c,[P.dom[P.dom.length-1],P.dom[P.dom.length-2]||P.dom[0]],"sous-bois");
   if(c.q.signature==="sentier")sentier(c);eauDouce(c,L.eau);
-  const sh=c.q.cx==="mono"?P.dom:c.q.cx==="explosif"?c.pick(P.pop):c.pick(P.ana);poilsLongs(c,1+Math.floor(r()*2),sh);
+  if(!c.ov.vegetation){const sh=c.q.cx==="mono"?P.dom:c.q.cx==="explosif"?c.pick(P.pop):c.pick(P.ana);poilsLongs(c,1+Math.floor(r()*2),sh);
   const ms=c.anchors=massifs(c,{n:Math.round(3+2.5*d),rBig:6.5,fams:famsFor(c),gap:1.5,kind:"bosquet"});
   mounds(c,{cover:.12*d,rMin:2.2,rMax:4.2,weight:(x,y)=>edgeW(c,x,y)});c.info.push(`${ms.length} bosquets denses`);
-  grappes(c,c.q.cx==="explosif"?3:c.q.cx==="mono"?1:2,c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop:P.ana);
+  grappes(c,c.q.cx==="explosif"?3:c.q.cx==="mono"?1:2,c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop:P.ana);}
   if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6);}
   c.info.unshift("forêt luxuriante");}
 function themeJardin(c){const {P,r}=c,L=c.q.layers||{},d=c.dens;
   groundCalm(c,[P.ground[0],P.ground[1]||P.ground[0]]);if(c.q.signature==="sentier")sentier(c);eauDouce(c,L.eau);
-  const ms=c.anchors=massifs(c,{n:Math.round(1+1.5*d),rBig:5,fams:[P.dom],gap:9,kind:"massif"});c.info.push(`${ms.length} massif${ms.length>1?"s":""} de verdure`);
+  if(!c.ov.vegetation){const ms=c.anchors=massifs(c,{n:Math.round(1+1.5*d),rBig:5,fams:[P.dom],gap:9,kind:"massif"});c.info.push(`${ms.length} massif${ms.length>1?"s":""} de verdure`);
   mounds(c,{cover:.04*d,rMin:1.5,rMax:2.3,tech:"loop3",base:P.ground.concat(P.dom.slice(0,2)),core:false});
-  grappes(c,Math.max(2,Math.round(3*d)),c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop.concat(P.ana):P.ana);
+  grappes(c,Math.max(2,Math.round(3*d)),c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop.concat(P.ana):P.ana);}
   if(c.q.signature==="rochers")pierre(c,"rochers");else if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6.5);}
   c.info.unshift("jardin fleuri");}
 function themeCiel(c){const {w,h,G,r,n1,n2,zone,H,inRug,P}=c,neb=(c.q.cx==="mono"?P.water.slice(1):NEB[c.q.season]||NEB.hiver).filter(q=>Y[q]);
@@ -439,7 +440,7 @@ function themeCiel(c){const {w,h,G,r,n1,n2,zone,H,inRug,P}=c,neb=(c.q.cx==="mono
 function themeMontagne(c){const L=c.q.layers||{};baseMontagne(c);if(L.eau==="riviere"||L.eau==="cascade")eauRiviere(c,L.eau==="cascade");else if(L.eau==="lac")eauEtang(c,.11);
   if(c.q.signature==="sentier")sentier(c);else if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6.5);}}
 function themeLave(c){baseLave(c);}
-function themeDesert(c){const L=c.q.layers||{},riv=L.eau==="riviere"||L.eau==="cascade"||L.eau==="lac";let xs=null;
+function themeDesert(c){const L=c.q.layers||{},riv=L.eau==="riviere"||L.eau==="cascade";let xs=null;
   if(riv){const ph=c.r()*6.28,x0=RW*(.3+.4*c.r()),A=6+c.r()*6;xs=y=>x0+A*Math.sin(y/15+ph)+3*Math.sin(y/7+ph*2);c.riverFn=xs;}
   c.q.layers=Object.assign({},L,{relief:L.relief==="vallee"?"vallee":"dunes"});baseStrates(c,xs);
   if(xs){eauRiviere(c,L.eau==="cascade");mounds(c,{cover:.07,rMin:2.2,rMax:4.2,weight:(x,y)=>Math.exp(-Math.pow((Math.abs(x-xs(y))-6)/3,2))});}
@@ -462,25 +463,30 @@ function themePlaine(c){const {P,r}=c,L=c.q.layers||{};
   const ramp=[...new Set([P.ground[0],P.dom[0],P.dom[1]||P.dom[0],(P.ana[0]||P.dom)[0]].filter(Boolean))];
   baseBandes(c,ramp,9/Math.sqrt(c.dens),c.q.geo?1:2.5,Math.PI/2+(r()-.5)*.25,null,"sol");
   eauDouce(c,L.eau);if(c.q.signature==="sentier")sentier(c);
-  mounds(c,{cover:.05*c.dens,rMin:1.5,rMax:2.4,tech:"loop3",base:P.dom.slice(0,3),core:false});
+  if(!c.ov.vegetation)mounds(c,{cover:.05*c.dens,rMin:1.5,rMax:2.4,tech:"loop3",base:P.dom.slice(0,3),core:false});
   c.info.unshift("une plaine ouverte, en grandes bandes calmes");}
 /* cocon : anneaux enveloppants autour d'un cœur, tons chauds et sombres, quelques coussins de mousse */
 function themeCocon(c){const {P,r}=c,cx=RW*(.42+.16*r()),cy=RH*(.42+.16*r()),sq=.8;
   const ramp=[...new Set(P.dom.slice().reverse().concat(P.ground))];
   baseBandes(c,ramp,4.2/Math.sqrt(c.dens),c.q.geo?1:3,0,(x,y)=>Math.hypot(x-cx,(y-cy)*sq),"cocon");
-  const ms=massifs(c,{n:Math.round(1+c.dens),rBig:4.5,fams:[P.dom],gap:10,kind:"coussin"});
+  const ms=c.ov.vegetation?[]:massifs(c,{n:Math.round(1+c.dens),rBig:4.5,fams:[P.dom],gap:10,kind:"coussin"});
   c.info.unshift(`un cocon d'anneaux enveloppants${ms.length?` et ${ms.length} coussins de mousse`:""}`);}
 /* éléments signature communs à toutes les ambiances (un seul par tapis) */
-function signatureCommune(c){const s=c.q.signature,k=c.q.sigScale||1,P=c.P;
-  if(["plaine","cocon"].includes(c.q.theme)){if(s==="soleil"||s==="lune"){let fx,fy;for(let i=0;i<200;i++){[fx,fy]=strongPoint(c);if(freeAt(c,fx,fy,7))break;}disque(c,s,fx,fy,7);}
-    else if(s==="rochers")pierre(c,"rochers");}
-  if(s==="fleurs"){grappes(c,1,c.q.cx==="mono"?[P.dom.slice(0,3)]:P.pop);}
-  else if(s==="reflet"){eauEtang(c,.07*k);}}
-
+function signatureCommune(c){const s=c.q.signature,k=c.q.sigScale||1,P=c.P;if(!s||c.sigFait)return;c.sigFait=true;
+  if(s==="fleurs")grappes(c,1,c.q.cx==="mono"?[P.dom.slice(0,3)]:P.pop);
+  else if(s==="reflet")eauEtang(c,.07*k);
+  else if(s==="soleil"||s==="lune"){let fx,fy;for(let i=0;i<200;i++){[fx,fy]=strongPoint(c);if(i>150){fx=RW*(.2+.6*c.r());fy=RH*(.15+.7*c.r());}if(freeAt(c,fx,fy,7))break;}disque(c,s,fx,fy,7);}
+  else if(s==="rochers"||s==="falaise")pierre(c,s);else if(s==="sentier")sentier(c);else if(s==="etoiles")ciel(c,"etoiles");}
+/* choix faits dans « Changer » : appliqués quelle que soit l'ambiance */
+function choixPersonnels(c){const ov=c.ov;
+  if(ov.eau&&!["aucune","mer","ile"].includes(ov.eau)&&!c.eauFaite)eauDouce(c,ov.eau);
+  if(ov.vegetation&&ov.vegetation!=="aucune")vegetation(c,ov.vegetation);
+  if(ov.mineral==="galets")pierre(c,"galets");
+  if(ov.ciel==="brume"||ov.ciel==="nuages")ciel(c,ov.ciel);}
 /* ---------- assemblage ---------- */
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
-    ({plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);signatureCommune(c);
+    ({plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);choixPersonnels(c);signatureCommune(c);
     pasDeBordure(c);clean(c);capYarns(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";

@@ -300,6 +300,8 @@ function ambiance(){
   if(ov.eau==="mer"||ov.eau==="ile")base="mer";else if(ov.relief==="volcan")base="lave";else if(ov.relief==="marque")base="montagne";
   else if(ov.relief==="dunes"||ov.relief==="vallee")base="desert";else if(["foret","arbre","clairiere"].includes(ov.vegetation))base="foret";
   else if(["fleurs","prairie"].includes(ov.vegetation)&&base!=="plaine")base="jardin";
+  else if(ov.relief==="plat")base="plaine";else if(ov.relief==="doux")base="cocon";
+  if(base==="mer"&&ov.eau&&ov.eau!=="mer"&&ov.eau!=="ile")base=["lac","source","riviere","cascade"].includes(ov.eau)?"jardin":"plaine";
   const auto=q8&&q8.d<.8?"epure":base;
   return {theme:(ATELIER&&S.amb)||auto,auto,tendance:base};
 }
@@ -315,9 +317,11 @@ function rugParams(){
   let sig=q5.sig||null;if(sig==="astre")sig=q2.light==="nuit"?"lune":"soleil";
   let force=false;for(const L of["chemin","ciel","mineral"]){const v=S.ov[L];if(["sentier","soleil","lune","etoiles","rochers","falaise"].includes(v)){sig=v;force=true;}}
   if(q10.lis==="devine"&&!force)sig=null;
-  if(sig&&!(SIGOK[A.theme]||[]).includes(sig))sig=null;
+  if(sig&&!force&&!(SIGOK[A.theme]||[]).includes(sig))sig=null;
+  // « Pas de… » dans « Changer » retire l'élément correspondant
+  if((S.ov.chemin==="aucune"&&sig==="sentier")||(S.ov.ciel==="aucune"&&["soleil","lune","etoiles"].includes(sig))||(S.ov.mineral==="aucune"&&["rochers","falaise"].includes(sig))||(S.ov.vegetation==="aucune"&&sig==="fleurs")||(S.ov.eau==="aucune"&&sig==="reflet"))sig=null;
   return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx,shape,dens,relief,
-    texture:q4.tex||"mousse",avoid:S.a.eviter||"",layers:c,theme:A.theme,tendance:A.tendance,signature:sig,
+    texture:q4.tex||"mousse",avoid:S.a.eviter||"",layers:c,ov:Object.assign({},S.ov),theme:A.theme,tendance:A.tendance,signature:sig,
     sigScale:q10.lis==="clair"?1.25:q10.lis==="secret"?.6:1,geo:!!q9.geo,mot:q12.mot||null,
     spec:{light:q2.light||"vif",el:q4.el||"vegetal",acc:q5.acc||"fleur"}};
 }
