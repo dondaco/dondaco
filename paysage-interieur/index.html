@@ -414,10 +414,18 @@ function rugParams(){
 let SERVEUR=null,RENDU={cle:null,img:null,etat:"",t0:0,secondes:0};
 fetch("/etat",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.ok){SERVEUR=j;render();}}).catch(()=>{});
 const cleRendu=()=>JSON.stringify(rugParams());
-function afficheRendu(){const box=document.getElementById("rendubox");if(!box)return;const ici=RENDU.cle===cleRendu();
-  if(RENDU.etat==="calcul"){box.innerHTML=`<span class="note">Rendu en cours dans Blender… ${Math.round((Date.now()-RENDU.t0)/1000)} s</span>`;return;}
-  if(RENDU.etat==="erreur"&&ici){box.innerHTML=`<span class="note">${esc(RENDU.msg)}</span>`;return;}
-  box.innerHTML=ici&&RENDU.img?`<img src="${RENDU.img}" alt="Rendu réaliste du tapis"><span class="note">Rendu réaliste · ${RENDU.secondes} s</span>`:"";}
+/* côté client : le rendu Blender remplace l'image simple dès qu'il est prêt ; côté atelier : le plan seulement */
+function afficheRendu(){const box=document.getElementById("rendubox"),cv=document.getElementById("cv");if(!box)return;
+  if(ATELIER){box.innerHTML="";if(cv)cv.style.display="";return;}
+  const ici=RENDU.cle===cleRendu(),pret=ici&&RENDU.img&&RENDU.etat==="fini";
+  if(cv)cv.style.display=pret?"none":"";
+  if(pret){box.innerHTML=`<img src="${RENDU.img}" alt="Ton tapis, en laine">`;return;}
+  if(RENDU.etat==="calcul"){box.innerHTML=`<span class="note">Ton tapis prend forme en laine… ${Math.round((Date.now()-RENDU.t0)/1000)} s</span>`;return;}
+  box.innerHTML=RENDU.etat==="erreur"&&ici?`<span class="note">${esc(RENDU.msg)}</span>`:"";}
+let autoT=0;
+function autoRendu(){if(ATELIER||!SERVEUR||!document.getElementById("cv"))return;const k=cleRendu();
+  if(RENDU.cle===k&&RENDU.etat!=="erreur")return;if(RENDU.etat==="calcul"){RENDU.attente=true;return;}
+  clearTimeout(autoT);autoT=setTimeout(()=>{if(cleRendu()===k&&RENDU.etat!=="calcul")rendreReel("finale");},700);}
 setInterval(()=>{if(RENDU.etat==="calcul")afficheRendu();},1000);
 async function rendreReel(qualite){if(RENDU.etat==="calcul")return;
   const q=rugParams(),g=Moteur.generate(q,8),m=Moteur.maps(g),b64=a=>{let s="";for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s);};
@@ -427,8 +435,8 @@ async function rendreReel(qualite){if(RENDU.etat==="calcul")return;
     if(!r.ok||!j.image)throw new Error(j.erreur||"Le rendu a échoué.");
     RENDU.img="data:image/png;base64,"+j.image;RENDU.secondes=j.secondes;RENDU.etat="fini";}
   catch(e){RENDU.etat="erreur";RENDU.msg=e.message||"Le rendu a échoué.";}
-  afficheRendu();}
-function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;afficheRendu();
+  afficheRendu();const encore=RENDU.attente;RENDU.attente=false;if(encore)autoRendu();}
+function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;afficheRendu();setTimeout(autoRendu,0);
   const g=Moteur.generate(rugParams(),(window.devicePixelRatio||1)>1.4?7:5.5);
   Moteur.render(cv,g,ATELIER?"atelier":"plan",getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#ECEEE8");
   const leg=document.getElementById("rugleg");if(!leg)return;if(!ATELIER){leg.innerHTML="";return;}
@@ -507,7 +515,7 @@ function renderScape(final){
       <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
       ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
   return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
-      ${SERVEUR?`<div class="rugbar"><button type="button" class="btn primary" data-rendu="finale">Rendu réaliste</button><button type="button" class="chip" data-rendu="apercu">Aperçu rapide</button></div>`:""}<div id="rendubox" class="rendubox"></div>
+      <div id="rendubox" class="rendubox"></div>
       <div class="rugbar">${ATELIER?`<button type="button" class="chip" data-export>Exporter pour Blender</button>`:""}${ATELIER?`<button type="button" class="chip" data-rugv>Autre proposition</button>`:""}</div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
       ${ATELIER?`<div class="rugbar" role="group" aria-label="Ambiance (mode atelier)"><span class="note" style="width:100%;text-align:center">Ambiance${S.amb?" choisie par toi":" déduite de tes réponses"} :</span>${Object.entries(AMB).map(([k,l])=>`<button type="button" class="chip" data-amb="${k}" aria-pressed="${ambiance().theme===k}">${l}</button>`).join("")}${S.amb?'<button type="button" class="chip" data-amb="">Revenir à l’automatique</button>':""}</div>`:""}
       <div class="rugleg" id="rugleg"></div></div>
