@@ -123,7 +123,6 @@ const LAYERS = {
     plat:{fr:"Une plaine",why:"Tu as besoin d’espace et de calme, d’un sol où tout est à portée.",en:"a wide gentle plain"},
     doux:{fr:"Des collines douces",why:"Tu avances par élans et par pauses, en rondeur.",en:"soft rolling hills"},
     marque:{fr:"Des montagnes",why:"Tu as de l’énergie, de la force, et tu aimes les sommets.",en:"mountains with strong peaks"},
-    volcan:{fr:"Un volcan",why:"Une chaleur intense couve à l’intérieur, protégée.",en:"a dormant volcano with a crater"},
     dunes:{fr:"Des dunes",why:"Tu vis par vagues, tu changes de forme avec le vent.",en:"wind-shaped dunes"},
     vallee:{fr:"Une vallée",why:"Tu as besoin d’un creux protégé, entouré de hauteurs.",en:"a sheltered valley between hills"}}},
   eau:{label:"L’eau",items:{
@@ -294,7 +293,7 @@ function answeredCount(){return Object.keys(S.a).filter(k=>Q[k]&&Q[k].opts).leng
 let ATELIER=location.hash==="#atelier";
 addEventListener("hashchange",()=>{ATELIER=location.hash==="#atelier";render();});
 // côté client : image propre du tapis (couleurs + léger relief) ; en mode atelier : plan technique avec courbes et hauteurs
-const AMB={epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
+const AMB={mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",desert:"Désert et canyon",jardin:"Jardin fleuri"};
 const SIGOK={plaine:["sentier","soleil","lune","rochers","fleurs","reflet"],cocon:["soleil","lune","rochers","fleurs","reflet"],
   epure:["lune","soleil","rochers","falaise","reflet"],mer:["rochers","soleil"],foret:["sentier","soleil","lune","fleurs","reflet"],
   jardin:["sentier","rochers","soleil","lune","fleurs","reflet"],ciel:["lune","soleil","etoiles"],montagne:["sentier","soleil","lune","reflet"],
@@ -306,15 +305,16 @@ AMB.plaine="Plaine";AMB.cocon="Cocon";
 function ambiance(){
   const q1=opt("q1"),q2=opt("q2"),q4=opt("q4"),q8=opt("q8"),ov=S.ov||{};
   let base="jardin";
-  if(q1)base={plaine:"plaine",foret:"foret",eau:"mer",plaid:"cocon"}[q1.lieu]||(q4&&q4.el==="feu"?"lave":q4&&q4.el==="terre"?"desert":"montagne");
+  if(q1)base={plaine:"plaine",foret:"foret",eau:"mer",plaid:"cocon"}[q1.lieu]||(q4&&q4.el==="terre"?"desert":"montagne");
   if(q2&&q2.light==="nuit"&&((q1&&q1.lieu==="plaine")||(q4&&q4.el==="air")))base="ciel";
-  if(ov.eau==="mer"||ov.eau==="ile")base="mer";else if(ov.relief==="volcan")base="lave";else if(ov.relief==="marque")base="montagne";
+  if(ov.eau==="mer"||ov.eau==="ile")base="mer";else if(ov.relief==="volcan"||ov.relief==="marque")base="montagne";
   else if(ov.relief==="dunes"||ov.relief==="vallee")base="desert";else if(["foret","arbre","clairiere"].includes(ov.vegetation))base="foret";
   else if(["fleurs","prairie"].includes(ov.vegetation)&&base!=="plaine")base="jardin";
   else if(ov.relief==="plat")base="plaine";else if(ov.relief==="doux")base="cocon";
   if(base==="mer"&&ov.eau&&ov.eau!=="mer"&&ov.eau!=="ile")base=["lac","source","riviere","cascade"].includes(ov.eau)?"jardin":"plaine";
-  const auto=q8&&q8.d<.8?"epure":base;
-  return {theme:(ATELIER&&S.amb)||auto,auto,tendance:base};
+  // ambiances « lave » et « épuré » retirées : un intérieur épuré donne la même ambiance, en moins dense
+  const auto=base,choisi=ATELIER&&S.amb&&AMB[S.amb]?S.amb:null;
+  return {theme:choisi||auto,auto,tendance:base};
 }
 function rugParams(){
   const c=compose(),A=ambiance(),g=k=>opt(k)||{};
