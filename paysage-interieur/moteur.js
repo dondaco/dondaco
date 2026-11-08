@@ -150,16 +150,25 @@ function palette3(sp){
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture].join("|"));
   const n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r),n4=makeNoise(r);
-  const shape=q.shape==="organique"?"tache":(q.shape||"tache"),organic=shape==="nuage"||shape==="tache"||shape==="fleur";
+  const shape=q.shape==="organique"?"tache":(q.shape||"tache"),organic=["nuage","tache","fleur","petales"].includes(shape);
   // contour organique : un cœur arrondi et une couronne de bulles fondues ensemble (comme un nuage)
   const bulles=[];if(shape==="nuage"){const rb=rng(q.seed+"|bulles"),K=10+Math.floor(rb()*4),a0=rb()*6.28;
     for(let k=0;k<K;k++){const br=8+rb()*5,t=a0+k*6.283/K+(rb()-.5)*.25;bulles.push([RW/2+(RW/2-br-.8)*Math.cos(t),RH/2+(RH/2-br-.8)*Math.sin(t),br]);}}
   const smin=(a,b,k)=>{const h=Math.max(k-Math.abs(a-b),0)/k;return Math.min(a,b)-h*h*k*.25;};
   const sdfF=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
     // tache : une goutte qui s'est ouverte — un rond déformé par quelques ondulations lentes, sans éclaboussures
-    if(shape==="tache"){const a=Math.atan2(cy/1.32,cx),rb=rng(q.seed+"|tache"),f=[rb()*6.28,rb()*6.28,rb()*6.28,rb()*6.28];
-      const k=1+.09*Math.sin(2*a+f[0])+.07*Math.sin(3*a+f[1])+.045*Math.sin(5*a+f[2])+.025*Math.sin(7*a+f[3]);
-      return(Math.hypot(cx,cy/1.32)-(RW/2-3)*.93*k)*.95;}
+    // tache : une grande forme lisse et asymétrique, avec une seule baie qui rentre (comme un haricot, une goutte étalée)
+    if(shape==="tache"){const rb=rng(q.seed+"|tache"),f=[rb()*6.28,rb()*6.28,rb()*6.28],fb=rb()*6.28,R=(RW/2-2)*.95,sy=1.28;
+      const a=Math.atan2(cy/sy,cx),k=1+.1*Math.sin(2*a+f[0])+.06*Math.sin(3*a+f[1])+.015*Math.sin(6*a+f[2]);
+      let d=(Math.hypot(cx,cy/sy)-R*.9*k)*.95;
+      const bx=Math.cos(fb)*R*1.02,by=Math.sin(fb)*R*1.02*sy,br=R*.42,dc=-(Math.hypot(cx-bx,cy-by)-br);
+      const kk=8,hh=Math.max(kk-Math.abs(d-dc),0)/kk;return Math.max(d,dc)+hh*hh*kk*.25;}
+    // pétales ronds : 4 à 6 grands pétales arrondis, de tailles inégales, qui se chevauchent (hortensia, rose ouverte)
+    if(shape==="petales"){const rb=rng(q.seed+"|petales"),n=4+Math.floor(rb()*3),R=RW/2-1.5,sy=1.18,a0=rb()*6.28;let d=1e9;
+      for(let k=0;k<n;k++){const t=a0+k*6.283/n+(rb()-.5)*.35,sz=.85+rb()*.3,pa=R*.5*sz,pb=R*.46*sz,dd=R*.45,px=Math.cos(t)*dd,py=Math.sin(t)*dd*sy;
+        const lx=(cx-px)*Math.cos(t)+(cy-py)*Math.sin(t),ly=-(cx-px)*Math.sin(t)+(cy-py)*Math.cos(t),e=(Math.hypot(lx/pa,ly/pb)-1)*Math.min(pa,pb);
+        const kk=5,h=Math.max(kk-Math.abs(d-e),0)/kk;d=Math.min(d,e)-h*h*kk*.25;}
+      return Math.min(d,Math.hypot(cx,cy)-R*.3);}
     // fleur : des pétales arrondis autour d'un cœur, comme un lotus vu du dessus
     // fleur de lotus vue du dessus : deux couronnes de pétales allongés en pointe, décalées, autour d'un cœur rond
     if(shape==="fleur"){const R0=RW/2-1,n=8;let best=Math.hypot(cx,cy)-R0*.3;
