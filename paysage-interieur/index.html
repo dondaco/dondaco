@@ -309,7 +309,7 @@ function ambiance(){
   if(q2&&q2.light==="nuit"&&((q1&&q1.lieu==="plaine")||(q4&&q4.el==="air")))base="ciel";
   if(ov.eau==="mer"||ov.eau==="ile")base="mer";else if(ov.relief==="volcan"||ov.relief==="marque")base="montagne";
   else if(ov.relief==="dunes"||ov.relief==="vallee")base="desert";else if(["foret","arbre","clairiere"].includes(ov.vegetation))base="foret";
-  else if(["fleurs","prairie"].includes(ov.vegetation)&&base!=="plaine")base="jardin";
+  else if(["fleurs","prairie"].includes(ov.vegetation)&&!["plaine","mer","ciel"].includes(base))base="jardin";
   else if(ov.relief==="plat")base="plaine";else if(ov.relief==="doux")base="cocon";
   if(base==="mer"&&ov.eau&&ov.eau!=="mer"&&ov.eau!=="ile")base=["lac","source","riviere","cascade"].includes(ov.eau)?"jardin":"plaine";
   // ambiances « lave » et « épuré » retirées : un intérieur épuré donne la même ambiance, en moins dense

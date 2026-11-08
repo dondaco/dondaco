@@ -110,14 +110,14 @@ function palette2(sp){
 function palette3(sp){
   const a=(sp.avoid||"").toLowerCase().trim(),bad=a?AVOID.filter(([re])=>re.test(a)).map(x=>x[1]):[];
   const main=Y[sp.main]?sp.main:"1I06",ALL=Object.keys(Y).filter(r=>r===main||!bad.some(f=>f(...hsl(r))));
-  const [h0,s0,l0]=hsl(main),dh=(x,y)=>{const d=Math.abs(x-y)%360;return d>180?360-d:d;},warm=h0<70||h0>=300,neutre0=s0<.15;
+  const [h0,s0,l0]=hsl(main),dh=(x,y)=>{const d=Math.abs(x-y)%360;return d>180?360-d:d;},warm=h0<70||h0>=300,neutre0=s0<.07;
   const byL=a=>[...new Set(a)].sort((x,y)=>lum(y)-lum(x)||x.localeCompare(y));
   const spread=(arr,n)=>{const a=byL(arr);if(a.length<=n)return a;const out=[];for(let i=0;i<n;i++)out.push(a[Math.round(i*(a.length-1)/(n-1))]);return byL(out);};
   const near=(arr,tl)=>arr.slice().sort((x,y)=>Math.abs(hsl(x)[2]-tl)-Math.abs(hsl(y)[2]-tl)||x.localeCompare(y));
   // la famille de la principale
   // nuances : même teinte, jamais plus saturées que la principale, pas de tons « bonbon »
-  const score=r=>{const[h,s,l]=hsl(r);if(r===main)return 0;return neutre0?(s<.2?Math.abs(s-s0):1+s):dh(h,h0)/25+(s>s0?(s-s0)*5:(s0-s)*.8)+(s>.78&&l>.55?1:0);};
-  const fam=ALL.filter(r=>score(r)<1.6&&(r===main||neutre0||hsl(r)[1]<=s0+.02)&&(neutre0||l0<.2||hsl(r)[2]>.13)).sort((x,y)=>score(x)-score(y)||x.localeCompare(y)).slice(0,9);
+  const score=r=>{const[h,s,l]=hsl(r);if(r===main)return 0;return neutre0?(s<.2?Math.abs(s-s0):1+s):(s<.06?1.2:0)+dh(h,h0)/(s0<.2?18:25)+(s>s0?(s-s0)*5:(s0-s)*.8)+(s>.78&&l>.55?1:0);};
+  const fam=ALL.filter(r=>score(r)<1.6&&(r===main||neutre0||hsl(r)[1]<=Math.max(s0+.02,s0*1.5+.08))&&(neutre0||l0<.2||hsl(r)[2]>.13)).sort((x,y)=>score(x)-score(y)||x.localeCompare(y)).slice(0,9);
   let dom=spread([main,...fam],5);if(!dom.includes(main)){dom[Math.floor(dom.length/2)]=main;dom=byL(dom);}
   const mi=dom.indexOf(main),voisinDom=dom[mi+1]||dom[mi-1]||main;
   // voisines douces, de part et d'autre
@@ -501,6 +501,14 @@ function themeDesert(c){const L=c.q.layers||{},riv=L.eau==="riviere"||L.eau==="c
 
 /* végétation et matières : au plus 4 (ton sur ton), 6 (nuancé) ou 10 (explosif) laines, en plus de celles de l'eau, du sable et du ciel ;
    les moins présentes prennent la couleur gardée la plus proche */
+/* règle : la couleur principale couvre au moins 45 % du tapis.
+   Sinon, les plus grandes zones (sol, eau, sable, ciel…) prennent la couleur principale, une par une ;
+   les éléments (signature, pompons, étoiles, liserés) gardent leurs couleurs. */
+function dominance(c){const P=c.P;if(!P.main)return;const garde=new Set(["lune","soleil","sentier","bord du sentier","étoile","pompon","fleur","écume","rivage","berge","halo","pierre","galet"]);
+  const aire=new Map();let tot=0,princ=0;
+  for(let o=0;o<c.N;o++){const z=c.zone[o];if(!z)continue;tot++;if(c.zones[z].ref===P.main)princ++;aire.set(z,(aire.get(z)||0)+1);}
+  const zs=[...aire.entries()].filter(([z])=>c.zones[z].ref!==P.main&&!garde.has(c.zones[z].kind)).sort((a,b)=>b[1]-a[1]);
+  for(const[z,n]of zs){if(princ>=.45*tot)break;c.zones[z].ref=P.main;princ+=n;}}
 function capYarns(c){const cap={mono:5,nuance:8,explosif:12}[c.q.cx]||8,area=new Map();
   for(let o=0;o<c.N;o++){const z=c.zone[o];if(!z)continue;const ref=c.zones[z].ref;area.set(ref,(area.get(ref)||0)+1);}
   if(area.size<=cap)return;
@@ -540,7 +548,7 @@ function choixPersonnels(c){const ov=c.ov;
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
     ({plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);choixPersonnels(c);signatureCommune(c);
-    pasDeBordure(c);clean(c);capYarns(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
+    pasDeBordure(c);clean(c);capYarns(c);dominance(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";
   const riverWanted=L.eau==="riviere"||L.eau==="cascade";
