@@ -509,7 +509,7 @@ function renderScape(final){
       ${final||!ATELIER?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
   return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
       ${SERVEUR?`<div class="rugbar"><button type="button" class="btn primary" data-rendu="finale">Rendu réaliste</button><button type="button" class="chip" data-rendu="apercu">Aperçu rapide</button></div>`:""}<div id="rendubox" class="rendubox"></div>
-      <div class="rugbar"><button type="button" class="${SERVEUR?"chip":"btn primary"}" data-export>Exporter pour Blender</button><button type="button" class="chip" data-rugv>Autre proposition</button></div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
+      <div class="rugbar">${ATELIER?`<button type="button" class="chip" data-export>Exporter pour Blender</button>`:""}<button type="button" class="chip" data-rugv>Autre proposition</button></div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
       ${ATELIER?`<div class="rugbar" role="group" aria-label="Ambiance (mode atelier)"><span class="note" style="width:100%;text-align:center">Ambiance${S.amb?" choisie par toi":" déduite de tes réponses"} :</span>${Object.entries(AMB).map(([k,l])=>`<button type="button" class="chip" data-amb="${k}" aria-pressed="${ambiance().theme===k}">${l}</button>`).join("")}${S.amb?'<button type="button" class="chip" data-amb="">Revenir à l’automatique</button>':""}</div>`:""}
       <div class="rugleg" id="rugleg"></div></div>
     <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
@@ -612,11 +612,11 @@ function render(){
     const name=(S.a.prenom||"").trim();
     m.innerHTML=`<section class="panel"><div class="panel-head"><span class="eyebrow">Ton portrait${name?" · "+esc(name):""}</span><h2>${name?"Le paysage intérieur de "+esc(name):"Ton paysage intérieur"}</h2><p class="poem">${poem()}</p></div>
       ${fiche()}
-      <div class="prompt-box q"><div class="row" style="justify-content:space-between"><span class="eyebrow">Prompt pour le générateur d’images</span>
+      ${ATELIER?`<div class="prompt-box q"><div class="row" style="justify-content:space-between"><span class="eyebrow">Prompt pour le générateur d’images</span>
         <div class="chips" role="group" aria-label="Langue du prompt"><button type="button" class="chip" data-lang="fr" aria-pressed="${lang==="fr"}">Français</button><button type="button" class="chip" data-lang="en" aria-pressed="${lang==="en"}">English</button></div></div>
         <textarea id="prompt" readonly>${esc(promptText(lang))}</textarea>
         <div class="row"><button type="button" class="btn primary" data-export>Exporter pour Blender</button><button type="button" class="btn" data-copy="prompt">Copier le prompt</button><button type="button" class="btn" data-copy="summary">Copier mes réponses</button><button type="button" class="btn" data-dl id="dlbtn" hidden>Enregistrer l’esquisse</button><span class="toast" id="toast" aria-live="polite"></span></div>
-        <textarea id="summary" readonly hidden>${esc(summary())}</textarea></div></section>${nav}`;
+        <textarea id="summary" readonly hidden>${esc(summary())}</textarea></div>`:""}</section>${nav}`;
   }else{
     m.innerHTML=`<section class="panel"><div class="panel-head"><span class="eyebrow">Étape ${S.step+1} sur ${STEPS.length}</span><h2>${st.title}</h2><p class="lede">${st.intro}</p></div>${st.qs.map(renderQ).join("")}${st.colors?renderPal():""}</section>${nav}`;
   }
