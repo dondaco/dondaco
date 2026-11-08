@@ -150,7 +150,7 @@ function palette3(sp){
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture].join("|"));
   const n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r),n4=makeNoise(r);
-  const shape=q.shape==="organique"?"tache":(q.shape||"tache"),organic=["nuage","tache","fleur","petales"].includes(shape);
+  const shape=q.shape==="organique"?"tache":(q.shape||"tache"),organic=["nuage","tache","fleur","petales","feuille"].includes(shape);
   // contour organique : un cœur arrondi et une couronne de bulles fondues ensemble (comme un nuage)
   const bulles=[];if(shape==="nuage"){const rb=rng(q.seed+"|bulles"),K=10+Math.floor(rb()*4),a0=rb()*6.28;
     for(let k=0;k<K;k++){const br=8+rb()*5,t=a0+k*6.283/K+(rb()-.5)*.25;bulles.push([RW/2+(RW/2-br-.8)*Math.cos(t),RH/2+(RH/2-br-.8)*Math.sin(t),br]);}}
@@ -163,6 +163,10 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
       let d=(Math.hypot(cx,cy/sy)-R*.9*k)*.95;
       const bx=Math.cos(fb)*R*1.02,by=Math.sin(fb)*R*1.02*sy,br=R*.42,dc=-(Math.hypot(cx-bx,cy-by)-br);
       const kk=8,hh=Math.max(kk-Math.abs(d-dc),0)/kk;return Math.max(d,dc)+hh*hh*kk*.25;}
+    // feuille : une grande feuille en amande, en biais, pointue aux deux bouts, la nervure légèrement en S
+    if(shape==="feuille"){const t=Math.atan2(RH,RW)-.08,ca=Math.cos(t),sa=Math.sin(t),u=cx*ca+cy*sa,v=-cx*sa+cy*ca,L=Math.hypot(RW,RH)/2-10,W=RW*.34,un=u/L;
+      if(Math.abs(un)>=1)return Math.hypot(Math.abs(u)-L,v)+.5;
+      const c=W*.55*(un*un*un*un*un)-W*.12*un,hw=W*Math.pow(1-un*un,.85)*(1+.15*un);return(Math.abs(v-c)-hw)*.8;}
     // pétales ronds : 4 à 6 grands pétales arrondis, de tailles inégales, qui se chevauchent (hortensia, rose ouverte)
     if(shape==="petales"){const rb=rng(q.seed+"|petales"),n=4+Math.floor(rb()*3),R=RW/2-1.5,sy=1.18,a0=rb()*6.28;let d=1e9;
       for(let k=0;k<n;k++){const t=a0+k*6.283/n+(rb()-.5)*.35,sz=.85+rb()*.3,pa=R*.5*sz,pb=R*.46*sz,dd=R*.45,px=Math.cos(t)*dd,py=Math.sin(t)*dd*sy;
