@@ -17,6 +17,17 @@ Le serveur (`rendu/serveur.py`) utilise le Python inclus dans Blender : rien d'a
 Ce mode ne marche pas depuis le lien claude.ai (la page n'a pas le droit de parler à l'ordinateur) :
 là, utilise le bouton « Exporter pour Blender ».
 
+## Partager avec quelqu'un à distance (les rendus restent faits sur ce Mac)
+
+Double-clique sur **`partager-le-serveur.command`** (dans `paysage-interieur`).
+La première fois, il télécharge `cloudflared` (outil gratuit de Cloudflare, sans compte), puis il affiche
+**un lien à envoyer** (déjà copié dans le presse-papiers), du type `https://…trycloudflare.com/?code=…`.
+
+- La personne ouvre ce lien chez elle : elle fait le questionnaire, et le rendu réaliste est calculé sur ton Mac.
+- Le lien contient un code d'accès : sans lui, personne ne peut lancer de rendu sur ton Mac.
+- Le lien change à chaque lancement. Le Mac doit rester allumé (pas en veille) et la fenêtre ouverte ; Ctrl + C pour arrêter.
+- Un seul rendu à la fois : si vous rendez en même temps, l'un des deux attend et réessaie.
+
 ## À la main : exporter les cartes d'un tapis
 
 Il faut Node.js et Playwright (`npm install playwright`, puis `npx playwright install chromium`).

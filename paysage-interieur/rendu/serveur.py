@@ -15,6 +15,7 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.dirname(ICI)  # le dossier paysage-interieur
 SCRIPT = os.path.join(ICI, "rendu_blender.py")
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+CODE = os.environ.get("PAYSAGE_CODE", "")  # si défini, les rendus demandent ce code (partage à distance)
 VERROU = threading.Lock()  # un rendu à la fois
 QUALITES = {  # fibres, échantillons, taille de l'image en %
     "apercu": (8000, 16, 50),
@@ -58,6 +59,8 @@ class Gestion(SimpleHTTPRequestHandler):
     def do_POST(self):
         if not self.path.startswith("/rendu"):
             return self.repondre(404, {"erreur": "inconnu"})
+        if CODE and self.headers.get("X-Code", "") != CODE:
+            return self.repondre(403, {"erreur": "Code d'accès manquant ou incorrect : ouvre le site avec le lien complet reçu."})
         if not BLENDER:
             return self.repondre(500, {"erreur": "Blender introuvable. Installe-le dans Applications, ou indique son chemin dans la variable BLENDER."})
         try:

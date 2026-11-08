@@ -136,7 +136,7 @@ function palette3(sp){
   const sand=warm&&!neutre0&&l0>.45?byL(dom.slice(0,2).concat(neu.slice(0,1))):neu.slice(0,3);
   const stone=neu.slice(1,5).length?neu.slice(1,5):neu;
   const sombres=byL(ALL.filter(r=>{const[h,s,l]=hsl(r);return l<.32&&(s<.1||(s<.5&&(warm?(h<60||h>=330):(h>=150&&h<330))));})),plates=sombres.slice(-3);
-  const night=hsl(dom[dom.length-1])[2]<.4?dom.slice(-2):byL(ALL.filter(r=>{const[h,s,l]=hsl(r);return l<.3&&(h>=200&&h<270||s<.1);})).slice(-2);
+  const night=hsl(dom[dom.length-1])[2]<.4?dom.slice(-2).reverse():byL(ALL.filter(r=>{const[h,s,l]=hsl(r);return l<.3&&(h>=200&&h<270||s<.1);})).slice(-2).reverse();
   const clair=neu[0]||dom[0];
   const cx=sp.cx||"nuance";
   const ana=cx==="mono"?[dom]:[v1,v2].filter(f=>f.length);
@@ -472,15 +472,17 @@ function themeJardin(c){const {P,r}=c,L=c.q.layers||{},d=c.dens;
 function themeCiel(c){const {w,h,G,r,n1,n2,zone,H,inRug,P}=c,neb=(P.neb&&P.neb.length?P.neb:c.q.cx==="mono"?P.water.slice(1):NEB[c.q.season]||NEB.hiver).filter(q=>Y[q]);
   const ph=r()*6.28,ang=(r()-.5)*1.2,ca=Math.cos(ang),sa=Math.sin(ang),y0=RH*(.45+.25*r());
   for(let o=0;o<c.N;o++){if(!inRug[o])continue;const x=(o%w+.5)/G,y=(Math.floor(o/w)+.5)/G,u=x*ca+y*sa,v=-x*sa+y*ca;
-    const dv=v-(y0+7*Math.sin(u/17+ph))+(fbm(n1,x/14,y/14)-.5)*9,width=6+4*fbm(n2,u/20,1);
-    if(Math.abs(dv)<width){const t=Math.abs(dv)/width,lvl=t<.33?2:t<.66?1:0;zone[o]=c.Z(neb[Math.min(lvl,neb.length-1)],lvl===2?"brush4":lvl===1?"loop3":"cut15","nébuleuse");H[o]=lvl===2?3.6:lvl===1?3:1.5;}
+    // voie lactée : un nuage diffus le long d'une diagonale, aux bords déchirés, sans rayures
+    const dv=v-(y0+5*Math.sin(u/23+ph)),large=9+5*fbm(n2,u/25,1),dens=Math.exp(-dv*dv/(2*large*large))*(.35+.95*fbm(n1,x/7+11,y/7));
+    if(dens>.42){const lvl=dens>.78?2:dens>.58?1:0;zone[o]=c.Z(neb[Math.min(lvl,neb.length-1)],lvl===2?"brush4":lvl===1?"brush4":"cut15","voie lactée");H[o]=lvl===2?3.8:lvl===1?3.2:1.5;}
     else{zone[o]=c.Z(fbm(c.n3,x/20+7,y/20)>.6?P.night[1]||P.night[0]:P.night[0],"cut15","ciel");H[o]=1.5;}}
   const sig=c.q.signature==="soleil"?"soleil":"lune";let fx,fy;for(let t=0;t<200;t++){[fx,fy]=strongPoint(c);const o=c.at(fx,fy);if(o>=0&&c.kind(o)==="ciel")break;}
   disque(c,sig,fx,fy,9+r()*3);
-  let k=0;const n=c.q.signature==="etoiles"?28:Math.round(12*c.dens);
-  for(let t=0;t<4000&&k<n;t++){const x=r()*RW,y=r()*RH,big=r()<.2,sz=big?1.6+r()*.8:.65;if(!freeAt(c,x,y,sz+1))continue;const o=c.at(x,y);if(c.busy[o]||c.kind(o)!=="ciel")continue;
+  let k=0;const n=(c.q.signature==="etoiles"?28:Math.round(12*c.dens))+Math.round(14*c.dens);
+  for(let t=0;t<6000&&k<n;t++){const x=r()*RW,y=r()*RH,big=r()<.15,sz=big?1.5+r()*.7:.6;if(!freeAt(c,x,y,sz+1))continue;const o=c.at(x,y);if(c.busy[o])continue;
+    const kd=c.kind(o);if(kd!=="ciel"&&kd!=="voie lactée")continue;if(kd==="ciel"&&r()<.45)continue; // plus d'étoiles dans la voie lactée
     blob(c,{x,y,r:sz,ref:P.star[0],tech:"loop3",kind:"étoile",flat:3},q=>!c.busy[q]);k++;}
-  c.info.unshift("ciel et espace");c.info.push(`une nébuleuse, ${k} étoiles`);}
+  c.info.unshift("ciel et espace");c.info.push(`une voie lactée, ${k} étoiles`);}
 function themeMontagne(c){const L=c.q.layers||{};baseMontagne(c);if(L.eau==="riviere"||L.eau==="cascade")eauRiviere(c,L.eau==="cascade");else if(L.eau==="lac")eauEtang(c,.11);
   if(c.q.signature==="sentier")sentier(c);else if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6.5);}}
 function themeLave(c){baseLave(c);}
@@ -520,7 +522,7 @@ function signatureCommune(c){const s=c.q.signature,k=c.q.sigScale||1,P=c.P;if(!s
   if(s==="fleurs")grappes(c,1,c.q.cx==="mono"?[P.dom.slice(0,3)]:P.pop);
   else if(s==="reflet")eauEtang(c,.07*k);
   else if(s==="soleil"||s==="lune"){let fx,fy;for(let i=0;i<200;i++){[fx,fy]=strongPoint(c);if(i>150){fx=RW*(.2+.6*c.r());fy=RH*(.15+.7*c.r());}if(freeAt(c,fx,fy,7))break;}disque(c,s,fx,fy,7);}
-  else if(s==="rochers"||s==="falaise")pierre(c,s);else if(s==="sentier")sentier(c);else if(s==="etoiles")ciel(c,"etoiles");}
+  else if(s==="rochers"||s==="falaise")pierre(c,s);else if(s==="sentier"&&c.q.theme!=="ciel")sentier(c);else if(s==="etoiles")ciel(c,"etoiles");}
 /* choix faits dans « Changer » : appliqués quelle que soit l'ambiance */
 function choixPersonnels(c){const ov=c.ov;
   if(ov.eau&&!["aucune","mer","ile"].includes(ov.eau)&&!c.eauFaite)eauDouce(c,ov.eau);

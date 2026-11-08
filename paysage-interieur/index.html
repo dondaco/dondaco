@@ -338,6 +338,8 @@ function rugParams(){
     spec:{light:q2.light||"vif",el:q4.el||"vegetal",acc:q5.acc||"fleur",main:coul.ref||null}};
 }
 /* ---------- rendu réaliste par le serveur local (Blender sur le Mac) ---------- */
+/* code d'accès du partage à distance : il arrive dans le lien (?code=…) et reste le temps de la visite */
+const CODE_ACCES=(()=>{let c=new URLSearchParams(location.search).get("code")||"";try{if(c)sessionStorage.setItem("paysage-code",c);else c=sessionStorage.getItem("paysage-code")||"";}catch(e){}return c;})();
 let SERVEUR=null,RENDU={cle:null,img:null,etat:"",t0:0,secondes:0};
 fetch("/etat",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.ok){SERVEUR=j;render();}}).catch(()=>{});
 const cleRendu=()=>JSON.stringify(rugParams());
@@ -358,7 +360,7 @@ async function rendreReel(qualite){if(RENDU.etat==="calcul")return;
   const q=rugParams(),g=Moteur.generate(q,8),m=Moteur.maps(g),b64=a=>{let s="";for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s);};
   RENDU={cle:JSON.stringify(q),img:null,etat:"calcul",t0:Date.now(),secondes:0};afficheRendu();
   try{const corps={qualite,vue:"dessus",largeur:70,hauteur:100,couleurs:b64(await png(m.col,m.w,m.h)),hauteurs:b64(await png(m.hei,m.w,m.h)),points:b64(await png(m.tec,m.w,m.h))};
-    const r=await fetch("/rendu",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corps)}),j=await r.json();
+    const r=await fetch("/rendu",{method:"POST",headers:{"Content-Type":"application/json","X-Code":CODE_ACCES},body:JSON.stringify(corps)}),j=await r.json();
     if(!r.ok||!j.image)throw new Error(j.erreur||"Le rendu a échoué.");
     RENDU.img="data:image/png;base64,"+j.image;RENDU.secondes=j.secondes;RENDU.etat="fini";}
   catch(e){RENDU.etat="erreur";RENDU.msg=e.message||"Le rendu a échoué.";}
