@@ -52,6 +52,7 @@ nav.steps button.cur{background:var(--ink);color:var(--bg);border-color:var(--in
 .q legend,.q label.qt{font-weight:600;font-size:17px;padding:0;margin-bottom:10px}
 .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
 .opt{font:inherit;text-align:left;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:11px 14px;cursor:pointer;transition:border-color .15s, background .15s}
+.dot{display:inline-block;width:18px;height:18px;border-radius:50%;margin-right:8px;vertical-align:-4px;border:1px solid rgba(0,0,0,.18)}
 .opt:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line))}
 .opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
@@ -247,6 +248,16 @@ const STEPS=[
      {fr:"énergie",mot:"energie",f:{elan:1}},{fr:"mystère",mot:"mystere",f:{reve:1}},{fr:"cocon",mot:"cocon",f:{douceur:1}},
      {fr:"liberté",mot:"liberte",f:{chemin:1}},{fr:"émerveillement",mot:"emerveillement",f:{reve:1}}]}
  ]},
+ {id:"choix",label:"Couleur et forme",title:"Ton tapis : sa couleur et sa forme",intro:"Deux choix concrets pour finir. Toutes les autres couleurs s’accorderont à celle que tu choisis.",qs:[
+   {id:"coul",q:"La couleur qui dominera ton tapis",couleurs:true,opts:[
+     {fr:"Vert mousse",ref:"1I06"},{fr:"Vert forêt",ref:"205"},{fr:"Vert sauge",ref:"206"},{fr:"Olive",ref:"403"},
+     {fr:"Bleu canard",ref:"3A17"},{fr:"Bleu nuit",ref:"561"},{fr:"Bleu ciel",ref:"ARS3F15"},{fr:"Bleu gris",ref:"264"},
+     {fr:"Terracotta",ref:"2A11"},{fr:"Miel",ref:"3H04"},{fr:"Camel",ref:"353"},{fr:"Brun moka",ref:"4L11"},
+     {fr:"Rose poudré",ref:"336"},{fr:"Rose pâle",ref:"498"},{fr:"Lavande",ref:"597"},{fr:"Prune",ref:"502"},
+     {fr:"Bordeaux",ref:"4A13"},{fr:"Gris doux",ref:"096"},{fr:"Écru",ref:"009"},{fr:"Anthracite",ref:"1B07"}]},
+   {id:"forme",q:"Sa forme",opts:[
+     {fr:"rectangle",shape:"rect"},{fr:"carré",shape:"carre"},{fr:"ovale",shape:"ovale"},{fr:"rond",shape:"rond"},{fr:"organique, aux bords libres",shape:"organique"}]}
+ ]},
  {id:"fiche",label:"Ton tapis",title:"Ton tapis",final:true}
 ];
 const Q={};STEPS.forEach(s=>(s.qs||[]).forEach(q=>Q[q.id]=q));
@@ -308,11 +319,12 @@ function ambiance(){
 function rugParams(){
   const c=compose(),A=ambiance(),g=k=>opt(k)||{};
   const q2=g("q2"),q4=g("q4"),q5=g("q5"),q7=g("q7"),q8=g("q8"),q9=g("q9"),q10=g("q10"),q12=g("q12");
-  let dens=q8.d>1.2?"foisonnant":q8.d<.8?"epure":"equilibre",cx=q7.cx||"nuance",relief=q7.relief||"doux",shape=q9.shape||"organique";
+  const coul=g("coul"),forme=g("forme");
+  let dens=q8.d>1.2?"foisonnant":q8.d<.8?"epure":"equilibre",cx=q7.cx||"nuance",relief=q7.relief||"doux",shape=forme.shape||q9.shape||"organique";
   // le mot (Q12) nuance l'ensemble
   if(q12.mot==="calme"||q12.mot==="liberte"){if(dens==="foisonnant")dens="equilibre";if(cx==="explosif")cx="nuance";}
   if(q12.mot==="energie"||q12.mot==="joie"){if(cx==="mono")cx="nuance";if(q12.mot==="energie")relief="sculpte";}
-  if(q12.mot==="cocon"&&shape!=="rect")shape="rond";
+  if(q12.mot==="cocon"&&!forme.shape&&shape!=="rect")shape="rond";
   // un seul élément signature : celui du regard (Q5), selon la lisibilité (Q10) ; « Changer » peut l'imposer
   let sig=q5.sig||null;if(sig==="astre")sig=q2.light==="nuit"?"lune":"soleil";
   let force=false;for(const L of["chemin","ciel","mineral"]){const v=S.ov[L];if(["sentier","soleil","lune","etoiles","rochers","falaise"].includes(v)){sig=v;force=true;}}
@@ -323,7 +335,7 @@ function rugParams(){
   return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx,shape,dens,relief,
     texture:q4.tex||"mousse",avoid:S.a.eviter||"",layers:c,ov:Object.assign({},S.ov),theme:A.theme,tendance:A.tendance,signature:sig,
     sigScale:q10.lis==="clair"?1.25:q10.lis==="secret"?.6:1,geo:!!q9.geo,mot:q12.mot||null,
-    spec:{light:q2.light||"vif",el:q4.el||"vegetal",acc:q5.acc||"fleur"}};
+    spec:{light:q2.light||"vif",el:q4.el||"vegetal",acc:q5.acc||"fleur",main:coul.ref||null}};
 }
 /* ---------- rendu réaliste par le serveur local (Blender sur le Mac) ---------- */
 let SERVEUR=null,RENDU={cle:null,img:null,etat:"",t0:0,secondes:0};
@@ -421,7 +433,7 @@ function renderQ(q){
   const v=S.a[q.id];
   if(q.type==="text")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label><input type="text" id="f-${q.id}" data-text="${q.id}" value="${esc(v)}" placeholder="${esc(q.ph)}"></div>`;
   if(q.type==="textarea")return `<div class="q"><label class="qt" for="f-${q.id}">${q.q}</label>${q.hint?`<p class="note">${q.hint}</p>`:""}<textarea id="f-${q.id}" data-text="${q.id}" placeholder="${esc(q.ph)}">${esc(v)}</textarea></div>`;
-  return `<fieldset class="q"><legend>${q.q}</legend>${q.hint?`<p class="note">${q.hint}</p>`:""}<div class="opts">${q.opts.map((o,i)=>`<button type="button" class="opt" data-q="${q.id}" data-v="${i}" aria-pressed="${v===i}">${o.fr}</button>`).join("")}</div></fieldset>`;
+  return `<fieldset class="q"><legend>${q.q}</legend>${q.hint?`<p class="note">${q.hint}</p>`:""}<div class="opts">${q.opts.map((o,i)=>`<button type="button" class="opt" data-q="${q.id}" data-v="${i}" aria-pressed="${v===i}">${o.ref&&window.Moteur?`<span class="dot" style="background:${Moteur.Y[o.ref].hex}"></span>`:""}${o.fr}</button>`).join("")}</div></fieldset>`;
 }
 function renderScape(final){
   const c=compose(),few=answeredCount()<5;
@@ -488,7 +500,7 @@ const FX={
 };
 const SEASON_ADJ={automne:"aux couleurs d’automne",ete:"aux couleurs d’été",printemps:"aux couleurs de printemps",hiver:"aux couleurs d’hiver"};
 function forces(){const n={};Object.keys(Q).forEach(id=>{const o=opt(id);if(o&&o.f)for(const[k,v]of Object.entries(o.f))n[k]=(n[k]||0)+v;});return n;}
-function paletteYarns(){if(!window.Moteur)return[];const q=rugParams(),P=Moteur.palette2(Object.assign({season:q.season,avoid:q.avoid},q.spec));
+function paletteYarns(){if(!window.Moteur)return[];const q=rugParams(),P=q.spec.main?Moteur.palette3(Object.assign({avoid:q.avoid,cx:q.cx},q.spec)):Moteur.palette2(Object.assign({season:q.season,avoid:q.avoid},q.spec));
   return [...new Set([...P.dom.slice(0,3),...P.ana.flat().slice(0,3),...P.pop.flat().slice(0,2)])].map(r=>Moteur.Y[r].hex);}
 function fiche(){
   const n=forces();

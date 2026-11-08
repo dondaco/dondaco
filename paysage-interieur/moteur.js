@@ -102,6 +102,49 @@ function palette2(sp){
   const blanc=nz(fam("blanc",2,.88),sand.slice(0,1));
   return {ground,dom,ana:ana.length?ana:[dom],pop:pop.length?pop:[dom],water,foam:blanc.slice(0,1),sand,stone,lava,plates,night,disc,star:blanc.slice(0,1)};}
 
+/* ---------- palette accordée à UNE couleur principale choisie par la personne ----------
+   - la principale domine (c'est le fond), avec ses nuances du clair au foncé ;
+   - quelques voisines douces (teinte proche, jamais plus saturées que la principale) ;
+   - des neutres accordés (chauds ou froids selon la principale) ;
+   - un seul accent, adouci ; l'eau et le ciel restent lisibles mais sourds. */
+function palette3(sp){
+  const a=(sp.avoid||"").toLowerCase().trim(),bad=a?AVOID.filter(([re])=>re.test(a)).map(x=>x[1]):[];
+  const main=Y[sp.main]?sp.main:"1I06",ALL=Object.keys(Y).filter(r=>r===main||!bad.some(f=>f(...hsl(r))));
+  const [h0,s0,l0]=hsl(main),dh=(x,y)=>{const d=Math.abs(x-y)%360;return d>180?360-d:d;},warm=h0<70||h0>=300,neutre0=s0<.15;
+  const byL=a=>[...new Set(a)].sort((x,y)=>lum(y)-lum(x)||x.localeCompare(y));
+  const spread=(arr,n)=>{const a=byL(arr);if(a.length<=n)return a;const out=[];for(let i=0;i<n;i++)out.push(a[Math.round(i*(a.length-1)/(n-1))]);return byL(out);};
+  const near=(arr,tl)=>arr.slice().sort((x,y)=>Math.abs(hsl(x)[2]-tl)-Math.abs(hsl(y)[2]-tl)||x.localeCompare(y));
+  // la famille de la principale
+  const score=r=>{const[h,s]=hsl(r);return neutre0?(s<.2?Math.abs(s-s0):1+s):dh(h,h0)/25+Math.abs(s-s0)*1.5;};
+  const fam=ALL.filter(r=>score(r)<1.6&&(neutre0||l0<.2||hsl(r)[2]>.13)).sort((x,y)=>score(x)-score(y)||x.localeCompare(y)).slice(0,9);
+  let dom=spread([main,...fam],5);if(!dom.includes(main)){dom[Math.floor(dom.length/2)]=main;dom=byL(dom);}
+  const mi=dom.indexOf(main),voisinDom=dom[mi+1]||dom[mi-1]||main;
+  // voisines douces, de part et d'autre
+  const smax=Math.max(.32,s0+.06);
+  const voisines=sign=>near(ALL.filter(r=>{const[h,s]=hsl(r);const d=((h-h0)*sign+720)%360;return!neutre0&&d>=25&&d<=75&&s<=smax&&s>.08;}),l0).slice(0,4);
+  const v1=spread(voisines(1),2),v2=spread(voisines(-1),2);
+  // neutres accordés
+  const neutres=ALL.filter(r=>{const[h,s,l]=hsl(r);return(l>.2||l0<.3)&&(s<.22||(warm&&h>=15&&h<48&&s<.55&&l>.78))&&(s<.06||(warm?(h<60||h>=330):(h>=150&&h<330)));});
+  const neu=spread(neutres.length>=3?neutres:ALL.filter(r=>hsl(r)[1]<.22),5);
+  // un seul accent, adouci (couleur opposée, pas plus vive que la principale)
+  const acc=ALL.filter(r=>{const[h,s,l]=hsl(r);return!neutre0&&dh(h,h0)>=120&&s>.12&&s<=Math.max(.42,s0)&&Math.abs(l-l0)<.32;})
+    .sort((x,y)=>Math.abs(hsl(x)[1]-s0*.7)-Math.abs(hsl(y)[1]-s0*.7)||x.localeCompare(y)).slice(0,1);
+  const accent=acc.length?acc:(v1.length?v1.slice(0,1):dom.slice(0,1));
+  // eau, sable, pierre, nuit
+  const bleu0=h0>=160&&h0<250&&s0>.15;
+  const water=bleu0?dom.slice(0,4):spread(ALL.filter(r=>{const[h,s]=hsl(r);return h>=175&&h<235&&s>.15&&s<=.56;}),4);
+  const sand=warm&&!neutre0&&l0>.45?byL(dom.slice(0,2).concat(neu.slice(0,1))):neu.slice(0,3);
+  const stone=neu.slice(1,5).length?neu.slice(1,5):neu;
+  const sombres=byL(ALL.filter(r=>{const[h,s,l]=hsl(r);return l<.32&&(s<.1||(s<.5&&(warm?(h<60||h>=330):(h>=150&&h<330))));})),plates=sombres.slice(-3);
+  const night=hsl(dom[dom.length-1])[2]<.4?dom.slice(-2):byL(ALL.filter(r=>{const[h,s,l]=hsl(r);return l<.3&&(h>=200&&h<270||s<.1);})).slice(-2);
+  const clair=neu[0]||dom[0];
+  const cx=sp.cx||"nuance";
+  const ana=cx==="mono"?[dom]:[v1,v2].filter(f=>f.length);
+  const pop=cx==="mono"?[dom.slice(0,2)]:cx==="explosif"?[accent].concat(ana).filter(f=>f.length):[accent];
+  return {ground:[main,voisinDom],dom,ana:ana.length?ana:[dom],pop:pop.length?pop:[dom],water,foam:[clair],sand,stone,
+    lava:warm?dom:byL(dom.concat(accent)),plates:plates.length?plates:dom.slice(-2),night,disc:[clair],star:[clair],
+    neb:byL([(v1[0]||dom[0]),dom[Math.min(1,dom.length-1)],(v2[0]||dom[Math.min(2,dom.length-1)])]).filter(Boolean),main};}
+
 /* ---------- contexte ---------- */
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture].join("|"));
@@ -109,6 +152,7 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const shape=q.shape||"organique",organic=shape==="organique";
   const sdfF=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
     if(shape==="rond"){return Math.hypot(cx,cy)-(RW/2-.6);}
+    if(shape==="carre"){const a=RW/2-.6,rr=3,qx=Math.abs(cx)-(a-rr),qy=Math.abs(cy)-(a-rr);return Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-rr;}
     if(shape==="ovale"){const a=RW/2-.6,b=RH/2-.6;return(Math.hypot(cx/a,cy/b)-1)*Math.min(a,b);}
     const inset=organic?2.5:.6,rr=organic?17:3,qx=Math.abs(cx)-(RW/2-inset-rr),qy=Math.abs(cy)-(RH/2-inset-rr);
     let s=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-rr;if(organic)s+=(fbm(n2,x/14,y/14)-.5)*9;return s;};
@@ -116,7 +160,7 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   for(let j=0;j<h;j++)for(let i=0;i<w;i++){const s=sdfF((i+.5)/G,(j+.5)/G);sdf[j*w+i]=s;inRug[j*w+i]=s<0?1:0;}
   const zones=[null],zM=new Map();
   const Z=(ref,tech,kind)=>{if(!Y[ref]){(window.__badRefs=window.__badRefs||[]).push(kind+":"+ref);ref="056";}const key=ref+"|"+tech+"|"+kind;if(!zM.has(key)){zones.push({ref,tech,kind});zM.set(key,zones.length-1);}return zM.get(key);};
-  const P=q.spec?palette2(Object.assign({avoid:q.avoid,season:q.season},q.spec)):palette(q.season,q.avoid);
+  const P=q.spec&&q.spec.main?palette3(Object.assign({avoid:q.avoid,cx:q.cx},q.spec)):q.spec?palette2(Object.assign({avoid:q.avoid,season:q.season},q.spec)):palette(q.season,q.avoid);
   const c={q,P,w,h,N,G,r,n1,n2,n3,n4,sdf,inRug,zone:new Uint16Array(N),H:new Float32Array(N).fill(1.5),wet:new Uint8Array(N),busy:new Uint8Array(N),zones,Z,
     pick:a=>a[Math.floor(r()*a.length)],info:[],ov:q.ov||{}};
   c.kind=o=>c.zone[o]?zones[c.zone[o]].kind:"";
@@ -425,7 +469,7 @@ function themeJardin(c){const {P,r}=c,L=c.q.layers||{},d=c.dens;
   grappes(c,Math.max(2,Math.round(3*d)),c.q.cx==="mono"?[P.dom.slice(0,3)]:c.q.cx==="explosif"?P.pop.concat(P.ana):P.ana);}
   if(c.q.signature==="rochers")pierre(c,"rochers");else if(c.q.signature==="soleil"||c.q.signature==="lune"){const [fx,fy]=strongPoint(c);disque(c,c.q.signature,fx,fy,6.5);}
   c.info.unshift("jardin fleuri");}
-function themeCiel(c){const {w,h,G,r,n1,n2,zone,H,inRug,P}=c,neb=(c.q.cx==="mono"?P.water.slice(1):NEB[c.q.season]||NEB.hiver).filter(q=>Y[q]);
+function themeCiel(c){const {w,h,G,r,n1,n2,zone,H,inRug,P}=c,neb=(P.neb&&P.neb.length?P.neb:c.q.cx==="mono"?P.water.slice(1):NEB[c.q.season]||NEB.hiver).filter(q=>Y[q]);
   const ph=r()*6.28,ang=(r()-.5)*1.2,ca=Math.cos(ang),sa=Math.sin(ang),y0=RH*(.45+.25*r());
   for(let o=0;o<c.N;o++){if(!inRug[o])continue;const x=(o%w+.5)/G,y=(Math.floor(o/w)+.5)/G,u=x*ca+y*sa,v=-x*sa+y*ca;
     const dv=v-(y0+7*Math.sin(u/17+ph))+(fbm(n1,x/14,y/14)-.5)*9,width=6+4*fbm(n2,u/20,1);
@@ -563,5 +607,5 @@ function maps(g){const {w,h,zone,H,zones}=g,N=w*h,col=new Uint8ClampedArray(N*4)
   for(let o=0;o<N;o++){const z=zone[o],k=o*4;if(!z)continue;const Zo=zones[z],c=Y[Zo.ref].rgb,hv=Math.round(Math.min(1,H[o]/6)*255),t=code[Zo.tech]*40;
     col[k]=c[0];col[k+1]=c[1];col[k+2]=c[2];col[k+3]=255;hei[k]=hei[k+1]=hei[k+2]=hv;hei[k+3]=255;tec[k]=tec[k+1]=tec[k+2]=t;tec[k+3]=255;}
   return {w,h,col,hei,tec};}
-window.Moteur={generate,render,legend,maps,palette2,Y,TECH,THEMES};
+window.Moteur={generate,render,legend,maps,palette2,palette3,Y,TECH,THEMES};
 })();
