@@ -184,173 +184,75 @@ const PALS={
     scene:{ground:"#E9EEF0",groundD:"#C9D7DE",line:"#2A1C3F",water:"#9FB3C8",waterL:"#FFFFFF",waterD:"#2A1C3F",green:"#4A1E5E",greenD:"#1F1F1F",stone:"#9AA3AA",stoneD:"#2A1C3F"},
     tufts:["#F5C6CE","#E3194C","#4A1E5E","#F4C726","#2A1C3F"]}
 };
-function curPal(){
-  if(S.palOv)return S.palOv;
-  const n={};["c1","c2","c3","c4","c5","c6","c7","c8"].forEach(k=>{const o=opt(k);if(o)n[o.p]=(n[o.p]||0)+1;});
-  const b=Object.entries(n).sort((x,y)=>y[1]-x[1])[0];return b?b[0]:null;
-}
+function curPal(){const o=opt("q3");return o?o.p:null;}
 const itemLayer={};Object.entries(LAYERS).forEach(([L,o])=>Object.keys(o.items).forEach(k=>{if(k!=="aucune")itemLayer[k]=L;}));
 
 /* ---------- Questions ---------- */
 const STEPS=[
  {id:"toi",label:"Toi",title:"Pour commencer",intro:"Réponds au feeling. Il n’y a pas de bonne réponse, seulement la tienne.",qs:[
    {id:"prenom",type:"text",q:"Comment tu t’appelles ?",ph:"Ton prénom"}]},
- {id:"perso",label:"Qui tu es",title:"Qui tu es",intro:"Ta façon d’être avec les autres et avec toi-même. Choisis la réponse qui te ressemble le plus.",qs:[
-   {id:"p1",q:"Dans un groupe d’ami·es, tu es souvent…",opts:[
-     {fr:"celle ou celui sur qui on peut compter, un peu en retrait",w:{rochers:2,arbre:1}},
-     {fr:"celle ou celui qui sent tout de suite comment chacun va",w:{lac:2,source:1}},
-     {fr:"celle ou celui qui entraîne les autres",w:{marque:2,soleil:1}},
-     {fr:"celle ou celui qui prend soin de tout le monde",w:{doux:2,prairie:1}},
-     {fr:"dans ta bulle, la tête un peu ailleurs",w:{nuages:2,brume:1}},
-     {fr:"celle ou celui qui propose toujours d’aller voir ailleurs",w:{sentier:2,dunes:1}}]},
-   {id:"p2",q:"Face à un obstacle, tu…",opts:[
-     {fr:"restes solide et attends que ça passe",w:{falaise:2,rochers:1}},
-     {fr:"as besoin de le ressentir et d’en parler avant d’agir",w:{source:2,lac:1}},
-     {fr:"fonces",w:{cascade:2,marque:1}},
-     {fr:"cherches un terrain d’entente, en douceur",w:{doux:2,clairiere:1}},
-     {fr:"imagines une solution à laquelle personne n’a pensé",w:{etoiles:2,lune:1}},
-     {fr:"cherches un autre chemin",w:{sentier:3}}]},
-   {id:"p3",q:"Ton rythme idéal",opts:[
-     {fr:"lent et régulier",w:{plat:2,mousse:1}},
-     {fr:"par vagues, avec des hauts et des bas",w:{mer:2,lac:1}},
-     {fr:"intense, plein d’énergie",w:{volcan:2,marque:1}},
-     {fr:"tranquille, avec du temps pour profiter",w:{doux:2,prairie:1}},
-     {fr:"au gré de tes envies, sans horaires",w:{brume:2,vallee:1}},
-     {fr:"toujours en mouvement, d’un endroit à l’autre",w:{dunes:2,sentier:1}}]},
-   {id:"p4",q:"Tes émotions ressemblent plutôt à…",opts:[
-     {fr:"un lac calme en surface, profond en dessous",w:{lac:3,plat:1}},
-     {fr:"une source cachée, qu’on découvre en s’approchant",w:{source:3}},
-     {fr:"un volcan qui dort",w:{volcan:3}},
-     {fr:"une pluie douce qui fait tout pousser",w:{fleurs:2,prairie:1}},
-     {fr:"une brume, difficile à saisir",w:{brume:3}},
-     {fr:"un fleuve qui coule sans s’arrêter",w:{riviere:3,sentier:1}}]},
-   {id:"p5",q:"Quand tout va trop vite, tu as besoin de…",opts:[
-     {fr:"retrouver un lieu connu, du concret",w:{arbre:2,plat:1}},
-     {fr:"te plonger dans l’eau",w:{mer:2,lac:1}},
-     {fr:"te défouler, bouger fort",w:{cascade:2,marque:1}},
-     {fr:"un plaid, un thé, quelqu’un de doux",w:{mousse:2,clairiere:1}},
-     {fr:"t’allonger et regarder le ciel",w:{nuages:2,etoiles:1}},
-     {fr:"marcher, partir un peu",w:{sentier:2,dunes:1}}]},
-   {id:"p6",q:"Ce qui te fait te sentir protégé·e",opts:[
-     {fr:"un rocher solide dans ton dos",w:{rochers:3}},
-     {fr:"de l’eau tout autour de toi",w:{ile:4}},
-     {fr:"une hauteur d’où tu vois tout venir",w:{marque:2,falaise:1}},
-     {fr:"un nid, des bras qui t’entourent",w:{clairiere:2,doux:1}},
-     {fr:"un creux loin du bruit, que personne ne connaît",w:{vallee:3}},
-     {fr:"savoir que tu peux partir quand tu veux",w:{sentier:2,dunes:1}}]}
+ {id:"lieux",label:"Tes lieux",title:"Là où tu te sens bien",intro:"Des lieux, des moments, des saisons. Laisse venir la première image.",qs:[
+   {id:"q1",q:"Si tu pouvais te téléporter maintenant dans un lieu où tu te sens bien, ce serait…",opts:[
+     {fr:"une grande plaine ensoleillée",lieu:"plaine",w:{plat:3,prairie:3},f:{chemin:2,douceur:1}},
+     {fr:"une forêt dense",lieu:"foret",w:{foret:3,arbre:1,mousse:1},f:{ancrage:2,douceur:1}},
+     {fr:"des montagnes ou un canyon",lieu:"montagne",w:{marque:2,vallee:2,falaise:1},f:{elan:2,ancrage:1}},
+     {fr:"au bord de l’eau",lieu:"eau",w:{mer:3,lac:1,galets:1},f:{ressenti:2,reve:1}},
+     {fr:"chez toi, sous un plaid",lieu:"plaid",w:{doux:3,mousse:2,clairiere:1},f:{douceur:2,ancrage:1}}]},
+   {id:"q2",q:"Ton moment préféré de la journée ?",opts:[
+     {fr:"le matin, quand tout est encore calme",light:"pastel",w:{brume:2},f:{reve:1}},
+     {fr:"le plein midi",light:"vif",w:{soleil:2},f:{elan:1}},
+     {fr:"le coucher de soleil",light:"chaud",w:{soleil:2},f:{douceur:1}},
+     {fr:"la nuit",light:"nuit",w:{lune:2,etoiles:2},f:{reve:2}}]},
+   {id:"q3",q:"La saison où tu te sens le plus toi-même ?",opts:[
+     {fr:"le printemps",p:"printemps",f:{douceur:1}},{fr:"l’été",p:"ete",f:{elan:1}},
+     {fr:"l’automne",p:"automne",f:{ancrage:1}},{fr:"l’hiver",p:"hiver",f:{reve:1}}]},
+   {id:"q4",q:"Ce qui te ressource le plus ?",opts:[
+     {fr:"la terre : marcher pieds nus, jardiner",el:"terre",tex:"ecorce",w:{galets:2,rochers:1},f:{ancrage:3}},
+     {fr:"l’eau : nager, une douche chaude, la pluie",el:"eau",tex:"eau",w:{riviere:2,source:1},f:{ressenti:3}},
+     {fr:"le feu : une bougie, un feu de cheminée, le soleil sur la peau",el:"feu",tex:"mousse",w:{volcan:2},f:{elan:3}},
+     {fr:"l’air : le vent, respirer fort, regarder le ciel",el:"air",tex:"mousse",w:{nuages:2,brume:1},f:{reve:3}},
+     {fr:"le végétal : les plantes, la forêt",el:"vegetal",tex:"mousse",w:{mousse:2,foret:1},f:{douceur:2,ancrage:1}}]}
  ]},
- {id:"racines",label:"Tes racines",title:"Tes racines",intro:"Ce qui te nourrit, d’où tu viens, ce que tu laisses derrière toi.",qs:[
-   {id:"r1",q:"Tes racines, c’est plutôt…",opts:[
-     {fr:"un lieu, une famille, quelque chose de très ancré",w:{arbre:3}},
-     {fr:"les liens du cœur, les émotions partagées",w:{source:2,lac:1}},
-     {fr:"les défis que tu as relevés",w:{soleil:2,marque:1}},
-     {fr:"un peu partout, plein de petites racines",w:{prairie:2,fleurs:1}},
-     {fr:"les histoires et l’imaginaire qui t’ont nourri·e",w:{lune:2,etoiles:1}},
-     {fr:"tu les cherches encore",w:{sentier:2,dunes:1}}]},
-   {id:"r2",q:"Un souvenir de nature qui t’est resté",opts:[
-     {fr:"une forêt",w:{foret:3,mousse:1}},
-     {fr:"le bord de mer",w:{mer:2,galets:2}},
-     {fr:"la montagne",w:{marque:2,falaise:1}},
-     {fr:"un jardin en fleurs",w:{fleurs:3}},
-     {fr:"une nuit à la belle étoile",w:{etoiles:3}},
-     {fr:"le désert, le sable",w:{dunes:3}}]},
-   {id:"r4",q:"Ce que tu laisses derrière toi",opts:[
-     {fr:"quelque chose de solide, sur quoi construire",w:{rochers:2,arbre:1}},
-     {fr:"des petites traces, des souvenirs ramassés",w:{galets:3}},
-     {fr:"une impulsion, l’envie de se lancer",w:{soleil:2,cascade:1}},
-     {fr:"des graines qui poussent après ton passage",w:{fleurs:2,prairie:1}},
-     {fr:"un peu de mystère",w:{brume:2,lune:1}},
-     {fr:"un chemin que d’autres peuvent suivre",w:{sentier:3}}]},
-   {id:"r5",q:"Ton moment entre ciel et terre",opts:[
-     {fr:"un ciel immense au-dessus d’une plaine",w:{plat:2,nuages:1}},
-     {fr:"la pleine lune qui se reflète sur l’eau",w:{lune:2,lac:1}},
-     {fr:"le soleil qui se lève",w:{soleil:3}},
-     {fr:"un ciel rose de fin de journée, dans l’herbe",w:{nuages:1,prairie:2}},
-     {fr:"une nuit pleine d’étoiles",w:{etoiles:3}},
-     {fr:"la brume du matin, quand tout est encore possible",w:{brume:2,sentier:1}}]},
-   {id:"r6",q:"Ton monde intérieur, il est…",opts:[
-     {fr:"stable, on sait où on met les pieds",w:{plat:2,rochers:1}},
-     {fr:"profond, on y découvre toujours quelque chose",w:{source:2,lac:1}},
-     {fr:"bouillonnant, plein de projets",w:{volcan:2}},
-     {fr:"chaleureux, ouvert à qui veut entrer",w:{clairiere:2,prairie:1}},
-     {fr:"secret, il faut trouver l’entrée",w:{vallee:2,brume:1}},
-     {fr:"jamais pareil, il change tout le temps",w:{dunes:2}}]}
+ {id:"regard",label:"Ton regard",title:"Ce que tu regardes, ce dont tu as besoin",intro:"Ce qui attire ton œil, et ce qui te fait du bien.",qs:[
+   {id:"q5",q:"Dans un paysage, qu’est-ce qui attire ton regard en premier ?",opts:[
+     {fr:"une petite fleur sauvage",acc:"fleur",sig:"fleurs",w:{fleurs:3},f:{douceur:1}},
+     {fr:"le soleil ou la lune",acc:"astre",sig:"astre",w:{soleil:1,lune:1},f:{reve:1}},
+     {fr:"un reflet sur l’eau",acc:"reflet",sig:"reflet",w:{source:2},f:{ressenti:1}},
+     {fr:"un oiseau, un mouvement",acc:"oiseau",sig:"sentier",w:{sentier:3},f:{chemin:2}},
+     {fr:"une pierre, un rocher",acc:"pierre",sig:"rochers",w:{rochers:3},f:{ancrage:1}}]},
+   {id:"eviter",type:"text",q:"Y a-t-il une couleur qui te met mal à l’aise, que tu n’aimes pas avoir autour de toi ?",ph:"Facultatif"},
+   {id:"q7",q:"Quand tu rentres chez toi après une longue journée, tu as besoin…",opts:[
+     {fr:"de silence et de douceur",cx:"mono",relief:"doux",besoin:"de silence et de douceur",f:{ressenti:1,reve:1}},
+     {fr:"d’énergie, de vie",cx:"explosif",relief:"sculpte",besoin:"d’énergie et de vie",f:{elan:2}},
+     {fr:"un peu des deux",cx:"nuance",relief:"doux",besoin:"d’un peu de calme et d’un peu de vie",f:{douceur:1}}]}
  ]},
- {id:"toucher",label:"Le toucher",title:"Le toucher",intro:"Ton tapis se lit aussi avec les mains. En tuftage, le relief vient des différentes hauteurs de laine.",qs:[
-   {id:"t1",q:"Si tu parcourais ton paysage les yeux fermés, du bout des doigts, tu voudrais sentir…",opts:[
-     {fr:"une surface lisse, sans bosses",w:{plat:4},tuft:"flat, even pile",tuftfr:"surface lisse, une seule hauteur"},
-     {fr:"des courbes douces",w:{doux:4},tuft:"gentle relief with two pile heights",tuftfr:"léger relief, deux hauteurs"},
-     {fr:"de vrais reliefs, des creux et des sommets, des touffes comme de la mousse",w:{marque:4},tuft:"sculptural high-pile mounds and moss-like clusters of many different heights, strong 3D relief",tuftfr:"relief sculpté, touffes de mousse de plusieurs hauteurs"}]},
-   {id:"t4",q:"La forme de ton tapis",opts:[
-     {fr:"organique, d’un seul tenant",shape:"organic",en:"irregular organic silhouette",frs:"forme organique irrégulière"},
-     {fr:"ronde",shape:"round",en:"round shape",frs:"forme ronde"},
-     {fr:"rectangulaire, comme un morceau de paysage découpé",shape:"rect",en:"rectangular shape",frs:"forme rectangulaire"}]},
-   {id:"t2",q:"La matière que tu aimes toucher",opts:[
-     {fr:"la mousse",w:{mousse:2},tex:"soft cut pile",texfr:"velours coupé tout doux"},
-     {fr:"un galet poli",w:{galets:2},tex:"smooth tight loop pile",texfr:"bouclé serré et lisse"},
-     {fr:"l’écorce d’un arbre",w:{arbre:1,foret:1},tex:"rugged textured loop pile",texfr:"bouclé nervuré"},
-     {fr:"le sable",w:{dunes:2},tex:"fine low cut pile",texfr:"velours ras"},
-     {fr:"l’eau",w:{lac:1,riviere:1},tex:"silky shiny cut pile",texfr:"velours soyeux"}]},
-   {id:"t3",q:"Ton paysage serait plutôt…",opts:[
-     {fr:"détaillé, plein de petites choses à découvrir",d:1.5,en:"rich and detailed, with many small things to discover",frd:"détaillé, plein de petites choses à découvrir"},
-     {fr:"équilibré, des éléments et des respirations",d:1,en:"balanced, with elements and calm areas",frd:"équilibré, des éléments et des respirations"},
-     {fr:"épuré, un seul élément fort et beaucoup de calme",d:.55,en:"minimal, one strong element and lots of calm space",frd:"épuré, un seul élément fort et beaucoup de calme"}]}
+ {id:"chez",label:"Chez toi",title:"Chez toi, et ta façon de voir",intro:"Ta manière d’habiter les lieux et de regarder les choses.",qs:[
+   {id:"q8",q:"Ton intérieur idéal, c’est…",opts:[
+     {fr:"épuré, presque vide",d:.55,f:{reve:1}},
+     {fr:"chaleureux, avec quelques objets choisis",d:1,f:{douceur:1}},
+     {fr:"rempli de souvenirs et de choses partout",d:1.5,f:{ressenti:1}}]},
+   {id:"q9",q:"Tu te reconnais plus dans…",opts:[
+     {fr:"une rivière qui serpente",shape:"organique",geo:false,w:{riviere:1,sentier:1},f:{chemin:1,ressenti:1}},
+     {fr:"une maison bien construite",shape:"rect",geo:true,f:{ancrage:2}},
+     {fr:"un jardin où la nature déborde des allées",shape:"ovale",geo:false,w:{fleurs:1},f:{douceur:1}}]},
+   {id:"q10",q:"Tu préfères les choses…",opts:[
+     {fr:"dites clairement",lis:"clair",f:{elan:1}},
+     {fr:"qui se devinent",lis:"devine",f:{reve:1}},
+     {fr:"avec un petit secret caché",lis:"secret",f:{ressenti:1}}]}
  ]},
- {id:"couleurs",label:"Tes couleurs",title:"Tes couleurs",colors:true,intro:"Ta façon de vivre dit beaucoup des couleurs dans lesquelles tu te sens bien. Tes réponses désignent une palette parmi quatre saisons.",qs:[
-   {id:"c1",q:"Ton dimanche idéal",opts:[
-     {fr:"cuisiner une grosse marmite et recevoir des ami·es",p:"automne"},
-     {fr:"une expo ou un concert, puis un thé au calme",p:"ete"},
-     {fr:"un pique-nique au parc, des jeux, des rires",p:"printemps"},
-     {fr:"un vernissage, un lieu nouveau et pointu",p:"hiver"}]},
-   {id:"c2",q:"La couleur vers laquelle ta main va spontanément",opts:[
-     {fr:"un vert olive ou une terre cuite",p:"automne"},
-     {fr:"un bleu doux ou un rose poudré",p:"ete"},
-     {fr:"un jaune soleil ou un corail",p:"printemps"},
-     {fr:"un noir profond ou un blanc pur",p:"hiver"}]},
-   {id:"c3",q:"L’objet ou le bijou que tu gardes près de toi",opts:[
-     {fr:"une pièce ancienne, en bois, en cuivre ou en ambre",p:"automne"},
-     {fr:"de l’argent mat, une perle, un quartz rose",p:"ete"},
-     {fr:"quelque chose de léger, qui brille et qui bouge",p:"printemps"},
-     {fr:"une pièce forte et graphique, qui se remarque",p:"hiver"}]},
-   {id:"c4",q:"Les autres te décrivent souvent comme…",opts:[
-     {fr:"chaleureux·se et curieux·se des autres",p:"automne"},
-     {fr:"calme et posé·e",p:"ete"},
-     {fr:"pétillant·e et spontané·e",p:"printemps"},
-     {fr:"déterminé·e et direct·e",p:"hiver"}]},
-   {id:"c5",q:"Chez toi, ce qui compte le plus",opts:[
-     {fr:"le confort, les matières naturelles, des objets qui racontent une histoire",p:"automne"},
-     {fr:"l’harmonie, des choses assorties, rien de trop",p:"ete"},
-     {fr:"la lumière, des plantes, les fenêtres ouvertes",p:"printemps"},
-     {fr:"l’épure : peu d’objets, mais forts",p:"hiver"}]},
-   {id:"c6",q:"La musique qui t’accompagne",opts:[
-     {fr:"soul, gospel, folk",p:"automne"},
-     {fr:"R&B, classique, piano",p:"ete"},
-     {fr:"pop, afrobeats, comédies musicales",p:"printemps"},
-     {fr:"rap, électro, jazz expérimental",p:"hiver"}]},
-   {id:"c7",q:"Une amie ne va pas bien, tu…",opts:[
-     {fr:"restes avec elle aussi longtemps qu’il le faut",p:"automne"},
-     {fr:"l’écoutes calmement et cherches avec elle",p:"ete"},
-     {fr:"essaies de la faire rire",p:"printemps"},
-     {fr:"l’aides à trouver une solution concrète",p:"hiver"}]},
-   {id:"c8",q:"La lumière que tu préfères",opts:[
-     {fr:"dorée, une fin d’après-midi d’automne",p:"automne"},
-     {fr:"douce et voilée, un matin d’été",p:"ete"},
-     {fr:"claire et vive, un jour de printemps",p:"printemps"},
-     {fr:"nette et froide, un matin d’hiver",p:"hiver"}]},
-   {id:"cx",q:"Le bouquet qui te ferait le plus plaisir",opts:[
-     {fr:"une seule sorte de fleur, en plusieurs tons",cx:"mono",en:"tone-on-tone, a single color family in many shades",frc:"ton sur ton, une seule famille de couleurs en plusieurs nuances"},
-     {fr:"quelques fleurs de couleurs proches, qui s’accordent bien",cx:"nuance",en:"a harmonious, nuanced mix of neighbouring colors",frc:"un mélange nuancé de couleurs voisines"},
-     {fr:"un bouquet des champs, toutes les couleurs mélangées",cx:"explosif",en:"an exuberant multicolor mix with many vivid accents",frc:"un mélange multicolore et joyeux, avec beaucoup d’accents vifs"}]},
-   {id:"eviter",type:"text",q:"Une couleur que tu ne veux surtout pas sur ton tapis ?",ph:"Facultatif"}
+ {id:"touche",label:"Ta touche",title:"Ta touche à toi",intro:"Un souvenir, et un mot pour ce que tu veux ressentir.",qs:[
+   {id:"ajout",type:"textarea",q:"Un objet, un lieu ou un souvenir qui compte pour toi ?",hint:"On ne le dessinera pas tel quel : on s’en inspirera pour un petit détail discret.",ph:"Facultatif"},
+   {id:"q12",q:"Si tu devais choisir un seul mot pour ce que tu as envie de ressentir chez toi ?",opts:[
+     {fr:"calme",mot:"calme",f:{reve:1}},{fr:"douceur",mot:"douceur",f:{douceur:1}},{fr:"joie",mot:"joie",f:{elan:1}},
+     {fr:"énergie",mot:"energie",f:{elan:1}},{fr:"mystère",mot:"mystere",f:{reve:1}},{fr:"cocon",mot:"cocon",f:{douceur:1}},
+     {fr:"liberté",mot:"liberte",f:{chemin:1}},{fr:"émerveillement",mot:"emerveillement",f:{reve:1}}]}
  ]},
- {id:"touche",label:"Ta touche",title:"Ta touche à toi",intro:"Cet espace est à toi. Tout est facultatif.",qs:[
-   {id:"ajout",type:"textarea",q:"Un détail qui compte pour toi ?",hint:"Un souvenir, un lieu, un objet, un animal… On ne le dessinera pas tel quel : on s’en inspirera pour une forme, une couleur ou un petit motif discret dans ton paysage.",ph:"Facultatif"}]},
  {id:"fiche",label:"Ton tapis",title:"Ton tapis",final:true}
 ];
 const Q={};STEPS.forEach(s=>(s.qs||[]).forEach(q=>Q[q.id]=q));
 
 /* ---------- État ---------- */
-const KEY="paysage-interieur-v2";
+const KEY="paysage-interieur-v3";
 let S={step:0,a:{},ov:{}};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.a)S={ov:{},...s};}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
@@ -382,33 +284,42 @@ let ATELIER=location.hash==="#atelier";
 addEventListener("hashchange",()=>{ATELIER=location.hash==="#atelier";render();});
 // côté client : image propre du tapis (couleurs + léger relief) ; en mode atelier : plan technique avec courbes et hauteurs
 const AMB={epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
-const SIGOK={epure:["lune","soleil","rochers","falaise"],mer:["rochers","soleil"],foret:["sentier","soleil","lune"],jardin:["sentier","rochers","soleil","lune"],
-  ciel:["lune","soleil","etoiles"],montagne:["sentier","soleil","lune"],lave:[],desert:["soleil","rochers","sentier"]};
-/* l'ambiance : le thème que les réponses portent le plus */
+const SIGOK={plaine:["sentier","soleil","lune","rochers","fleurs","reflet"],cocon:["soleil","lune","rochers","fleurs","reflet"],
+  epure:["lune","soleil","rochers","falaise","reflet"],mer:["rochers","soleil"],foret:["sentier","soleil","lune","fleurs","reflet"],
+  jardin:["sentier","rochers","soleil","lune","fleurs","reflet"],ciel:["lune","soleil","etoiles"],montagne:["sentier","soleil","lune","reflet"],
+  lave:[],desert:["soleil","rochers","sentier","reflet"]};
+AMB.plaine="Plaine";AMB.cocon="Cocon";
+/* l'ambiance vient directement des réponses (pas de hasard) :
+   le lieu (Q1) donne l'ambiance, l'élément (Q4) la précise pour les montagnes, la nuit (Q2) peut l'emmener vers le ciel,
+   un intérieur épuré (Q8) donne l'ambiance épurée ; une couche changée à la main peut la faire basculer. */
 function ambiance(){
-  const c=compose(),sc=scores(),t3=opt("t3"),cand=[];
-  if(c.eau==="mer"||c.eau==="ile")cand.push(["mer",sc[c.eau]||0]);
-  if(c.relief==="volcan")cand.push(["lave",sc.volcan||0]);
-  if(c.relief==="marque")cand.push(["montagne",sc.marque||0]);
-  if(c.relief==="dunes"||c.relief==="vallee")cand.push(["desert",sc[c.relief]||0]);
-  if(["lune","etoiles","nuages","brume"].includes(c.ciel))cand.push(["ciel",(sc[c.ciel]||0)*.9]);
-  if(["foret","arbre","clairiere","mousse"].includes(c.vegetation))cand.push(["foret",sc[c.vegetation]||0]);
-  if(["fleurs","prairie"].includes(c.vegetation))cand.push(["jardin",sc[c.vegetation]||0]);
-  cand.sort((a,b)=>b[1]-a[1]);const top=cand[0]?cand[0][0]:"jardin";
-  const auto=t3&&t3.d<.8?"epure":top;
-  return {theme:(ATELIER&&S.amb)||auto,auto,tendance:top};
+  const q1=opt("q1"),q2=opt("q2"),q4=opt("q4"),q8=opt("q8"),ov=S.ov||{};
+  let base="jardin";
+  if(q1)base={plaine:"plaine",foret:"foret",eau:"mer",plaid:"cocon"}[q1.lieu]||(q4&&q4.el==="feu"?"lave":q4&&q4.el==="terre"?"desert":"montagne");
+  if(q2&&q2.light==="nuit"&&((q1&&q1.lieu==="plaine")||(q4&&q4.el==="air")))base="ciel";
+  if(ov.eau==="mer"||ov.eau==="ile")base="mer";else if(ov.relief==="volcan")base="lave";else if(ov.relief==="marque")base="montagne";
+  else if(ov.relief==="dunes"||ov.relief==="vallee")base="desert";else if(["foret","arbre","clairiere"].includes(ov.vegetation))base="foret";
+  else if(["fleurs","prairie"].includes(ov.vegetation)&&base!=="plaine")base="jardin";
+  const auto=q8&&q8.d<.8?"epure":base;
+  return {theme:(ATELIER&&S.amb)||auto,auto,tendance:base};
 }
 function rugParams(){
-  const c=compose(),t4=opt("t4"),t3=opt("t3"),cx=opt("cx"),sc=scores(),A=ambiance();
-  // un seul élément signature, compatible avec l'ambiance
-  const ok=SIGOK[A.theme]||[],picked=k=>S.ov.chemin===k||S.ov.ciel===k||S.ov.mineral===k;
-  const sigs=["sentier","soleil","lune","etoiles","rochers","falaise"].filter(k=>(c.chemin===k||c.ciel===k||c.mineral===k)&&ok.includes(k))
-    .sort((a,b)=>(picked(b)?99:sc[b]||0)-(picked(a)?99:sc[a]||0));
-  return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx:cx?cx.cx:"nuance",
-    shape:t4?{organic:"organique",round:"rond",rect:"rect"}[t4.shape]:"organique",
-    dens:t3?(t3.d>1.2?"foisonnant":t3.d<.8?"epure":"equilibre"):"equilibre",
-    relief:["lisse","doux","sculpte"][S.a.t1]||"doux",texture:["mousse","galet","ecorce","sable","eau"][S.a.t2]||"mousse",
-    avoid:S.a.eviter||"",layers:c,theme:A.theme,tendance:A.tendance,signature:sigs[0]||null};
+  const c=compose(),A=ambiance(),g=k=>opt(k)||{};
+  const q2=g("q2"),q4=g("q4"),q5=g("q5"),q7=g("q7"),q8=g("q8"),q9=g("q9"),q10=g("q10"),q12=g("q12");
+  let dens=q8.d>1.2?"foisonnant":q8.d<.8?"epure":"equilibre",cx=q7.cx||"nuance",relief=q7.relief||"doux",shape=q9.shape||"organique";
+  // le mot (Q12) nuance l'ensemble
+  if(q12.mot==="calme"||q12.mot==="liberte"){if(dens==="foisonnant")dens="equilibre";if(cx==="explosif")cx="nuance";}
+  if(q12.mot==="energie"||q12.mot==="joie"){if(cx==="mono")cx="nuance";if(q12.mot==="energie")relief="sculpte";}
+  if(q12.mot==="cocon"&&shape!=="rect")shape="rond";
+  // un seul élément signature : celui du regard (Q5), selon la lisibilité (Q10) ; « Changer » peut l'imposer
+  let sig=q5.sig||null;if(sig==="astre")sig=q2.light==="nuit"?"lune":"soleil";
+  let force=false;for(const L of["chemin","ciel","mineral"]){const v=S.ov[L];if(["sentier","soleil","lune","etoiles","rochers","falaise"].includes(v)){sig=v;force=true;}}
+  if(q10.lis==="devine"&&!force)sig=null;
+  if(sig&&!(SIGOK[A.theme]||[]).includes(sig))sig=null;
+  return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx,shape,dens,relief,
+    texture:q4.tex||"mousse",avoid:S.a.eviter||"",layers:c,theme:A.theme,tendance:A.tendance,signature:sig,
+    sigScale:q10.lis==="clair"?1.25:q10.lis==="secret"?.6:1,geo:!!q9.geo,mot:q12.mot||null,
+    spec:{light:q2.light||"vif",el:q4.el||"vegetal",acc:q5.acc||"fleur"}};
 }
 /* ---------- rendu réaliste par le serveur local (Blender sur le Mac) ---------- */
 let SERVEUR=null,RENDU={cle:null,img:null,etat:"",t0:0,secondes:0};
@@ -572,9 +483,12 @@ const FX={
     rituel:"Parcours le chemin de ton tapis du bout des doigts, d’un bout à l’autre, en te posant une seule question : qu’est-ce qui compte pour moi aujourd’hui ?"}
 };
 const SEASON_ADJ={automne:"aux couleurs d’automne",ete:"aux couleurs d’été",printemps:"aux couleurs de printemps",hiver:"aux couleurs d’hiver"};
+function forces(){const n={};Object.keys(Q).forEach(id=>{const o=opt(id);if(o&&o.f)for(const[k,v]of Object.entries(o.f))n[k]=(n[k]||0)+v;});return n;}
+function paletteYarns(){if(!window.Moteur)return[];const q=rugParams(),P=Moteur.palette2(Object.assign({season:q.season,avoid:q.avoid},q.spec));
+  return [...new Set([...P.dom.slice(0,3),...P.ana.flat().slice(0,3),...P.pop.flat().slice(0,2)])].map(r=>Moteur.Y[r].hex);}
 function fiche(){
-  const n=scores();
-  const fs=Object.entries(FORCES).map(([k,f])=>[k,f.items.reduce((s,i)=>s+(n[i]||0),0)]).sort((a,b)=>b[1]-a[1]);
+  const n=forces();
+  const fs=Object.keys(FORCES).map(k=>[k,n[k]||0]).sort((a,b)=>b[1]-a[1]);
   const pk=curPal(),name=(S.a.prenom||"").trim();
   const card=(eb,title,body)=>`<section><span class="eyebrow">${eb}</span>${title?`<h3>${title}</h3>`:""}${body}</section>`;
   const out=[];
@@ -584,12 +498,12 @@ function fiche(){
       `<p>Tu es surtout guidé·e par ${FORCES[k1].name}${k2?`, et aussi par ${FORCES[k2].name}`:""}. ${FORCES[k1].txt}</p>${k2?`<p>${FORCES[k2].txt}</p>`:""}${pk?`<p>${SEASON[pk]}</p>`:""}`));
   }
   out.push(`<section class="plain"><span class="eyebrow">Le paysage où tu te sens bien</span><p>C’est l’endroit qui te ressemble, celui où tu reviens à toi. ${pk?`Ses couleurs : ${PALS[pk].frl.split(" : ")[1]}.`:""}</p>
-    ${pk?`<div class="sw">${PALS[pk].c.map(c=>`<span style="background:${c}"></span>`).join("")}</div>`:""}</section>${renderScape(false)}`);
+    <div class="sw">${paletteYarns().map(c=>`<span style="background:${c}"></span>`).join("")}</div></section>${renderScape(false)}`);
   if(has){
     const list=[...FX[k1].forces,...(k2?FX[k2].forces.slice(0,2):[])];
     out.push(card("Tes forces","",`<ul>${list.map(x=>`<li>${x}</li>`).join("")}</ul>`));
-    const p5=opt("p5");
-    out.push(card("Quand tu as besoin de te ressourcer","",`<p>${FX[k1].besoin}</p>${k2?`<p>${FX[k2].besoin}</p>`:""}${p5?`<p class="soft">Tu l’as dit toi-même : quand tout va trop vite, tu as besoin de ${p5.fr}.</p>`:""}`));
+    const q7=opt("q7");
+    out.push(card("Quand tu as besoin de te ressourcer","",`<p>${FX[k1].besoin}</p>${k2?`<p>${FX[k2].besoin}</p>`:""}${q7?`<p class="soft">Tu l’as dit toi-même : en rentrant chez toi, tu as besoin ${q7.besoin}.</p>`:""}`));
     out.push(card("Pour te recentrer","Ton paysage intérieur, à portée de main",
       `<p>On n’a pas toujours accès à la nature, ni à un lieu à soi, quand on en a besoin. Ton tapis est là pour ça : un morceau de ton paysage intérieur, chez toi, où tu peux venir t’asseoir, respirer et te retrouver.</p>
        <p>Pour toi, il aura ${FORCES[k1].tapis}${k2?`, avec ${FORCES[k2].tapis}`:""}.</p>

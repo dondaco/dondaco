@@ -62,6 +62,46 @@ function palette(season,avoid){const S=SEASONS[season]||SEASONS.printemps,a=(avo
   const P={};for(const k in S){if(k==="ana"||k==="pop")P[k]=S[k].map(f=>clean(f,[])).filter(f=>f.length);else P[k]=clean(S[k],clean(S.stone));}
   if(!P.ana.length)P.ana=[P.dom];if(!P.pop.length)P.pop=P.ana;return P;}
 
+/* ---------- palette composée à partir des réponses (sans hasard) ----------
+   lumière (Q2) : pastel / vif / chaud / nuit · saison (Q3) · élément dominant (Q4) · accent (Q5) · couleur exclue (Q6)
+   Chaque rôle est rempli avec les laines du nuancier qui correspondent le mieux, triées du clair au foncé. */
+const FAM={
+  terre:(h,s,l)=>h>=12&&h<40&&s>.2&&s<.8&&l>.2&&l<.68,
+  eau:(h,s,l)=>h>=170&&h<240&&s>.15,
+  feu:(h,s,l)=>(h<38||h>=345)&&s>.45&&l>.3&&l<.75,
+  air:(h,s,l)=>(l>.74&&s<.45)||(h>=185&&h<225&&l>.6),
+  vegetal:(h,s,l)=>h>=55&&h<150&&s>.12,
+  tendre:(h,s,l)=>h>=60&&h<130&&l>.5,rose:(h,s,l)=>(h>=320||h<15)&&l>.6&&s>.2,pastel:(h,s,l)=>l>.72&&s>.15,
+  jauneVif:(h,s,l)=>h>=38&&h<62&&s>.6,bleuFranc:(h,s,l)=>h>=200&&h<235&&s>.45&&l>.3&&l<.65,
+  ocre:(h,s,l)=>h>=28&&h<48&&s>.45&&l>.35&&l<.62,rouille:(h,s,l)=>h>=8&&h<28&&s>.45&&l>.3&&l<.6,
+  bordeaux:(h,s,l)=>(h>=330||h<8)&&l<.42&&s>.3,brun:(h,s,l)=>h>=10&&h<40&&l<.45&&s>.15,
+  blanc:(h,s,l)=>l>.8&&s<.4,grisBleu:(h,s,l)=>(h>=180&&h<240&&s<.4&&l>.4)||(s<.1&&l>.35&&l<.8),
+  or:(h,s,l)=>h>=36&&h<56&&s>.5&&l>.45,argent:(h,s,l)=>s<.15&&l>.65,turquoise:(h,s,l)=>h>=165&&h<195&&s>.25,
+  neutre:(h,s,l)=>s<.18&&l>.2,sombre:(h,s,l)=>l<.3&&s<.3,nuitBleu:(h,s,l)=>h>=200&&h<265&&l<.36,
+  sable:(h,s,l)=>h>=18&&h<50&&l>.6&&s>.12,chaudVif:(h,s,l)=>(h<50||h>=330)&&s>.5&&l>.4&&l<.75
+};
+const SAISON_FAM={printemps:["tendre","rose","pastel"],ete:["jauneVif","bleuFranc"],automne:["ocre","rouille","bordeaux","brun"],hiver:["blanc","grisBleu"]};
+const ACCENT_FAM={fleur:["rose","jauneVif"],astre:["or","argent"],reflet:["turquoise"],oiseau:["blanc","sombre"],pierre:["neutre"]};
+const LUM_CIBLE={pastel:.7,vif:.52,chaud:.55,nuit:.3};
+function palette2(sp){
+  const a=(sp.avoid||"").toLowerCase().trim(),bad=a?AVOID.filter(([re])=>re.test(a)).map(x=>x[1]):[];
+  const ALL=Object.keys(Y).filter(r=>!bad.some(f=>f(...hsl(r))));
+  const fam=(name,n,tl)=>{const c=ALL.filter(r=>FAM[name](...hsl(r)));c.sort((x,y)=>Math.abs(hsl(x)[2]-tl)-Math.abs(hsl(y)[2]-tl)||x.localeCompare(y));
+    return c.slice(0,n).sort((x,y)=>lum(y)-lum(x));};
+  const nz=(...l)=>l.find(x=>x&&x.length)||ALL.slice(0,3);
+  const L=LUM_CIBLE[sp.light]||.55,el=FAM[sp.el]?sp.el:"vegetal";
+  const dom=nz(fam(el,6,L),fam("vegetal",6,L));
+  const ground=nz(fam(el,3,sp.light==="nuit"?.14:sp.light==="pastel"?.62:.34),dom.slice(-2));
+  let ana=(SAISON_FAM[sp.season]||SAISON_FAM.printemps).map(f=>fam(f,3,L)).filter(f=>f.length);
+  if(sp.light==="chaud")ana=[fam("chaudVif",3,.6)].concat(ana).filter(f=>f.length);
+  const pop=(ACCENT_FAM[sp.acc]||["rose"]).map(f=>fam(f,2,.6)).filter(f=>f.length).concat(ana);
+  const water=nz(fam("eau",4,sp.light==="nuit"?.32:sp.light==="pastel"?.66:.48));
+  const sand=nz(fam("sable",3,.74),fam("blanc",3,.85)),stone=nz(fam("neutre",4,.55)),lava=nz(fam("feu",4,.5));
+  const plates=nz(fam("sombre",3,.14),stone.slice(-2)),night=nz(fam("nuitBleu",2,.18),plates);
+  const disc=nz(sp.light==="nuit"?fam("argent",1,.82):fam("or",1,.6),sand.slice(0,1));
+  const blanc=nz(fam("blanc",2,.88),sand.slice(0,1));
+  return {ground,dom,ana:ana.length?ana:[dom],pop:pop.length?pop:[dom],water,foam:blanc.slice(0,1),sand,stone,lava,plates,night,disc,star:blanc.slice(0,1)};}
+
 /* ---------- contexte ---------- */
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture,JSON.stringify(q.layers)].join("|"));
@@ -76,7 +116,7 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   for(let j=0;j<h;j++)for(let i=0;i<w;i++){const s=sdfF((i+.5)/G,(j+.5)/G);sdf[j*w+i]=s;inRug[j*w+i]=s<0?1:0;}
   const zones=[null],zM=new Map();
   const Z=(ref,tech,kind)=>{if(!Y[ref]){(window.__badRefs=window.__badRefs||[]).push(kind+":"+ref);ref="056";}const key=ref+"|"+tech+"|"+kind;if(!zM.has(key)){zones.push({ref,tech,kind});zM.set(key,zones.length-1);}return zM.get(key);};
-  const P=palette(q.season,q.avoid);
+  const P=q.spec?palette2(Object.assign({avoid:q.avoid,season:q.season},q.spec)):palette(q.season,q.avoid);
   const c={q,P,w,h,N,G,r,n1,n2,n3,n4,sdf,inRug,zone:new Uint16Array(N),H:new Float32Array(N).fill(1.5),wet:new Uint8Array(N),busy:new Uint8Array(N),zones,Z,
     pick:a=>a[Math.floor(r()*a.length)],info:[]};
   c.kind=o=>c.zone[o]?zones[c.zone[o]].kind:"";
@@ -97,7 +137,7 @@ function blob(c,m,ok){const {w,h,G,zone,H,n2,n3,inRug,busy}=c,z=c.Z(m.ref,m.tech
   const p1=c.r()*6.28,p2=c.r()*6.28,zc=m.core?c.Z(m.core,m.tech,m.kind||"mousse"):0;
   for(let y=Math.max(0,Math.floor(cj-b));y<Math.min(h,cj+b);y++)for(let x=Math.max(0,Math.floor(ci-b));x<Math.min(w,ci+b);x++){const o=y*w+x;
     if(!inRug[o]||(ok&&!ok(o)))continue;const dx=x/G-m.x,dy=y/G-m.y,d=Math.hypot(dx,dy),a=Math.atan2(dy,dx);
-    const sc=m.r*.55,rad=m.r*(.84+.32*fbm(n3,dx/sc+p1*7,dy/sc+p2*7))+(fbm(n3,x/G/1.2,y/G/1.2)-.5)*.8;
+    const sc=m.r*.55,gk=c.q.geo?.3:1,rad=m.r*(1-.16*gk+.32*gk*fbm(n3,dx/sc+p1*7,dy/sc+p2*7))+(fbm(n3,x/G/1.2,y/G/1.2)-.5)*.8*gk;
     if(d>=rad)continue;const ins=rad-d;zone[o]=zc&&ins>Math.max(1.6,rad*.45)+(fbm(n2,x/G/2+p2,y/G/2)-.5)*1.4?zc:z;
     H[o]=m.tech==="pompon"?1.5+m.r*.6+Math.sqrt(Math.max(0,m.r*m.r-d*d)):m.flat?m.flat:heightFor(m.tech,ins,d/rad,m.r,fbm(n2,dx/(m.r*.33)+p1*5,dy/(m.r*.33)));busy[o]=1;}}
 const triIdx=(k,n)=>{if(n<2)return 0;const p=2*n-2,m=((k%p)+p)%p;return m<n?m:p-m;};
@@ -291,7 +331,7 @@ function clean(c){const {w,h,zone,inRug}=c,lab=new Int32Array(c.N).fill(-1),minA
 
 /* ---------- ambiances : une composition claire par thème ---------- */
 const NEB={printemps:["806C","597","300"],ete:["502","517","597"],automne:["502","2A11","423"],hiver:["585","597","3B15"]};
-const THEMES={epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
+const THEMES={plaine:"Plaine",cocon:"Cocon",epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
 function groundCalm(c,refs,kind){const {w,h,G,n1,zone,H,inRug}=c;
   for(let o=0;o<c.N;o++){if(!inRug[o]||zone[o])continue;const x=(o%w)/G,y=Math.floor(o/w)/G;zone[o]=c.Z(fbm(n1,x/18+31,y/18+7)>.58&&refs[1]?refs[1]:refs[0],"cut15",kind||"sol");H[o]=1.5;}}
 /* points forts de composition (règle des tiers), choisis au hasard */
@@ -306,7 +346,7 @@ function sentier(c){const {w,h,G,r,zone,H,inRug,wet,P}=c,vert=r()<.6,L=vert?RH:R
 function anneauxAutour(c,fx,fy,R,n,gap){const {w,G,zone,H,inRug}=c;
   for(let o=0;o<c.N;o++){if(!inRug[o]||c.kind(o)!=="sol")continue;const x=(o%w+.5)/G,y=(Math.floor(o/w)+.5)/G,d=Math.hypot(x-fx,y-fy)-R+(fbm(c.n2,x/9,y/9)-.5)*1.4;
     if(d>1.2&&d<1.2+gap*n&&((d-1.2)%gap)<1){zone[o]=c.Z(c.zones[zone[o]].ref,"loop3","sol");H[o]=3;}}}
-function disque(c,kind,fx,fy,R,overWet){const {w,h,G,r,zone,H,inRug,P}=c,ref=kind==="lune"?P.disc[0]:kind==="soleil"?(c.q.cx==="mono"?P.disc[0]:P.lava[P.lava.length-1]):P.disc[0];
+function disque(c,kind,fx,fy,R,overWet){R*=c.q.sigScale||1;const {w,h,G,r,zone,H,inRug,P}=c,ref=kind==="lune"?P.disc[0]:kind==="soleil"?(c.q.cx==="mono"?P.disc[0]:P.lava[P.lava.length-1]):P.disc[0];
   const ma=r()*6.28,off=R*.42,R2=R*.88,cx2=fx+Math.cos(ma)*off,cy2=fy+Math.sin(ma)*off,b=Math.ceil((R+3)*G);
   for(let y=Math.max(0,Math.floor(fy*G-b));y<Math.min(h,fy*G+b);y++)for(let x=Math.max(0,Math.floor(fx*G-b));x<Math.min(w,fx*G+b);x++){const o=y*w+x;if(!inRug[o]||(c.wet[o]&&!overWet))continue;
     const X=x/G,Yy=y/G,d=Math.hypot(X-fx,Yy-fy);if(d>=R)continue;let ins=R-d;
@@ -417,10 +457,30 @@ function capYarns(c){const cap={mono:5,nuance:8,explosif:12}[c.q.cx]||8,area=new
   const nearIn=(ref,pool)=>{const a=Y[ref].rgb;let best=pool[0],bd=1e9;for(const k of pool){const b=Y[k].rgb,d=(a[0]-b[0])**2*.3+(a[1]-b[1])**2*.59+(a[2]-b[2])**2*.11;if(d<bd){bd=d;best=k;}}return best;};
   for(const zz of c.zones){if(zz&&!keep.includes(zz.ref))zz.ref=nearIn(zz.ref,!prot.has(zz.kind)&&keepNP.length?keepNP:keep);}}
 
+/* plaine : grandes bandes horizontales calmes, tons clairs, quelques touffes rases */
+function themePlaine(c){const {P,r}=c,L=c.q.layers||{};
+  const ramp=[...new Set([P.ground[0],P.dom[0],P.dom[1]||P.dom[0],(P.ana[0]||P.dom)[0]].filter(Boolean))];
+  baseBandes(c,ramp,9/Math.sqrt(c.dens),c.q.geo?1:2.5,Math.PI/2+(r()-.5)*.25,null,"sol");
+  eauDouce(c,L.eau);if(c.q.signature==="sentier")sentier(c);
+  mounds(c,{cover:.05*c.dens,rMin:1.5,rMax:2.4,tech:"loop3",base:P.dom.slice(0,3),core:false});
+  c.info.unshift("une plaine ouverte, en grandes bandes calmes");}
+/* cocon : anneaux enveloppants autour d'un cœur, tons chauds et sombres, quelques coussins de mousse */
+function themeCocon(c){const {P,r}=c,cx=RW*(.42+.16*r()),cy=RH*(.42+.16*r()),sq=.8;
+  const ramp=[...new Set(P.dom.slice().reverse().concat(P.ground))];
+  baseBandes(c,ramp,4.2/Math.sqrt(c.dens),c.q.geo?1:3,0,(x,y)=>Math.hypot(x-cx,(y-cy)*sq),"cocon");
+  const ms=massifs(c,{n:Math.round(1+c.dens),rBig:4.5,fams:[P.dom],gap:10,kind:"coussin"});
+  c.info.unshift(`un cocon d'anneaux enveloppants${ms.length?` et ${ms.length} coussins de mousse`:""}`);}
+/* éléments signature communs à toutes les ambiances (un seul par tapis) */
+function signatureCommune(c){const s=c.q.signature,k=c.q.sigScale||1,P=c.P;
+  if(["plaine","cocon"].includes(c.q.theme)){if(s==="soleil"||s==="lune"){let fx,fy;for(let i=0;i<200;i++){[fx,fy]=strongPoint(c);if(freeAt(c,fx,fy,7))break;}disque(c,s,fx,fy,7);}
+    else if(s==="rochers")pierre(c,"rochers");}
+  if(s==="fleurs"){grappes(c,1,c.q.cx==="mono"?[P.dom.slice(0,3)]:P.pop);}
+  else if(s==="reflet"){eauEtang(c,.07*k);}}
+
 /* ---------- assemblage ---------- */
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
-    ({epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);
+    ({plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);signatureCommune(c);
     pasDeBordure(c);clean(c);capYarns(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";
@@ -497,5 +557,5 @@ function maps(g){const {w,h,zone,H,zones}=g,N=w*h,col=new Uint8ClampedArray(N*4)
   for(let o=0;o<N;o++){const z=zone[o],k=o*4;if(!z)continue;const Zo=zones[z],c=Y[Zo.ref].rgb,hv=Math.round(Math.min(1,H[o]/6)*255),t=code[Zo.tech]*40;
     col[k]=c[0];col[k+1]=c[1];col[k+2]=c[2];col[k+3]=255;hei[k]=hei[k+1]=hei[k+2]=hv;hei[k+3]=255;tec[k]=tec[k+1]=tec[k+2]=t;tec[k+3]=255;}
   return {w,h,col,hei,tec};}
-window.Moteur={generate,render,legend,maps,Y,TECH,THEMES};
+window.Moteur={generate,render,legend,maps,palette2,Y,TECH,THEMES};
 })();
