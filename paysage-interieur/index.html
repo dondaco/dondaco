@@ -506,7 +506,7 @@ function renderScape(final){
   const layers=Object.keys(LAYERS).map(L=>{const it=LAYERS[L].items[c[L]];
     return `<div class="layer"><div class="head"><span class="eyebrow">${LAYERS[L].label}</span>${S.ov[L]?'<span class="note">choisi par toi</span>':""}</div>
       <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
-      ${final||!ATELIER?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
+      ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
   return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
       ${SERVEUR?`<div class="rugbar"><button type="button" class="btn primary" data-rendu="finale">Rendu réaliste</button><button type="button" class="chip" data-rendu="apercu">Aperçu rapide</button></div>`:""}<div id="rendubox" class="rendubox"></div>
       <div class="rugbar">${ATELIER?`<button type="button" class="chip" data-export>Exporter pour Blender</button>`:""}<button type="button" class="chip" data-rugv>Autre proposition</button></div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
