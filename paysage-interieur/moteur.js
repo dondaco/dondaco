@@ -161,7 +161,14 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
       const k=1+.09*Math.sin(2*a+f[0])+.07*Math.sin(3*a+f[1])+.045*Math.sin(5*a+f[2])+.025*Math.sin(7*a+f[3]);
       return(Math.hypot(cx,cy/1.32)-(RW/2-3)*.93*k)*.95;}
     // fleur : des pétales arrondis autour d'un cœur, comme un lotus vu du dessus
-    if(shape==="fleur"){const n=8,a=Math.atan2(cy,cx),t=Math.abs(Math.cos(n*a/2)),R=(RW/2-.8)*(.74+.26*Math.pow(t,.55));return(Math.hypot(cx,cy)-R)*.9;}
+    // fleur de lotus vue du dessus : deux couronnes de pétales allongés en pointe, décalées, autour d'un cœur rond
+    if(shape==="fleur"){const R0=RW/2-1,n=8;let best=Math.hypot(cx,cy)-R0*.3;
+      // chaque pétale est une amande pointue partant du cœur ; deux rangs décalés, le second plus court
+      const petale=(ang,L,W)=>{const ca=Math.cos(ang),sa=Math.sin(ang),u=cx*ca+cy*sa,v=-cx*sa+cy*ca,L0=L*.22,Lp=L-L0,us=u-L0;
+        if(us<=0||us>=Lp)return Math.hypot(Math.max(0,-us),Math.max(0,us-Lp))+Math.abs(v)+.5;
+        const t=us/Lp,hw=W/2*Math.pow(Math.sin(Math.PI*Math.pow(t,.8)),.55);return Math.abs(v)-hw;};
+      for(let k=0;k<n;k++){best=Math.min(best,petale(k*2*Math.PI/n-Math.PI/2,R0,R0*.5),petale((k+.5)*2*Math.PI/n-Math.PI/2,R0*.82,R0*.46));}
+      return best;}
     if(shape==="nuage"){const qx=Math.abs(cx)-(RW/2-13-12),qy=Math.abs(cy)-(RH/2-13-12);let s=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-12;
       for(const[bx,by,br]of bulles)s=smin(s,Math.hypot(x-bx,y-by)-br,4);return s;}
     if(shape==="rond"){return Math.hypot(cx,cy)-(RW/2-.6);}
