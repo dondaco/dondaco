@@ -66,6 +66,8 @@ textarea{min-height:90px;resize:vertical}
 @media (max-width:640px){.scape{grid-template-columns:1fr}}
 .canvas-wrap{display:flex;flex-direction:column;gap:8px;align-items:center}
 canvas{width:100%;max-width:340px;aspect-ratio:7/10;height:auto}
+.rendubox{display:flex;flex-direction:column;gap:6px;align-items:center;width:100%;max-width:340px}
+.rendubox img{width:100%;height:auto;border-radius:10px;border:1px solid var(--line)}
 .rugbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .rugleg{display:flex;flex-direction:column;gap:4px;font-size:13px;max-width:340px;width:100%}
 .rugleg span.sw2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid rgba(0,0,0,.15)}
@@ -405,7 +407,25 @@ function rugParams(){
     relief:["lisse","doux","sculpte"][S.a.t1]||"doux",texture:["mousse","galet","ecorce","sable","eau"][S.a.t2]||"mousse",
     avoid:S.a.eviter||"",layers:c,theme:A.theme,tendance:A.tendance,signature:sigs[0]||null};
 }
-function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;
+/* ---------- rendu réaliste par le serveur local (Blender sur le Mac) ---------- */
+let SERVEUR=null,RENDU={cle:null,img:null,etat:"",t0:0,secondes:0};
+fetch("/etat",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.ok){SERVEUR=j;render();}}).catch(()=>{});
+const cleRendu=()=>JSON.stringify(rugParams());
+function afficheRendu(){const box=document.getElementById("rendubox");if(!box)return;const ici=RENDU.cle===cleRendu();
+  if(RENDU.etat==="calcul"){box.innerHTML=`<span class="note">Rendu en cours dans Blender… ${Math.round((Date.now()-RENDU.t0)/1000)} s</span>`;return;}
+  if(RENDU.etat==="erreur"&&ici){box.innerHTML=`<span class="note">${esc(RENDU.msg)}</span>`;return;}
+  box.innerHTML=ici&&RENDU.img?`<img src="${RENDU.img}" alt="Rendu réaliste du tapis"><span class="note">Rendu réaliste · ${RENDU.secondes} s</span>`:"";}
+setInterval(()=>{if(RENDU.etat==="calcul")afficheRendu();},1000);
+async function rendreReel(qualite){if(RENDU.etat==="calcul")return;
+  const q=rugParams(),g=Moteur.generate(q,8),m=Moteur.maps(g),b64=a=>{let s="";for(let i=0;i<a.length;i+=32768)s+=String.fromCharCode.apply(null,a.subarray(i,i+32768));return btoa(s);};
+  RENDU={cle:JSON.stringify(q),img:null,etat:"calcul",t0:Date.now(),secondes:0};afficheRendu();
+  try{const corps={qualite,vue:"dessus",largeur:70,hauteur:100,couleurs:b64(await png(m.col,m.w,m.h)),hauteurs:b64(await png(m.hei,m.w,m.h)),points:b64(await png(m.tec,m.w,m.h))};
+    const r=await fetch("/rendu",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(corps)}),j=await r.json();
+    if(!r.ok||!j.image)throw new Error(j.erreur||"Le rendu a échoué.");
+    RENDU.img="data:image/png;base64,"+j.image;RENDU.secondes=j.secondes;RENDU.etat="fini";}
+  catch(e){RENDU.etat="erreur";RENDU.msg=e.message||"Le rendu a échoué.";}
+  afficheRendu();}
+function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;afficheRendu();
   const g=Moteur.generate(rugParams(),(window.devicePixelRatio||1)>1.4?7:5.5);
   Moteur.render(cv,g,VIEW,getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#ECEEE8");
   const leg=document.getElementById("rugleg");if(!leg)return;
@@ -484,7 +504,8 @@ function renderScape(final){
       <span class="val">${it.fr}</span>${it.why?`<p class="why">${it.why}</p>`:""}
       ${final?"":`<details><summary>Changer</summary><div class="chips" role="group" aria-label="${LAYERS[L].label}">${Object.entries(LAYERS[L].items).map(([k,o])=>`<button type="button" class="chip" data-layer="${L}" data-item="${k}" aria-pressed="${c[L]===k}">${o.fr}</button>`).join("")}</div></details>`}</div>`;}).join("");
   return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Plan atelier du tapis vu du dessus"></canvas>
-      <div class="rugbar"><button type="button" class="btn primary" data-export>Exporter pour Blender</button><button type="button" class="chip" data-rugv>Autre proposition</button></div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
+      ${SERVEUR?`<div class="rugbar"><button type="button" class="btn primary" data-rendu="finale">Rendu réaliste</button><button type="button" class="chip" data-rendu="apercu">Aperçu rapide</button></div>`:""}<div id="rendubox" class="rendubox"></div>
+      <div class="rugbar"><button type="button" class="${SERVEUR?"chip":"btn primary"}" data-export>Exporter pour Blender</button><button type="button" class="chip" data-rugv>Autre proposition</button></div><span class="toast" id="exptoast" aria-live="polite" style="text-align:center"></span>
       <div class="rugbar" role="group" aria-label="Ambiance"><span class="note" style="width:100%;text-align:center">Ambiance${S.amb?" choisie par toi":" déduite de tes réponses"} :</span>${Object.entries(AMB).map(([k,l])=>`<button type="button" class="chip" data-amb="${k}" aria-pressed="${ambiance().theme===k}">${l}</button>`).join("")}${S.amb?'<button type="button" class="chip" data-amb="">Revenir à l’automatique</button>':""}</div>
       <div class="rugleg" id="rugleg"></div></div>
     <div class="layers">${few?'<p class="note">Tu as répondu à peu de questions : le paysage est encore approximatif.</p>':""}${layers}</div></div>`;
@@ -608,6 +629,7 @@ document.addEventListener("click",e=>{
   if(t.hasAttribute("data-prev"))return go(S.step-1);
   if(t.dataset.q)return keep(()=>{const v=+t.dataset.v;if(S.a[t.dataset.q]===v)delete S.a[t.dataset.q];else S.a[t.dataset.q]=v;});
   if(t.dataset.layer)return keep(()=>{S.ov[t.dataset.layer]=t.dataset.item;});
+  if(t.dataset.rendu){rendreReel(t.dataset.rendu);return;}
   if(t.hasAttribute("data-export")){exporterBlender();return;}
   if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
   if(t.dataset.amb!==undefined)return keep(()=>{if(t.dataset.amb)S.amb=t.dataset.amb;else delete S.amb;});

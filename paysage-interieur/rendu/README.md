@@ -4,7 +4,20 @@ Le moteur dessine le plan du tapis ; Blender en fait une image réaliste : relie
 la couleur de chaque laine, une texture différente pour le velours coupé, le loop et le brossé,
 le tapis posé sur un sol sous une lumière douce.
 
-## 1. Exporter les cartes d'un tapis
+## Le plus simple : rendu automatique depuis le site (sur le Mac)
+
+1. Installe Blender (gratuit) dans Applications : https://www.blender.org/download/
+2. Télécharge le dossier `paysage-interieur` et double-clique sur **`demarrer-le-serveur.command`**
+   (la première fois, macOS peut le bloquer : clic droit > Ouvrir > Ouvrir).
+   Le site s'ouvre dans le navigateur à l'adresse http://localhost:8765/ ; laisse la fenêtre du Terminal ouverte.
+3. Réponds au questionnaire. Sous le plan du tapis : **« Aperçu rapide »** (environ 30 s, image réduite)
+   ou **« Rendu réaliste »** (fibres complètes). Blender calcule en arrière-plan et l'image s'affiche dans la page.
+
+Le serveur (`rendu/serveur.py`) utilise le Python inclus dans Blender : rien d'autre à installer.
+Ce mode ne marche pas depuis le lien claude.ai (la page n'a pas le droit de parler à l'ordinateur) :
+là, utilise le bouton « Exporter pour Blender ».
+
+## À la main : exporter les cartes d'un tapis
 
 Il faut Node.js et Playwright (`npm install playwright`, puis `npx playwright install chromium`).
 
