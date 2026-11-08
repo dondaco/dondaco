@@ -580,7 +580,9 @@ function choixPersonnels(c){const ov=c.ov;
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
     ({plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);choixPersonnels(c);signatureCommune(c);
-    pasDeBordure(c);clean(c);capYarns(c);dominance(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
+    pasDeBordure(c);clean(c);capYarns(c);dominance(c);
+    // couleurs remplacées par la personne : appliquées en dernier, sans rien déplacer
+    for(const zz of c.zones){if(!zz)continue;zz.orig=zz.ref;const nv=(q.remplace||{})[zz.ref];if(nv&&Y[nv])zz.ref=nv;}for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";
   const riverWanted=L.eau==="riviere"||L.eau==="cascade";
