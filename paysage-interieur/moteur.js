@@ -154,6 +154,14 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   // contour organique : un cœur arrondi et une couronne de bulles fondues ensemble (comme un nuage)
   const bulles=[];if(shape==="nuage"){const rb=rng(q.seed+"|bulles"),K=10+Math.floor(rb()*4),a0=rb()*6.28;
     for(let k=0;k<K;k++){const br=8+rb()*5,t=a0+k*6.283/K+(rb()-.5)*.25;bulles.push([RW/2+(RW/2-br-.8)*Math.cos(t),RH/2+(RH/2-br-.8)*Math.sin(t),br]);}}
+  // feuille : chaque feuille est différente (sens, inclinaison, largeur, courbure, finesse des pointes), puis mise à l'échelle pour tenir dans le cadre
+  let feuilleSdf=null;if(shape==="feuille"){const fr=rng(q.seed+"|feuille"),miroir=fr()<.5?-1:1,diag=Math.atan2(RH,RW);
+    const t=miroir*(diag-.25+fr()*.45),ca=Math.cos(t),sa=Math.sin(t),L=Math.hypot(RW,RH)/2-6,W=RW*(.28+fr()*.12),S=(fr()<.5?-1:1)*(.25+fr()*.45),B=(fr()-.5)*.6,P=.65+fr()*.4,K=fr()*.25;
+    const bord=un=>[W*S*Math.pow(un,5)-W*K*un,W*Math.pow(Math.max(0,1-un*un),P)*(1+B*un)];
+    let mx=0,my=0;for(let k=-100;k<=100;k++){const un=k/100,[c,hw]=bord(un),u=un*L;for(const v of[c-hw,c+hw]){mx=Math.max(mx,Math.abs(u*ca-v*sa));my=Math.max(my,Math.abs(u*sa+v*ca));}}
+    const sc=Math.max(mx/(RW/2-1.2),my/(RH/2-1.2));
+    feuilleSdf=(cx,cy)=>{const X=cx*sc,Yy=cy*sc,u=X*ca+Yy*sa,v=-X*sa+Yy*ca,un=u/L;if(Math.abs(un)>=1)return(Math.hypot(Math.abs(u)-L,v)+.5)/sc;
+      const[c,hw]=bord(un);return(Math.abs(v-c)-hw)*.8/sc;};}
   const smin=(a,b,k)=>{const h=Math.max(k-Math.abs(a-b),0)/k;return Math.min(a,b)-h*h*k*.25;};
   const sdfF=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
     // tache : une goutte qui s'est ouverte — un rond déformé par quelques ondulations lentes, sans éclaboussures
@@ -164,9 +172,7 @@ function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
       const bx=Math.cos(fb)*R*1.02,by=Math.sin(fb)*R*1.02*sy,br=R*.42,dc=-(Math.hypot(cx-bx,cy-by)-br);
       const kk=8,hh=Math.max(kk-Math.abs(d-dc),0)/kk;return Math.max(d,dc)+hh*hh*kk*.25;}
     // feuille : une grande feuille en amande, en biais, pointue aux deux bouts, la nervure légèrement en S
-    if(shape==="feuille"){const t=Math.atan2(RH,RW)-.08,ca=Math.cos(t),sa=Math.sin(t),u=cx*ca+cy*sa,v=-cx*sa+cy*ca,L=Math.hypot(RW,RH)/2-10,W=RW*.34,un=u/L;
-      if(Math.abs(un)>=1)return Math.hypot(Math.abs(u)-L,v)+.5;
-      const c=W*.55*(un*un*un*un*un)-W*.12*un,hw=W*Math.pow(1-un*un,.85)*(1+.15*un);return(Math.abs(v-c)-hw)*.8;}
+    if(shape==="feuille")return feuilleSdf(cx,cy);
     // pétales ronds : 4 à 6 grands pétales arrondis, de tailles inégales, qui se chevauchent (hortensia, rose ouverte)
     if(shape==="petales"){const rb=rng(q.seed+"|petales"),n=4+Math.floor(rb()*3),R=RW/2-1.5,sy=1.18,a0=rb()*6.28;let d=1e9;
       for(let k=0;k<n;k++){const t=a0+k*6.283/n+(rb()-.5)*.35,sz=.85+rb()*.3,pa=R*.5*sz,pb=R*.46*sz,dd=R*.45,px=Math.cos(t)*dd,py=Math.sin(t)*dd*sy;
