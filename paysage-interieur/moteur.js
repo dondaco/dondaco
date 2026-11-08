@@ -150,7 +150,7 @@ function palette3(sp){
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture].join("|"));
   const n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r),n4=makeNoise(r);
-  const shape=q.shape==="organique"?"tache":(q.shape||"tache"),organic=["nuage","tache","fleur","petales","feuille"].includes(shape);
+  const shape=q.shape==="organique"?"tache":q.shape==="fleur"?"petales":(q.shape||"tache"),organic=["nuage","tache","fleur","petales","feuille"].includes(shape);
   // contour organique : un cœur arrondi et une couronne de bulles fondues ensemble (comme un nuage)
   const bulles=[];if(shape==="nuage"){const rb=rng(q.seed+"|bulles"),K=10+Math.floor(rb()*4),a0=rb()*6.28;
     for(let k=0;k<K;k++){const br=8+rb()*5,t=a0+k*6.283/K+(rb()-.5)*.25;bulles.push([RW/2+(RW/2-br-.8)*Math.cos(t),RH/2+(RH/2-br-.8)*Math.sin(t),br]);}}
@@ -414,7 +414,7 @@ function clean(c){const {w,h,zone,inRug}=c,lab=new Int32Array(c.N).fill(-1),minA
 
 /* ---------- ambiances : une composition claire par thème ---------- */
 const NEB={printemps:["806C","597","300"],ete:["502","517","597"],automne:["502","2A11","423"],hiver:["585","597","3B15"]};
-const THEMES={plaine:"Plaine",cocon:"Cocon",epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
+const THEMES={motif:"Motif",plaine:"Plaine",cocon:"Cocon",epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
 function groundCalm(c,refs,kind){const {w,h,G,n1,zone,H,inRug}=c;
   for(let o=0;o<c.N;o++){if(!inRug[o]||zone[o])continue;const x=(o%w)/G,y=Math.floor(o/w)/G;zone[o]=c.Z(fbm(n1,x/18+31,y/18+7)>.58&&refs[1]?refs[1]:refs[0],"cut15",kind||"sol");H[o]=1.5;}}
 /* points forts de composition (règle des tiers), choisis au hasard */
@@ -576,10 +576,43 @@ function choixPersonnels(c){const ov=c.ov;
   if(ov.vegetation&&ov.vegetation!=="aucune")vegetation(c,ov.vegetation);
   if(ov.mineral==="galets")pierre(c,"galets");
   if(ov.ciel==="brume"||ov.ciel==="nuages")ciel(c,ov.ciel);}
+/* ---------- motif : composition symétrique et calme, qui se répète ----------
+   avec un cœur : rosace à n branches (cœur, pétales, couronne de points, festons) ;
+   sans cœur : un petit motif répété en quinconce, choisi selon l'univers des réponses ;
+   dans les deux cas un cadre ton sur ton qui suit le bord du tapis. */
+function themeMotif(c){const {w,h,G,zone,H,inRug,sdf,P,r}=c,dom=P.dom,nD=dom.length,L=k=>dom[Math.max(0,Math.min(nD-1,k))];
+  const acc=(c.q.cx==="mono"?dom[0]:(P.pop[0]&&P.pop[0][0])||dom[0]),main=P.main||P.ground[0];
+  const set=(o,ref,tech,kind,ins)=>{zone[o]=c.Z(ref,tech,kind);H[o]=tech==="cut15"?1.5:tech==="loop3"?3:Math.min(4,3+.25*Math.max(0,ins||0));};
+  const centre=c.q.motifCentre!==false,tend=c.q.tendance||"jardin",n=r()<.5?6:8,Rref=Math.min(RW,RH)/2-1.5;
+  // échelle d'une grille en quinconce centrée sur le tapis
+  const s=(c.dens>1.2?10:c.dens<.8?17:13);
+  for(let o=0;o<c.N;o++){if(!inRug[o])continue;const x=(o%w+.5)/G-RW/2,y=(Math.floor(o/w)+.5)/G-RH/2,ins=-sdf[o];
+    set(o,main,"cut15","fond",0);
+    if(ins>1.8&&ins<4){set(o,L(1),"loop3","cadre");continue;}
+    if(ins<=5.2)continue;
+    if(centre){const rr=Math.hypot(x,y),seg=2*Math.PI/n;let t=((Math.atan2(y,x)%seg)+seg)%seg;t=Math.min(t,seg-t);const R=Rref;
+      if(rr<.12*R){set(o,rr<.055*R?acc:L(nD-2),rr<.055*R?"pompon":"cut4","cœur",.12*R-rr);continue;}
+      if(rr>=.12*R&&rr<.15*R){set(o,L(0),"loop3","anneau");continue;}
+      {const px=rr*Math.cos(t)-.31*R,py=rr*Math.sin(t),e=Math.hypot(px/(.13*R),py/(.07*R));if(e<1){set(o,e<.55?L(nD-2):L(2),"cut4","pétale",(1-e)*4);continue;}}
+      if(rr>.47*R&&rr<.5*R){set(o,L(1),"loop3","anneau");continue;}
+      {const px=rr*Math.cos(seg/2-t)-.6*R,py=rr*Math.sin(seg/2-t);if(Math.hypot(px,py)<.04*R){set(o,acc,"pompon","point");continue;}
+       const px2=rr*Math.cos(t)-.6*R,py2=rr*Math.sin(t);if(Math.hypot(px2,py2)<.028*R){set(o,L(0),"loop3","point");continue;}}
+      {const fes=.75*R+.035*R*Math.cos(Math.atan2(y,x)*n*2);if(rr>fes&&rr<fes+.03*R){set(o,L(2),"loop3","feston");continue;}}
+      continue;}
+    // sans cœur : motif répété en quinconce
+    const row=Math.round(y/(s*.87)),lx=x-Math.round((x-(row&1)*s/2)/s)*s-(row&1)*s/2,ly=y-row*s*.87;
+    if(tend==="mer"){const d=Math.hypot(lx,ly+s*.43);if(Math.abs(d-s*.5)<.6||Math.abs(d-s*.32)<.5)set(o,Math.abs(d-s*.5)<.6?L(1):L(0),"loop3","écaille");}
+    else if(tend==="ciel"){const ax=Math.abs(lx),ay=Math.abs(ly);if(Math.hypot(lx,ly)<s*.07)set(o,acc,"pompon","point");else if((ax<.45&&ay<s*.22)||(ay<.45&&ax<s*.22))set(o,L(0),"loop3","étoile");}
+    else if(tend==="montagne"||tend==="desert"){const v=ly+Math.abs(lx)*.75;if(Math.abs(v)<.7||Math.abs(v-s*.3)<.55)set(o,Math.abs(v)<.7?L(1):L(0),"loop3","chevron");}
+    else{const ax=Math.abs(lx),ay=Math.abs(ly),t=Math.min(ax,ay),u=Math.max(ax,ay);
+      if(Math.hypot(lx,ly)<s*.09)set(o,acc,"pompon","cœur");
+      else{const e=Math.hypot((u-s*.2)/(s*.12),t/(s*.07));if(e<1)set(o,L(nD-2),"cut4","pétale",(1-e)*3);}}}
+  c.sigFait=true;c.info.unshift(centre?`un motif en rosace à ${n} branches, avec un cœur`:"un motif calme qui se répète");}
+
 /* ---------- assemblage ---------- */
 function generate(q,G){
   if(q.theme&&THEMES[q.theme]){const c=ctx(q,G);
-    ({plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);choixPersonnels(c);signatureCommune(c);
+    ({motif:themeMotif,plaine:themePlaine,cocon:themeCocon,epure:themeEpure,mer:themeMer,foret:themeForet,ciel:themeCiel,montagne:themeMontagne,lave:themeLave,desert:themeDesert,jardin:themeJardin})[q.theme](c);if(q.theme!=="motif"){choixPersonnels(c);signatureCommune(c);}
     pasDeBordure(c);clean(c);capYarns(c);dominance(c);for(let o=0;o<c.N;o++)if(!c.inRug[o])c.zone[o]=0;
     return {w:c.w,h:c.h,G,zone:c.zone,H:c.H,zones:c.zones,info:c.info,theme:q.theme};}
   const c=ctx(q,G),L=q.layers||{},rel=L.relief||"doux";

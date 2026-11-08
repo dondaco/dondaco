@@ -256,6 +256,10 @@ const STEPS=[
      {fr:"liberté",mot:"liberte",f:{chemin:1}},{fr:"émerveillement",mot:"emerveillement",f:{reve:1}}]}
  ]},
  {id:"choix",label:"Couleur et forme",title:"Ton tapis : sa couleur et sa forme",intro:"Deux choix concrets pour finir. Toutes les autres couleurs s’accorderont à celle que tu choisis.",qs:[
+   {id:"style",q:"Ton tapis, tu le vois plutôt…",opts:[
+     {fr:"un paysage imaginaire, un peu féerique, où l’on devine la mer, la forêt, le ciel…",style:"paysage"},
+     {fr:"un motif calme qui se répète, autour d’un cœur au centre",style:"motif",centre:true},
+     {fr:"un motif calme qui se répète, sans centre",style:"motif",centre:false}]},
    {id:"coul",q:"La couleur qui dominera ton tapis",couleurs:true,opts:[
      {fr:"Vert mousse",ref:"1I06"},{fr:"Vert forêt",ref:"205"},{fr:"Vert sauge",ref:"206"},{fr:"Olive",ref:"403"},
      {fr:"Bleu canard",ref:"3A17"},{fr:"Bleu nuit",ref:"561"},{fr:"Bleu ciel",ref:"ARS3F15"},{fr:"Bleu gris",ref:"264"},
@@ -263,7 +267,7 @@ const STEPS=[
      {fr:"Rose poudré",ref:"336"},{fr:"Rose pâle",ref:"498"},{fr:"Lavande",ref:"597"},{fr:"Prune",ref:"502"},
      {fr:"Bordeaux",ref:"4A13"},{fr:"Gris doux",ref:"096"},{fr:"Écru",ref:"009"},{fr:"Anthracite",ref:"1B07"}]},
    {id:"forme",q:"Sa forme",opts:[
-     {fr:"rectangle",shape:"rect"},{fr:"carré",shape:"carre"},{fr:"ovale",shape:"ovale"},{fr:"rond",shape:"rond"},{fr:"tache, comme une goutte qui s’ouvre",shape:"tache"},{fr:"nuage, en bulles",shape:"nuage"},{fr:"feuille",shape:"feuille"},{fr:"fleur aux pétales ronds",shape:"petales"},{fr:"fleur de lotus",shape:"fleur"}]}
+     {fr:"rectangle",shape:"rect"},{fr:"carré",shape:"carre"},{fr:"ovale",shape:"ovale"},{fr:"rond",shape:"rond"},{fr:"tache, comme une goutte qui s’ouvre",shape:"tache"},{fr:"nuage, en bulles",shape:"nuage"},{fr:"feuille",shape:"feuille"},{fr:"fleur aux pétales ronds",shape:"petales"}]}
  ]},
  {id:"fiche",label:"Ton tapis",title:"Ton tapis",final:true}
 ];
@@ -340,8 +344,9 @@ function rugParams(){
   if(sig&&!force&&!(SIGOK[A.theme]||[]).includes(sig))sig=null;
   // « Pas de… » dans « Changer » retire l'élément correspondant
   if((S.ov.chemin==="aucune"&&sig==="sentier")||(S.ov.ciel==="aucune"&&["soleil","lune","etoiles"].includes(sig))||(S.ov.mineral==="aucune"&&["rochers","falaise"].includes(sig))||(S.ov.vegetation==="aucune"&&sig==="fleurs")||(S.ov.eau==="aucune"&&sig==="reflet"))sig=null;
+  const st=g("style"),motif=st.style==="motif";
   return {seed:(S.a.prenom||"").trim().toLowerCase()+"|"+JSON.stringify(S.a),v:S.rv||0,season:curPal()||"printemps",cx,shape,dens,relief,
-    texture:q4.tex||"mousse",avoid:S.a.eviter||"",layers:c,ov:Object.assign({},S.ov),theme:A.theme,tendance:A.tendance,signature:sig,
+    texture:q4.tex||"mousse",avoid:S.a.eviter||"",layers:c,ov:Object.assign({},S.ov),theme:motif?"motif":A.theme,motifCentre:st.centre!==false,tendance:A.tendance,signature:sig,
     sigScale:q10.lis==="clair"?1.25:q10.lis==="secret"?.6:1,geo:!!q9.geo,mot:q12.mot||null,
     spec:{light:q2.light||"vif",el:q4.el||"vegetal",acc:q5.acc||"fleur",main:coul.ref||null}};
 }
@@ -446,6 +451,7 @@ function renderQ(q){
   return `<fieldset class="q"><legend>${q.q}</legend>${q.hint?`<p class="note">${q.hint}</p>`:""}<div class="opts">${q.opts.map((o,i)=>`<button type="button" class="opt" data-q="${q.id}" data-v="${i}" aria-pressed="${v===i}">${o.ref&&window.Moteur?`<span class="dot" style="background:${Moteur.Y[o.ref].hex}"></span>`:""}${o.fr}</button>`).join("")}</div></fieldset>`;
 }
 function renderScape(final){
+  if((opt("style")||{}).style==="motif")return `<div class="scape"><div class="canvas-wrap"><canvas id="cv" role="img" aria-label="Ton tapis vu du dessus"></canvas><div id="rendubox" class="rendubox"></div><div class="rugleg" id="rugleg"></div></div><div class="layers"><p class="note">Un motif calme et symétrique, dans les nuances de ta couleur.</p></div></div>`;
   const c=compose(),few=answeredCount()<5;
   const layers=Object.keys(LAYERS).map(L=>{const it=LAYERS[L].items[c[L]];
     return `<div class="layer"><div class="head"><span class="eyebrow">${LAYERS[L].label}</span>${S.ov[L]?'<span class="note">choisi par toi</span>':""}</div>
