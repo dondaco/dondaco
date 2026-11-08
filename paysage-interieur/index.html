@@ -386,10 +386,12 @@ function hexHsl(hex){const[r,g,b]=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/2
   if(!d)return[0,0,l];const s=d/(1-Math.abs(2*l-1));let h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360;return[h,s,l];}
 function mesCouleurs(g){const aire=new Map();let tot=0;
   for(let o=0;o<g.zone.length;o++){const z=g.zone[o];if(!z)continue;tot++;const k=g.zones[z].orig||g.zones[z].ref;aire.set(k,(aire.get(k)||0)+1);}
-  const liste=[...aire.entries()].filter(([,n])=>n/tot>=.01).sort((a,b)=>b[1]-a[1]).slice(0,10),R=S.repl||{},Y=Moteur.Y;
-  let html=`<span class="eyebrow">Les laines de ton tapis</span><p class="note">Une couleur ne te plaît pas ? Touche-la pour la remplacer.</p><div class="mesl">`+
+  // la couleur principale ne se change qu'à l'étape « Couleur et forme »
+  const main=(rugParams().spec||{}).main,R=S.repl||{},Y=Moteur.Y,etape=STEPS.findIndex(st=>st.id==="choix");if(main&&R[main]){delete R[main];}
+  const liste=[...aire.entries()].filter(([k,n])=>n/tot>=.01&&k!==main).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  let html=`<span class="eyebrow">Les laines de ton tapis</span><p class="note">Une couleur ne te plaît pas ? Touche-la pour la remplacer.</p>${main&&Y[main]?`<div class="mesl"><span class="lainebtn" style="cursor:default"><span class="sw3" style="background:${Y[main].hex}"></span><span>${esc(Y[main].nom)} · couleur principale</span></span><button type="button" class="chip" data-go="${etape}">La changer</button></div>`:""}<div class="mesl">`+
     liste.map(([orig])=>{const cur=R[orig]||orig;return `<button type="button" class="lainebtn" data-laine="${orig}" aria-pressed="${S.picking===orig}" title="${esc(Y[cur].nom)}"><span class="sw3" style="background:${Y[cur].hex}"></span><span>${esc(Y[cur].nom)}${R[orig]?" ·&nbsp;changée":""}</span></button>`;}).join("")+`</div>`;
-  if(S.picking&&aire.has(S.picking)){const orig=S.picking,cur=R[orig]||orig,[h0,,l0]=hexHsl(Y[orig].hex);
+  if(S.picking&&aire.has(S.picking)&&S.picking!==main){const orig=S.picking,cur=R[orig]||orig,[h0,,l0]=hexHsl(Y[orig].hex);
     const tout=Object.values(Y).filter(y=>y.ref).map(y=>{const[h,s,l]=hexHsl(y.hex);return{...y,h,s,l};});
     const proches=tout.slice().sort((a,b)=>(Math.min(Math.abs(a.h-h0),360-Math.abs(a.h-h0))/60+Math.abs(a.l-l0)*2)-(Math.min(Math.abs(b.h-h0),360-Math.abs(b.h-h0))/60+Math.abs(b.l-l0)*2)).filter(y=>y.ref!==orig).slice(0,11);
     const grille=tout.sort((a,b)=>(a.s<.12?400:Math.round(a.h/24)*24)-(b.s<.12?400:Math.round(b.h/24)*24)||b.l-a.l);
@@ -616,7 +618,7 @@ document.addEventListener("click",e=>{
   if(t.dataset.rendu){rendreReel(t.dataset.rendu);return;}
   if(t.hasAttribute("data-export")){exporterBlender();return;}
   if(t.dataset.laine){const k=t.dataset.laine;return keep(()=>{S.picking=S.picking===k?null:k;});}
-  if(t.dataset.choix!==undefined){const nv=t.dataset.choix,k=S.picking;return keep(()=>{if(k&&nv){S.repl=S.repl||{};if(nv===k)delete S.repl[k];else S.repl[k]=nv;}if(!nv||nv===k)S.picking=null;});}
+  if(t.dataset.choix!==undefined){const nv=t.dataset.choix,k=S.picking;return keep(()=>{if(k&&nv&&k!==(rugParams().spec||{}).main){S.repl=S.repl||{};if(nv===k)delete S.repl[k];else S.repl[k]=nv;}if(!nv||nv===k)S.picking=null;});}
   if(t.hasAttribute("data-rugv"))return keep(()=>{S.rv=(S.rv||0)+1;});
   if(t.dataset.amb!==undefined)return keep(()=>{if(t.dataset.amb)S.amb=t.dataset.amb;else delete S.amb;});
   if(t.hasAttribute("data-dl")&&DL){const cv=document.getElementById("cv"),toast=document.getElementById("toast");
