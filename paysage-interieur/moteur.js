@@ -150,13 +150,19 @@ function palette3(sp){
 function ctx(q,G){const w=Math.round(RW*G),h=Math.round(RH*G),N=w*h;
   const r=rng([q.seed,q.v,q.season,q.cx,q.shape,q.relief,q.dens,q.texture].join("|"));
   const n1=makeNoise(r),n2=makeNoise(r),n3=makeNoise(r),n4=makeNoise(r);
-  const shape=q.shape||"organique",organic=shape==="organique";
+  const shape=q.shape==="organique"?"tache":(q.shape||"tache"),organic=shape==="nuage"||shape==="tache"||shape==="fleur";
   // contour organique : un cœur arrondi et une couronne de bulles fondues ensemble (comme un nuage)
-  const bulles=[];if(organic){const rb=rng(q.seed+"|bulles"),K=10+Math.floor(rb()*4),a0=rb()*6.28;
+  const bulles=[];if(shape==="nuage"){const rb=rng(q.seed+"|bulles"),K=10+Math.floor(rb()*4),a0=rb()*6.28;
     for(let k=0;k<K;k++){const br=8+rb()*5,t=a0+k*6.283/K+(rb()-.5)*.25;bulles.push([RW/2+(RW/2-br-.8)*Math.cos(t),RH/2+(RH/2-br-.8)*Math.sin(t),br]);}}
   const smin=(a,b,k)=>{const h=Math.max(k-Math.abs(a-b),0)/k;return Math.min(a,b)-h*h*k*.25;};
   const sdfF=(x,y)=>{const cx=x-RW/2,cy=y-RH/2;
-    if(organic){const qx=Math.abs(cx)-(RW/2-13-12),qy=Math.abs(cy)-(RH/2-13-12);let s=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-12;
+    // tache : une goutte qui s'est ouverte — un rond déformé par quelques ondulations lentes, sans éclaboussures
+    if(shape==="tache"){const a=Math.atan2(cy/1.32,cx),rb=rng(q.seed+"|tache"),f=[rb()*6.28,rb()*6.28,rb()*6.28,rb()*6.28];
+      const k=1+.09*Math.sin(2*a+f[0])+.07*Math.sin(3*a+f[1])+.045*Math.sin(5*a+f[2])+.025*Math.sin(7*a+f[3]);
+      return(Math.hypot(cx,cy/1.32)-(RW/2-3)*.93*k)*.95;}
+    // fleur : des pétales arrondis autour d'un cœur, comme un lotus vu du dessus
+    if(shape==="fleur"){const n=8,a=Math.atan2(cy,cx),t=Math.abs(Math.cos(n*a/2)),R=(RW/2-.8)*(.74+.26*Math.pow(t,.55));return(Math.hypot(cx,cy)-R)*.9;}
+    if(shape==="nuage"){const qx=Math.abs(cx)-(RW/2-13-12),qy=Math.abs(cy)-(RH/2-13-12);let s=Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-12;
       for(const[bx,by,br]of bulles)s=smin(s,Math.hypot(x-bx,y-by)-br,4);return s;}
     if(shape==="rond"){return Math.hypot(cx,cy)-(RW/2-.6);}
     if(shape==="carre"){const a=RW/2-.6,rr=3,qx=Math.abs(cx)-(a-rr),qy=Math.abs(cy)-(a-rr);return Math.hypot(Math.max(qx,0),Math.max(qy,0))+Math.min(Math.max(qx,qy),0)-rr;}
