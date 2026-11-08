@@ -343,10 +343,9 @@ const STEPS=[
      {fr:"un bouquet des champs, toutes les couleurs mélangées",cx:"explosif",en:"an exuberant multicolor mix with many vivid accents",frc:"un mélange multicolore et joyeux, avec beaucoup d’accents vifs"}]},
    {id:"eviter",type:"text",q:"Une couleur que tu ne veux surtout pas sur ton tapis ?",ph:"Facultatif"}
  ]},
- {id:"paysage",label:"Ton paysage",title:"Ton paysage",scape:true},
  {id:"touche",label:"Ta touche",title:"Ta touche à toi",intro:"Cet espace est à toi. Tout est facultatif.",qs:[
    {id:"ajout",type:"textarea",q:"Un détail qui compte pour toi ?",hint:"Un souvenir, un lieu, un objet, un animal… On ne le dessinera pas tel quel : on s’en inspirera pour une forme, une couleur ou un petit motif discret dans ton paysage.",ph:"Facultatif"}]},
- {id:"fiche",label:"Ton portrait",title:"Ton portrait",final:true}
+ {id:"fiche",label:"Ton tapis",title:"Ton tapis",final:true}
 ];
 const Q={};STEPS.forEach(s=>(s.qs||[]).forEach(q=>Q[q.id]=q));
 
@@ -381,7 +380,7 @@ function answeredCount(){return Object.keys(S.a).filter(k=>Q[k]&&Q[k].opts).leng
    Côté client, le tapis est celui qui découle des réponses : rien à re-choisir. */
 let ATELIER=location.hash==="#atelier";
 addEventListener("hashchange",()=>{ATELIER=location.hash==="#atelier";render();});
-const VIEW="atelier"; // la vue client est mise de côté : le rendu réaliste viendra d’un générateur d’images guidé par ce plan
+// côté client : image propre du tapis (couleurs + léger relief) ; en mode atelier : plan technique avec courbes et hauteurs
 const AMB={epure:"Épuré",mer:"Mer et plage",foret:"Forêt luxuriante",ciel:"Ciel et espace",montagne:"Montagne",lave:"Lave",desert:"Désert et canyon",jardin:"Jardin fleuri"};
 const SIGOK={epure:["lune","soleil","rochers","falaise"],mer:["rochers","soleil"],foret:["sentier","soleil","lune"],jardin:["sentier","rochers","soleil","lune"],
   ciel:["lune","soleil","etoiles"],montagne:["sentier","soleil","lune"],lave:[],desert:["soleil","rochers","sentier"]};
@@ -431,10 +430,10 @@ async function rendreReel(qualite){if(RENDU.etat==="calcul")return;
   afficheRendu();}
 function drawRug(){const cv=document.getElementById("cv");if(!cv||!window.Moteur)return;afficheRendu();
   const g=Moteur.generate(rugParams(),(window.devicePixelRatio||1)>1.4?7:5.5);
-  Moteur.render(cv,g,VIEW,getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#ECEEE8");
+  Moteur.render(cv,g,ATELIER?"atelier":"plan",getComputedStyle(document.documentElement).getPropertyValue("--bg").trim()||"#ECEEE8");
   const leg=document.getElementById("rugleg");if(!leg)return;if(!ATELIER){leg.innerHTML="";return;}
   const rows=Moteur.legend(g);
-  leg.innerHTML=VIEW==="atelier"
+  leg.innerHTML=ATELIER
     ?`<span class="eyebrow">Plan atelier · ${new Set(rows.map(r=>r.ref)).size} laines · courbes tous les 0,5 cm</span>`+rows.map(r=>`<span><span class="sw2" style="background:${r.hex}"></span>${r.nom} · ${r.ref} · ${r.techFr} · ${Math.max(1,Math.round(r.part*100))} %</span>`).join("")+`<span class="note">${g.info.join(" · ")}</span>`
     :`<span class="note">Ton tapis vu du dessus, en vraies laines. ${g.signature?"":""}</span>`;
 }
@@ -577,7 +576,7 @@ function fiche(){
       `<p>Tu es surtout guidé·e par ${FORCES[k1].name}${k2?`, et aussi par ${FORCES[k2].name}`:""}. ${FORCES[k1].txt}</p>${k2?`<p>${FORCES[k2].txt}</p>`:""}${pk?`<p>${SEASON[pk]}</p>`:""}`));
   }
   out.push(`<section class="plain"><span class="eyebrow">Le paysage où tu te sens bien</span><p>C’est l’endroit qui te ressemble, celui où tu reviens à toi. ${pk?`Ses couleurs : ${PALS[pk].frl.split(" : ")[1]}.`:""}</p>
-    ${pk?`<div class="sw">${PALS[pk].c.map(c=>`<span style="background:${c}"></span>`).join("")}</div>`:""}</section>${renderScape(true)}`);
+    ${pk?`<div class="sw">${PALS[pk].c.map(c=>`<span style="background:${c}"></span>`).join("")}</div>`:""}</section>${renderScape(false)}`);
   if(has){
     const list=[...FX[k1].forces,...(k2?FX[k2].forces.slice(0,2):[])];
     out.push(card("Tes forces","",`<ul>${list.map(x=>`<li>${x}</li>`).join("")}</ul>`));
@@ -604,6 +603,7 @@ function renderPal(){
 let lang="fr";
 function render(){
   renderSteps();window.__name=S.a.prenom||"";
+  if(!(S.step>=0&&S.step<STEPS.length))S.step=STEPS.length-1;
   const st=STEPS[S.step],m=document.getElementById("main"),last=S.step===STEPS.length-1;
   const nav=`<div class="nav"><button type="button" class="btn" data-prev ${S.step===0?"disabled":""}>Retour</button>${last?'<button type="button" class="btn" data-reset>Recommencer</button>':`<button type="button" class="btn primary" data-next>${S.step===STEPS.length-2?"Voir ma fiche":"Continuer"}</button>`}</div>`;
   if(st.scape){

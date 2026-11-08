@@ -446,6 +446,12 @@ function generate(q,G){
 const fineN=makeNoise(rng("fibres")),fineM=makeNoise(rng("chiné"));
 function render(cv,g,view,floorHex){const {w,h,G,zone,H,zones}=g;cv.width=w;cv.height=h;const x=cv.getContext("2d"),img=x.createImageData(w,h),D=img.data;
   const fl=(floorHex||"#E4DED3").replace("#",""),floor=[0,2,4].map(i=>parseInt(fl.slice(i,i+2),16));
+  if(view==="plan"){ // vue client : couleurs des laines, léger relief, ni traits ni chiffres
+    const Hb=blur(H,w,h,Math.max(1,Math.round(.6*G)));
+    for(let o=0;o<w*h;o++){const z=zone[o],k=o*4;if(!z){D[k]=floor[0];D[k+1]=floor[1];D[k+2]=floor[2];D[k+3]=255;continue;}
+      const i=o%w,j=(o-i)/w,c=Y[zones[z].ref].rgb,dx=Hb[Math.min(o+1,j*w+w-1)]-Hb[Math.max(o-1,j*w)],dy=Hb[Math.min(o+w,w*h-1)]-Hb[Math.max(o-w,0)];
+      const f=Math.min(1.12,Math.max(.8,1-(dx*.5+dy*.7)*G*.18))*(1+(hash(i,j)-.5)*.05);D[k]=Math.min(255,c[0]*f);D[k+1]=Math.min(255,c[1]*f);D[k+2]=Math.min(255,c[2]*f);D[k+3]=255;}
+    x.putImageData(img,0,0);return;}
   if(view==="atelier"){const Hin=H.map((v,o)=>zone[o]?v:1.5),Hc=blur(Hin,w,h,Math.max(1,Math.round(.45*G))),lv=v=>Math.floor((v-1.5)/.5+1e-6),mj=v=>Math.floor(v+1e-6),cand=[];
     for(let o=0;o<w*h;o++){const z=zone[o],k=o*4,i=o%w;let col=z?Y[zones[z].ref].rgb:floor;
       if(z){const r1=i<w-1?o+1:o,d1=o+w<w*h?o+w:o,edge=(zone[r1]!==z&&zone[r1])||(zone[d1]!==z&&zone[d1]);
