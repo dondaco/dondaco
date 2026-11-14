@@ -1,7 +1,7 @@
 # Paysage intérieur · à faire
 
 ## En cours
-- Finaliser le générateur : compositions moins chaotiques (massifs, calme entre les éléments, nombre de laines plafonné), puis valider chaque ambiance avec les tests de l'atelier.
+- Affiner l'esthétique et la cohérence des couleurs du générateur, avec les tests de l'atelier.
 
 ## Plus tard
 - **Rendu pour les vrais clients** : aujourd'hui, le rendu Blender se fait sur le Mac de l'atelier via le serveur local ; pour un site public, il faudra un serveur de rendu joignable en ligne (le Mac allumé et accessible, ou une machine avec carte graphique louée à l'usage).
