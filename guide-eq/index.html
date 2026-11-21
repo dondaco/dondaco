@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guide EQ vocal</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Guide EQ vocal (freebie) refait en DA STUDIO OS : une page A4 paysage, écran CRT ambre. Source : PDF « GUIDE EQ VOCAL (2026) » de Donda. */
+@page{size:297mm 210mm;margin:0}
+:root{--bg:#110904;--screen:#1a0f06;--line:#3d2a15;--fg:#f6e2c6;--dim:#b8956c;--accent:#ff9a1f;--accent2:#ffc46b;--ok:#8fd47a;--hot:#ff6a4d;--grey:#8a755c;
+--display:"VT323","IBM Plex Mono",monospace;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",monospace}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:297mm;height:210mm;padding:12mm 15mm 10mm;display:grid;grid-template-rows:auto auto 1fr auto;gap:5mm;position:relative;overflow:hidden;
+ background:radial-gradient(120% 90% at 15% 0%,rgba(255,154,31,.10),transparent 60%),radial-gradient(90% 80% at 100% 100%,rgba(255,106,77,.07),transparent 60%),var(--bg)}
+header{display:flex;align-items:flex-end;gap:9mm}
+.ttl{font-family:var(--display);font-size:64px;line-height:.8;color:var(--accent);letter-spacing:.02em;white-space:nowrap;text-shadow:0 0 18px rgba(255,154,31,.35)}
+.ttl small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.22em;color:var(--dim);margin-bottom:6px;text-shadow:none}
+.ttl b{font-weight:400;color:var(--fg)}
+.cur{display:inline-block;width:.45em;height:.72em;background:var(--accent);margin-left:6px;vertical-align:-2px}
+header p{margin:0;font-size:14.5px;line-height:1.45;color:var(--dim);max-width:118mm}
+header p strong{color:var(--fg);font-weight:500}
+.legend{display:flex;gap:9mm;font-size:13px;color:var(--dim);font-family:var(--mono)}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{width:26px;height:10px;border-radius:5px;display:inline-block}
+.legend .no{background:var(--hot)} .legend .yes{background:var(--ok)}
+.legend .rw{margin-left:auto}
+.screen{position:relative;border:1.5px solid var(--accent);border-radius:14px;background:
+ linear-gradient(rgba(255,255,255,.018) 50%,transparent 50%) 0 0/100% 4px,
+ radial-gradient(100% 120% at 50% 40%,#22140a,var(--screen) 70%,#0c0603);
+ box-shadow:0 0 0 4px rgba(255,154,31,.08),0 0 40px rgba(255,154,31,.12),inset 0 0 60px rgba(0,0,0,.6);overflow:hidden}
+.bar{position:absolute;top:0;left:0;right:0;height:8mm;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 4mm;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--dim)}
+.bar b{color:var(--accent);font-weight:500}
+.plot{position:absolute;top:8mm;bottom:9mm;left:0;right:12mm}
+.vl{position:absolute;top:0;bottom:0;width:0;border-left:1.5px solid var(--accent);opacity:.85}
+.hl{position:absolute;left:var(--x0);right:0;top:50%;border-top:1.5px solid var(--accent);opacity:.85}
+.grid{position:absolute;inset:0;background:
+ linear-gradient(to bottom,rgba(255,196,107,.06) 1px,transparent 1px) 0 0/100% 12.5%}
+.cell{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2.2mm;text-align:center;padding:0 2mm}
+.cell .y,.cell .n{font-family:var(--display);font-size:31px;line-height:.95;letter-spacing:.02em}
+.cell .y{color:var(--ok);text-shadow:0 0 12px rgba(143,212,122,.35)}
+.cell .n{color:var(--hot);text-shadow:0 0 12px rgba(255,106,77,.3)}
+.cell .y::before{content:"✓ ";font-size:.7em;vertical-align:.1em} .cell .n::before{content:"✗ ";font-size:.7em;vertical-align:.1em}
+.useless{position:absolute;top:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:2mm;
+ background:repeating-linear-gradient(135deg,rgba(138,117,92,.07) 0 6px,transparent 6px 12px)}
+.useless b{font-family:var(--display);font-weight:400;font-size:28px;line-height:.95;color:var(--grey)}
+.useless span{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--grey)}
+.rowlab{position:absolute;right:-11mm;transform:translateY(-50%);font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.1em;writing-mode:vertical-rl;}
+.db{position:absolute;right:-10mm;font-family:var(--mono);font-size:9.5px;color:var(--dim);transform:translateY(-50%)}
+.side{position:absolute;left:calc(var(--x0) + 2mm);font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--accent2);opacity:.85}
+.hz{position:absolute;bottom:0;left:0;right:12mm;height:9mm;border-top:1px solid var(--line)}
+.hz span{position:absolute;white-space:nowrap;top:50%;transform:translate(-50%,-50%);font-family:var(--display);font-size:24px;color:var(--fg)}
+.hz span:first-child{transform:translate(0,-50%);left:3mm!important}
+.hz span:last-child{transform:translate(-100%,-50%)}
+footer{display:flex;align-items:center;justify-content:space-between;gap:8mm;font-size:13.5px;color:var(--dim)}
+footer a{color:var(--fg);text-decoration:none;display:flex;align-items:center;gap:10px}
+footer a b{font-family:var(--display);font-weight:400;font-size:22px;color:var(--accent);letter-spacing:.03em}
+footer .pill{border:1.5px solid var(--accent);border-radius:999px;padding:5px 14px;color:var(--accent);font-family:var(--mono);font-size:12px;letter-spacing:.08em}
+footer .me{font-family:var(--mono);font-size:12px;letter-spacing:.1em}
+
+@media screen{html,body{overflow-x:hidden}body{min-height:100vh}.fit{transform-origin:0 0}.dl{display:flex;justify-content:center;padding:14px 16px 24px}.dl a{font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:8px 16px;text-decoration:none}.dl a:hover{background:rgba(255,154,31,.12)}}
+.end{max-width:640px;margin:0 auto 40px;padding:18px;background:#21160b;border:1px solid var(--accent);border-radius:12px;display:grid;gap:12px;font-size:16px;line-height:1.55}
+.end h2{font-family:var(--display);font-weight:400;font-size:34px;margin:0;line-height:1;color:var(--fg)}
+.end>p{margin:0;color:var(--fg)}
+.trkhint{margin:0;font-size:12px;color:var(--dim)}
+.trk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.trk button{font-family:var(--display);font-size:clamp(15px,4.4vw,20px);background:transparent;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:6px 4px;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk button[aria-selected="true"]{background:var(--accent);color:#160e06;border-color:var(--accent)}
+.trk button:focus-visible,.cta:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.stg{background:#2a1a0b;border-radius:10px;padding:12px 14px;display:grid;gap:6px}
+.stg b{font-family:var(--display);font-weight:400;font-size:24px;color:var(--accent);line-height:1}
+.stg p{margin:0;font-size:14px;color:var(--dim)}
+.stg ol{margin:0;padding-left:20px;display:grid;gap:3px;font-size:15px;color:var(--fg)}
+.stg .tagc{font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 5px;margin-left:6px;white-space:nowrap}
+.cta{justify-self:center;text-align:center;background:var(--accent);color:#160e06;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:10px}
+@media screen and (max-width:700px){.end{margin:0 16px 32px}}
+@media print{.dl,.end{display:none}}
+</style>
+<style id="da-v4">
+/* STUDIO OS · DA V4 (validée par Donda le 21/11/2026)
+   Couche commune posée par-dessus chaque page (outils/appliquer-da-v4.py).
+   Palette = CHARTE_MONTAGE (écran des réels). Anton = titres, Inter = texte,
+   Courier gras = le « système » (étiquettes, menus, chiffres d'écran).
+   Pour revenir à l'ancienne DA : git checkout da-actuelle-2026-11-19 -- <fichier>. */
+:root,:root[data-theme],:root:not([data-theme="light"]),:root[data-theme="light"],html[data-theme="dark"]{
+  --ambre:#E89A2C; --encre:#150B03; --dore:#D9B84A; --rouille:#C4472E; --os:#E6DFCC; --gris:#8C8676; --trait:#4C4C42;
+  --display:"Anton",Impact,"Arial Narrow",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Courier New",Courier,monospace;
+  /* noms des pages existantes */
+  --bg:#0b0603; --panel:#16120d; --card:#16120d; --screen:#100c08; --soft:#1d150b;
+  --line:#3b2e1b; --fg:#E6DFCC; --dim:#B4AA94; --muted:#B4AA94; --grey:#8C8676;
+  --amber:#E89A2C; --amber-soft:#F0B45A; --accent:#E89A2C; --accent2:#D9B84A; --accent-ink:#150B03; --ink:#150B03;
+  --cut:#C4472E; --hot:#C4472E; --ok:#D9B84A; --okbg:#2a220c; --okbg2:#1d1709; --gauge-bg:#241a0e;
+  --r:14px;
+}
+html,body{background:radial-gradient(120% 70% at 50% 0%,#2a1707 0%,#120903 45%,#060301 100%) fixed,#060301!important;color:var(--fg)}
+body{font-family:var(--body)}
+/* Courier gras pour tout ce qui utilisait la mono */
+[style*="--mono"],code,kbd{font-weight:700}
+/* Titres : Anton, un cran plus petit que le VT323 (Anton est bien plus large) */
+h1,h2,h3{font-family:var(--display)!important;font-weight:400!important;letter-spacing:.01em;line-height:.95;text-transform:uppercase}
+h1{font-size:clamp(34px,8.5vw,56px)!important}
+h2{font-size:clamp(24px,6vw,34px)!important}
+h3{font-size:clamp(18px,4.6vw,24px)!important}
+/* Un mot doré dans un titre : <span class="or">mot</span> */
+.or{color:var(--dore)!important}
+/* Plus d'effets d'écran sur les pages */
+.scan,.scanlines,.crt::after,.crt::before{display:none!important}
+/* Boutons pleins : ambre, texte encre, coins arrondis */
+button,.btn,a.btn{border-radius:12px}
+/* Grands titres en crème (l'ambre reste pour les petites étiquettes « > » et ce qui se clique) */
+h1,h2{color:var(--os)!important;text-shadow:none!important}
+
+.cur{display:none!important}
+.ttl{color:var(--os)!important;text-shadow:none!important;font-size:56px!important;line-height:.9!important}
+.ttl b{color:var(--dore)!important}
+@media print{html,body{background:#0b0603!important;background-attachment:scroll!important}}
+
+</style>
+</head>
+<body>
+<div class="fit" id="fit"><div class="page" style="--x0:20%">
+  <header>
+    <div class="ttl"><small>STUDIO OS</small>&gt; GUIDE <b>EQ</b> VOCAL<span class="cur"></span></div>
+    <p>Ce diagramme te montre comment chaque bande de fréquences <strong>change ta voix</strong>, selon que tu <strong>montes</strong> ou que tu <strong>baisses</strong> ces fréquences.</p>
+  </header>
+  <div class="legend">
+    <span><i class="yes"></i>ce qu’on veut</span>
+    <span><i class="no"></i>ce qu’on ne veut pas (si on va trop loin)</span>
+    <span class="rw">en haut : on monte · en bas : on baisse</span>
+  </div>
+  <div class="screen">
+    <div class="bar"><span>EQ · VOIX LEAD</span><b>@DONDACRUZ</b><span>12 dB</span></div>
+    <div class="plot">
+      <div class="grid"></div>
+      <div class="useless" style="width:20%"><b>FRÉQUENCES<br>INUTILES<br>DANS<br>UNE VOIX</b><span>coupe-les (low cut)</span></div>
+      <div class="vl" style="left:20%"></div><div class="vl" style="left:49%"></div><div class="vl" style="left:76.5%"></div>
+      <div class="hl"></div>
+      <div class="side" style="top:2.5mm">+ MONTER</div>
+      <div class="side" style="bottom:2.5mm">− BAISSER</div>
+      <!-- haut : on monte -->
+      <div class="cell" style="left:20%;width:29%;top:0;height:50%"><div class="y">CORPS</div><div class="n">BROUILLON<br>/ HOME STUDIO</div></div>
+      <div class="cell" style="left:49%;width:27.5%;top:0;height:50%"><div class="y">PRÉSENCE</div><div class="n">RADIO</div></div>
+      <div class="cell" style="left:76.5%;width:23.5%;top:0;height:50%"><div class="y">CLARTÉ<br>/ BRILLANCE</div><div class="n">AGRESSIF</div></div>
+      <!-- bas : on baisse -->
+      <div class="cell" style="left:20%;width:29%;top:50%;height:50%"><div class="y">DÉFINITION<br>/ QUALITÉ</div><div class="n">FRAGILE / VIDE</div></div>
+      <div class="cell" style="left:49%;width:27.5%;top:50%;height:50%"><div class="y">MOINS NASAL<br>/ PINCÉ</div><div class="n">CREUX / EFFACÉ</div></div>
+      <div class="cell" style="left:76.5%;width:23.5%;top:50%;height:50%"><div class="y">CLARTÉ<br>/ BRILLANCE</div><div class="n">ÉTOUFFÉ</div></div>
+      <div class="db" style="top:6%">+12</div><div class="db" style="top:28%">+6</div><div class="db" style="top:50%;color:var(--accent)">0</div><div class="db" style="top:72%">−6</div><div class="db" style="top:94%">−12</div>
+    </div>
+    <div class="hz"><span style="left:0">0 Hz</span><span style="left:20%">80 Hz</span><span style="left:49%">600 Hz</span><span style="left:76.5%">4 kHz</span><span style="left:100%">20 kHz</span></div>
+  </div>
+  <footer>
+    <a href="https://dondaco.github.io/dondaco/labo/"><b>&gt; LE LABO</b><span>Teste l’EQ sur une vraie voix, directement dans ton navigateur : 7 outils de mix gratuits.</span><span class="pill">OUVRIR LE LABO →</span></a>
+    <span class="me">@dondacruz</span>
+  </footer>
+</div></div>
+<div class="dl"><a href="guide-eq-vocal.pdf" id="dlb" download>TÉLÉCHARGER LE PDF ↓</a></div>
+<section class="end">
+  <h2>Bien régler ta voix, ça s’apprend mieux à plusieurs.</h2>
+  <p>Ce guide te donne la carte. Dans STUDIO OS, je t’apprends à mixer ta voix étape par étape, et on avance ensemble jusqu’à ton premier son fini.</p>
+  <p class="trkhint">Le parcours en 4 étapes, dans STUDIO OS : touche une étape pour voir ce qu’on y fait.</p>
+  <div class="trk" id="trk" role="tablist" aria-label="Les 4 étapes"></div>
+  <div class="stg" id="stg" role="tabpanel"></div>
+  <a class="cta" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener">Rejoindre gratuitement STUDIO OS</a>
+</section>
+<script src="etapes.js"></script>
+<script>
+/* À l'écran, la page A4 se réduit pour tenir dans la largeur (téléphone compris). À l'impression, elle garde sa taille. */
+(function(){const f=document.getElementById('fit'),pg=f.firstElementChild;function fit(){if(matchMedia('print').matches){f.style.transform='';f.style.height='';return}const w=pg.offsetWidth,h=pg.offsetHeight,k=Math.min(1,document.documentElement.clientWidth/w);f.style.transform='scale('+k+')';f.style.height=(h*k)+'px';f.style.width=(w*k)+'px';f.style.margin='0 auto'}addEventListener('resize',fit);if(document.fonts)document.fonts.ready.then(fit);fit()})();
+(function(){let tsel=0;const ET=window.ETAPES||[],t=document.getElementById('trk'),p=document.getElementById('stg');const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ function r(){if(!ET.length){t.hidden=p.hidden=true;return}t.textContent='';ET.forEach((e,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(i===tsel));b.textContent=e.name;b.onclick=()=>{tsel=i;r()};t.append(b)});
+ const e=ET[tsel];p.innerHTML='<b>'+esc(e.name)+'</b><p>'+esc(e.goal)+'</p>';const ol=document.createElement('ol');e.items.forEach(it=>{const li=document.createElement('li');li.textContent=it.do||it.t;const tag=it.cours?'Chapitre STUDIO OS':it.appel?'Appel avec Donda':'';if(tag){const sp=document.createElement('span');sp.className='tagc';sp.textContent=tag;li.append(sp)}ol.append(li)});p.append(ol)}r()})();
+(async function(){const b=document.getElementById('dlb');try{const d=window.claude&&await window.claude.use('downloads');if(!d)return;b.addEventListener('click',async e=>{e.preventDefault();try{const blob=await (await fetch('guide-eq-vocal.pdf')).blob();await d.save({filename:'Guide EQ vocal - Dondacruz.pdf',data:blob});}catch(err){}});}catch(e){}})();
+</script>
+</body></html>

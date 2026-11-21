@@ -1,0 +1,444 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="description" content="Tes 500 premiers euros avec ta musique : le guide gratuit."><link rel="icon" href="data:,"><title>Tes 500 premiers euros</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout : deux temps. 1) « Choisir » : 6 options en cartes repliables, on coche celles qu'on veut suivre, puis on s'engage avec un bouton. 2) « Mon plan » : un tableau épuré avec la cagnotte, et seulement les options choisies (action à cocher + argent rapporté). Esprit STUDIO OS réservé aux titres et chiffres ; clair et sombre. */
+:root{
+  --bg:#fbf7f1; --card:#ffffff; --line:#eadfce; --fg:#2a1d10; --dim:#7a654c; --accent:#e07a00; --accent-ink:#ffffff; --ok:#2f8a3b; --gauge-bg:#f1e6d6; --soft:#fdf1e2; --muted:#5a4630; --okbg:#e9f7e4; --okbg2:#ffffff;
+  --display:"VT323","IBM Plex Mono",ui-monospace,monospace; --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#160e06;--card:#21160b;--line:#3d2a15;--fg:#f6e2c6;--dim:#b8956c;--accent:#ff9a1f;--accent-ink:#160e06;--ok:#8fd47a;--gauge-bg:#2e1f10;--soft:#2a1a0b;--muted:#dcc2a0;--okbg:#10301a;--okbg2:#1b2a12;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#160e06;--card:#21160b;--line:#3d2a15;--fg:#f6e2c6;--dim:#b8956c;--accent:#ff9a1f;--accent-ink:#160e06;--ok:#8fd47a;--gauge-bg:#2e1f10;--soft:#2a1a0b;--muted:#dcc2a0;--okbg:#10301a;--okbg2:#1b2a12;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto;display:grid;gap:20px}
+header{display:grid;gap:10px;padding-top:6px}
+.tag{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.06em}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(42px,11vw,64px);line-height:.95;margin:0;text-wrap:balance}
+h1 span{color:var(--accent)}
+h2.sec{font-family:var(--display);font-weight:400;font-size:32px;line-height:1;margin:6px 0 0}
+.lead{margin:0;max-width:56ch}
+.note{margin:0;font-size:14px;color:var(--muted)}
+/* cagnotte */
+.bar{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:8px}
+.jt{font-family:var(--mono);font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.amt{display:flex;align-items:baseline;gap:8px}
+.amt b{font-family:var(--display);font-weight:400;font-size:56px;line-height:.9;color:var(--accent)}
+.amt span{font-family:var(--display);font-size:28px;color:var(--dim)}
+.gauge{height:26px;border-radius:13px;background:var(--gauge-bg);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.gauge i{display:block;height:100%;width:0;border-radius:13px;background:linear-gradient(90deg,var(--accent),#ffb84d);box-shadow:0 0 12px rgba(255,154,31,.45);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.gauge i{transition:none}}
+.bar.won{border-color:var(--ok);border-width:2px}
+.bar.won .jt{color:var(--ok);font-weight:600}
+.bar.won .amt b{color:var(--ok)}
+.bar.won .gauge i{background:linear-gradient(90deg,#2f8a3b,#7fd36b);box-shadow:0 0 14px rgba(80,190,90,.5)}
+.won-msg{margin:0;font-size:15px;font-weight:600;color:var(--ok)}
+.bar.won{background:linear-gradient(160deg,var(--okbg),var(--okbg2));padding:18px 18px 20px;box-shadow:0 8px 28px rgba(47,138,59,.22)}
+.bar.won .amt b{font-size:72px}
+.bar.won .gauge{height:30px}
+.gwrap{position:relative;padding-bottom:22px}
+.gwrap .tick{position:absolute;top:0;height:26px;width:2px;margin-left:-1px;background:rgba(0,0,0,.28);pointer-events:none}
+.gwrap .lab{position:absolute;bottom:0;transform:translateX(-50%);font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap}
+.gwrap .lab.last{transform:translateX(-100%)}
+.gwrap .lab.zero{transform:none}
+.gwrap .lab.hit{color:var(--accent);font-weight:600}
+.bar.won .gwrap .tick{height:30px}
+.bar.won .gwrap .lab{color:var(--ok);font-weight:600}
+[hidden]{display:none!important}
+.win{display:grid;gap:10px}
+.next-txt{margin:0;font-size:15px}
+.dmbtn{justify-self:start;background:var(--ok);color:#fff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:10px}
+.dmbtn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.mile{display:grid;gap:6px;background:var(--soft);border-radius:10px;padding:10px 12px}
+.mile p{margin:0;font-size:15px;font-weight:600}
+.mile a{justify-self:start;color:var(--accent);font-weight:600;font-size:14px}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:12px}
+.confetti i{position:absolute;top:-10px;width:8px;height:12px;border-radius:2px;animation:fall 1.6s ease-in forwards}
+@keyframes fall{to{transform:translateY(260px) rotate(540deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.confetti{display:none}}
+.bar{position:relative}
+.cel{position:relative;overflow:hidden;background:var(--card);border:2px solid var(--ok);border-radius:12px;padding:18px 16px;display:grid;gap:10px;text-align:center}
+.cel h3{margin:0;font-family:'VT323',monospace;font-size:34px;line-height:1;color:var(--accent)}
+.cel p{margin:0;font-size:16px}
+.cel .go{font-weight:600}
+.cel .btn{justify-self:center}
+.bar.pop{animation:pop .9s ease}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.03)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.bar.pop{animation:none}}
+/* options (choix) */
+.opts{display:grid;gap:10px}
+details.opt{background:var(--card);border:1px solid var(--line);border-radius:12px}
+details.opt.pick{border-color:var(--accent);background:var(--soft)}
+details.opt summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 16px}
+details.opt summary::-webkit-details-marker{display:none}
+details.opt summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:12px}
+.t{min-width:0} .t strong{display:block;font-size:16px;line-height:1.35} .t small{color:var(--dim);font-size:13px}
+.chev{color:var(--dim);transition:transform .2s} details[open] .chev{transform:rotate(90deg)}
+.pickmark{display:block;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.body{padding:0 16px 16px;display:grid;gap:12px}
+.body p{margin:0} .body ul{margin:0;padding-left:18px} .body li{margin:3px 0}
+.choose{display:flex;align-items:center;gap:10px;font-weight:600;cursor:pointer;background:var(--bg);border:1.5px dashed var(--accent);border-radius:10px;padding:10px 12px}
+.choose input{width:20px;height:20px;accent-color:var(--accent);margin:0}
+.commit{position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:grid;gap:6px;justify-items:center;text-align:center;padding:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:11px 18px;cursor:pointer;border:1.5px solid var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.primary:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--accent);font-size:14px;padding:8px 14px}
+.btn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+/* plan (tableau épuré) */
+.plan{display:grid;gap:10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;gap:10px}
+.card.done{border-color:var(--ok)}
+.card h3{margin:0;font-size:16px;line-height:1.35}
+.card .earn{font-family:var(--display);font-size:24px;color:var(--accent);line-height:1}
+.card .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.action{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;background:var(--bg);border-radius:10px;padding:12px;cursor:pointer}
+.action input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ok);cursor:pointer}
+.money{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--dim)}
+.money input{font:inherit;width:96px;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.money input:focus{outline:2px solid var(--accent);border-color:transparent}
+.pledge{margin:0;font-size:14px;background:var(--soft);border-radius:10px;padding:10px 12px}
+.center{display:grid;justify-items:center}
+/* fin */
+.end{background:var(--card);border:1px solid var(--accent);border-radius:12px;padding:18px;display:grid;gap:12px}
+.end h2{font-family:var(--display);font-weight:400;font-size:34px;margin:0;line-height:1}
+.path{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.path li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline}
+.path .k{font-family:var(--display);font-size:22px;color:var(--accent);line-height:1;min-width:1.2em}
+.path b{display:block}
+.trk{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.trk button{font-family:var(--display);font-size:clamp(15px,4.4vw,20px);background:transparent;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:6px 4px;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trk button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.trk button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.stg{background:var(--soft);border-radius:10px;padding:12px 14px;display:grid;gap:6px}
+.stg b{font-family:var(--display);font-weight:400;font-size:24px;color:var(--accent);line-height:1}
+.stg p{margin:0;font-size:14px;color:var(--dim)}
+.stg ol{margin:0;padding-left:20px;display:grid;gap:3px;font-size:15px}
+.stg .tagc{font-size:11px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 5px;margin-left:6px;white-space:nowrap}
+.trkhint{margin:0;font-size:12px;color:var(--dim)}
+.carry .rien{font:inherit;font-size:13px;background:none;border:none;color:var(--dim);text-decoration:underline;cursor:pointer;padding:0}
+.cta{justify-self:center;text-align:center;background:var(--accent);color:var(--accent-ink);text-decoration:none;font-weight:600;padding:11px 18px;border-radius:10px}
+.cta:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.home{display:grid;gap:10px;justify-items:center;text-align:center}
+.homebtn{font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:transparent;border:1.5px solid var(--accent);border-radius:10px;padding:9px 14px;cursor:pointer}
+.homebtn:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.homehelp{text-align:left;max-width:440px;width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;display:grid;gap:6px}
+.homehelp .hb{color:var(--fg);font-weight:600}
+.homehelp ol{margin:0;padding-left:20px} .homehelp p{margin:0;color:var(--dim);font-size:13px}
+.other summary{cursor:pointer;font-size:13px;color:var(--accent)}
+.other ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--dim)}
+footer{font-family:var(--mono);font-size:11px;color:var(--dim);border-top:1px solid var(--line);padding-top:8px;margin-top:8px;letter-spacing:.03em;opacity:.8}
+.preview{margin:0;padding-left:20px;color:var(--dim);font-size:14px}
+.sp{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dim)}
+.sp .mini{flex:1;height:6px;border-radius:3px;background:var(--gauge-bg);overflow:hidden}
+.sp .mini i{display:block;height:100%;background:var(--ok);border-radius:3px;transition:width .4s}
+.ssteps{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ssteps li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;align-items:start;font-size:15px}
+.ssteps li.ok span{color:var(--dim);text-decoration:line-through}
+.ssteps li.later{color:var(--dim);opacity:.55}
+.ssteps li.now{background:var(--soft);border:1.5px solid var(--accent);border-radius:10px;padding:10px;grid-template-columns:1fr}
+.ssteps li.now label{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;cursor:pointer;font-weight:600}
+.ssteps li.now input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--ok)}
+.undo{width:22px;height:22px;border-radius:50%;border:none;background:var(--ok);color:var(--accent-ink);font-size:12px;cursor:pointer;padding:0}
+.undo:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--dim);margin:7px 0 0 6px}
+/* Tableau de bord membre : report du montant, palier 2 */
+.carry{display:grid;gap:6px;font-size:13px;color:var(--dim);border-top:1px dashed var(--line);padding-top:8px}
+.carry span{display:flex;align-items:center;gap:8px}
+.carry input,.xform input,.xform select{font:inherit;font-size:14px;background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.carry input,.xform input{width:100px}
+.p2{background:var(--card);border:1.5px solid var(--accent);border-radius:12px;padding:16px;display:grid;gap:10px}
+.p2 .sec{margin:0}
+.p2t{margin:0;font-size:16px}
+.xform{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.deal{border:1px dashed rgba(143,212,122,.5);border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.5}
+.xlist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.xlist li{display:flex;gap:10px;align-items:center;font-size:14px}
+.xlist b{font-family:var(--mono);color:var(--ok);font-weight:600;min-width:80px}
+.xlist span{flex:1;color:var(--dim)}
+.xlist button{all:unset;cursor:pointer;color:var(--dim);padding:0 6px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+<style id="da-v4">
+/* STUDIO OS · DA V4 (validée par Donda le 21/11/2026)
+   Couche commune posée par-dessus chaque page (outils/appliquer-da-v4.py).
+   Palette = CHARTE_MONTAGE (écran des réels). Anton = titres, Inter = texte,
+   Courier gras = le « système » (étiquettes, menus, chiffres d'écran).
+   Pour revenir à l'ancienne DA : git checkout da-actuelle-2026-11-19 -- <fichier>. */
+:root,:root[data-theme],:root:not([data-theme="light"]),:root[data-theme="light"],html[data-theme="dark"]{
+  --ambre:#E89A2C; --encre:#150B03; --dore:#D9B84A; --rouille:#C4472E; --os:#E6DFCC; --gris:#8C8676; --trait:#4C4C42;
+  --display:"Anton",Impact,"Arial Narrow",sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Courier New",Courier,monospace;
+  /* noms des pages existantes */
+  --bg:#0b0603; --panel:#16120d; --card:#16120d; --screen:#100c08; --soft:#1d150b;
+  --line:#3b2e1b; --fg:#E6DFCC; --dim:#B4AA94; --muted:#B4AA94; --grey:#8C8676;
+  --amber:#E89A2C; --amber-soft:#F0B45A; --accent:#E89A2C; --accent2:#D9B84A; --accent-ink:#150B03; --ink:#150B03;
+  --cut:#C4472E; --hot:#C4472E; --ok:#D9B84A; --okbg:#2a220c; --okbg2:#1d1709; --gauge-bg:#241a0e;
+  --r:14px;
+}
+html,body{background:radial-gradient(120% 70% at 50% 0%,#2a1707 0%,#120903 45%,#060301 100%) fixed,#060301!important;color:var(--fg)}
+body{font-family:var(--body)}
+/* Courier gras pour tout ce qui utilisait la mono */
+[style*="--mono"],code,kbd{font-weight:700}
+/* Titres : Anton, un cran plus petit que le VT323 (Anton est bien plus large) */
+h1,h2,h3{font-family:var(--display)!important;font-weight:400!important;letter-spacing:.01em;line-height:.95;text-transform:uppercase}
+h1{font-size:clamp(34px,8.5vw,56px)!important}
+h2{font-size:clamp(24px,6vw,34px)!important}
+h3{font-size:clamp(18px,4.6vw,24px)!important}
+/* Un mot doré dans un titre : <span class="or">mot</span> */
+.or{color:var(--dore)!important}
+/* Plus d'effets d'écran sur les pages */
+.scan,.scanlines,.crt::after,.crt::before{display:none!important}
+/* Boutons pleins : ambre, texte encre, coins arrondis */
+button,.btn,a.btn{border-radius:12px}
+/* Grands titres en crème (l'ambre reste pour les petites étiquettes « > » et ce qui se clique) */
+h1,h2{color:var(--os)!important;text-shadow:none!important}
+
+h1 span{color:var(--dore)!important}
+
+</style>
+
+</head><body>
+<div class="wrap">
+  <header>
+    <span class="tag">&gt; STUDIO OS · guide gratuit · Donda Cruz</span>
+    <h1>Tes 500 premiers euros <span>avec ta musique</span></h1>
+    <p class="lead" id="lead"></p>
+  </header>
+
+  <div class="bar" aria-live="polite">
+    <span class="jt" id="jt">Ce que ma musique me rapporte</span>
+    <div class="amt"><b id="sum">0 €</b><span id="cap">/ 500 €</span></div>
+    <div class="gwrap"><div class="gauge" role="progressbar" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0" aria-label="Euros gagnés sur l'objectif de 500 €"><i id="fill"></i></div><span class="tick" id="tk1" style="left:20%" aria-hidden="true"></span><span class="tick" id="tk2" style="left:50%" aria-hidden="true"></span><span class="lab zero" style="left:0" aria-hidden="true">0</span><span class="lab" id="lb1" data-v="100" style="left:20%" aria-hidden="true">100 €</span><span class="lab" id="lb2" data-v="250" style="left:50%" aria-hidden="true">250 €</span><span class="lab last" id="lb3" data-v="500" style="left:100%" aria-hidden="true">500 €</span></div>
+    <div class="win" id="wonmsg" hidden>
+      <p class="won-msg">🏆 Objectif atteint ! Tu as gagné 500 € avec ta musique. C'est ton argent : investis-le dans ton projet, ou mets-le de côté pour une place en résidence, si tu en as envie.</p>
+      <p class="next-txt">Tu l'as fait. Envoie-moi <b>CAGNOTTE</b> en DM sur Instagram : je veux voir ça, et je te dis quelle est ta prochaine marche.</p>
+      <a class="dmbtn" href="https://ig.me/m/dondacruz" target="_blank" rel="noopener">Envoyer CAGNOTTE à @dondacruz</a>
+    </div>
+    <div class="mile" id="mile" hidden><p id="miletxt"></p><a id="milelink" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener"></a></div>
+    <form class="carry" id="carry" hidden><label for="carryIn">Tu avais déjà commencé avec le guide gratuit ? Reporte ton montant :</label><span><input id="carryIn" type="number" inputmode="numeric" min="0" placeholder="0"> € <button class="btn ghost" type="submit">OK</button> <button class="rien" type="button" id="carryNo">Rien à reporter</button></span></form>
+
+    <p class="note deal" id="deal" hidden>💸 De temps en temps, on fête dans nos vidéos le total gagné par toute la bande STUDIO OS. Juste la somme de tout le monde : jamais ton nom, jamais ton montant.</p>
+  </div>
+  <section class="p2" id="p2" hidden aria-labelledby="t-p2">
+    <div class="cel" id="cel" hidden role="status">
+      <h3>🎉 Félicitations !</h3>
+      <p><b>Tu as atteint ton objectif : 500 €.</b> Tu gagnes concrètement de l'argent avec ta musique. C'est ton argent : tu en fais ce que tu veux.</p>
+      <p class="go">Envie d'aller plus loin ? Une place dans l'une de nos résidences coûte 3 000 € : 4 jours entre producteurs pour finir tes titres. Ta musique peut te l'offrir.</p>
+      <button class="btn primary" type="button" id="celok">Je passe au palier 2 ›</button>
+    </div>
+    <h2 class="sec" id="t-p2">Palier 2 : jusqu'à 3 000 €</h2>
+    <p class="p2t">Donda t'aide à gagner de l'argent avec ta musique. Note ici chaque euro gagné.</p>
+    <p class="note">C'est ton argent : tu en fais ce que tu veux. Une place dans l'une de nos résidences coûte 3 000 € : si un jour tu veux nous rejoindre, ta musique peut te l'offrir.</p>
+    <p class="won-msg" id="p2won" hidden>🏆 3 000 € gagnés avec ta musique. Bravo ! C'est ton argent, et c'est de quoi t'offrir une place dans l'une de nos résidences, si tu en as envie.</p>
+    <form class="xform" id="xform"><label for="xEur">J'ai gagné</label><input id="xEur" type="number" inputmode="numeric" min="1" placeholder="0" required> €
+      <label for="xSrc" class="vh">Avec</label><select id="xSrc"><option>Droits (Sabam, PlayRight…)</option><option>Prestation (mix, chœurs, prod…)</option><option>Concert</option><option>Ventes, merch, précommandes</option><option>Financement participatif</option><option>Bourse, aide, partenariat</option><option>Autre</option></select>
+      <button class="btn primary" type="submit">Ajouter</button></form>
+    <ul class="xlist" id="xlist"></ul>
+  </section>
+  <p class="note" id="plannote">Un plan, pas une promesse : le résultat dépend de ton travail. Tes réponses restent sur cet appareil.</p>
+
+  <!-- 1) CHOISIR -->
+  <section id="choose" aria-labelledby="t-choose">
+    <h2 class="sec" id="t-choose">Choisis tes options</h2>
+    <p class="note" style="margin-bottom:10px">Pas besoin de tout faire : coche celles qui te parlent, maintenant.</p>
+    <div class="opts" id="opts"></div>
+    <div class="commit" style="margin-top:14px">
+      <button class="btn primary" id="commit" type="button" disabled>Je m'engage</button>
+      <span class="note" id="commitnote">Choisis au moins une option</span>
+    </div>
+  </section>
+
+  <!-- 2) MON PLAN -->
+  <section id="plan" hidden aria-labelledby="t-plan">
+    <h2 class="sec" id="t-plan">Mon plan</h2>
+    <p class="pledge" id="pledge"></p>
+    <div class="plan" id="cards" style="margin-top:10px"></div>
+    <div class="center" style="margin-top:12px"><button class="btn ghost" id="edit" type="button">Modifier mes options</button></div>
+  </section>
+
+  <section class="end">
+    <h2>Remplir cette barre, ça se fait mieux à plusieurs.</h2>
+    <p>Et si tu veux aller plus loin, je t'accompagne : on fait grandir ce que ta musique te rapporte, on concrétise ta carrière, et on part en résidence pour trouver ta DA.</p>
+    <p class="trkhint">Le parcours en 4 étapes, dans STUDIO OS : touche une étape pour voir ce qu'on y fait.</p>
+    <div class="trk" id="trk" role="tablist" aria-label="Les 4 étapes"></div>
+    <div class="stg" id="stg" role="tabpanel"></div>
+    <a class="cta" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener">Rejoindre gratuitement STUDIO OS</a>
+  </section>
+
+  <div class="home">
+    <button class="homebtn" id="homebtn" type="button" aria-expanded="false" aria-controls="homehelp">📌 Garder ce guide sur mon écran d'accueil</button>
+    <div class="homehelp" id="homehelp" hidden>
+      <p class="hb" id="hbname"></p>
+      <ol id="homesteps"></ol>
+      <details class="other"><summary>Un autre navigateur ?</summary><ul id="otherb"></ul></details>
+      <p>Le guide apparaît ensuite comme une app : tu y reviens en un geste pour noter ce que ta musique te rapporte.</p>
+    </div>
+  </div>
+
+  <footer>&gt; STUDIO OS · Donda Cruz, ingé son et coach d'artistes_</footer>
+</div>
+
+<script src="etapes.js"></script>
+<script>
+(function(){
+  const OPTS=[
+    {id:1,title:"Récupérer l'argent qu'on te doit",when:"Le plus rapide · si tu as déjà sorti des titres",
+     body:"<p>Quand ta musique est diffusée, des droits sont collectés. S'ils ne sont pas déclarés à ton nom, tu risques de ne jamais les toucher.</p>",
+     steps:["Lister mes titres sortis et mon rôle sur chacun (auteur, compositeur, interprète).","M'inscrire à ma société de gestion d'auteurs (SABAM, SACEM…) si ce n'est pas encore fait.","Déclarer chacun de mes titres, avec la répartition si on était plusieurs.","M'inscrire aussi pour mes droits d'interprète (PlayRight, Adami…)."]},
+    {id:2,title:"Vendre ce que je sais déjà faire",when:"1 à 2 mois · beatmakers, ingés, musiciens, créatifs",
+     body:"<p>Pas besoin d'être connu pour être payé : d'autres artistes ont besoin de toi. Prods, topline, mix, sessions, visuels ou clips.</p>",
+     steps:["Choisir 1 service que je sais déjà bien faire.","Écrire mon offre en une phrase, avec un prix de départ (« je fais X pour Y, à partir de Z € »).","Préparer 1 exemple à montrer (un avant/après, un extrait).","Proposer mon offre à 3 artistes que j'apprécie."]},
+    {id:3,title:"Jouer en live, même petit",when:"1 à 3 mois · artistes et interprètes",
+     body:"<p>Concert en appartement, dans la rue, première partie, événement privé, soirée à thème : le live paie et fait grandir ta communauté.</p>",
+     steps:["Choisir 4 ou 5 morceaux pour un set de 20 minutes.","Le répéter et en filmer une version.","Lister 5 lieux ou organisateurs qui pourraient m'accueillir, ou repérer un bon spot pour jouer dans la rue (et vérifier s'il faut une autorisation dans ma ville).","Envoyer ma proposition à 2 d'entre eux avec un tarif clair, ou faire ma première session dans la rue."]},
+    {id:4,title:"Transformer mes contenus en partenariats",when:"2 à 4 mois · si tu publies régulièrement",
+     body:"<p>Une marque regarde surtout si ton public lui ressemble et si tu publies avec régularité. Choisis des marques que tu utilises vraiment.</p>",
+     steps:["Lister 5 marques que j'utilise vraiment (matériel, plugins, vêtements…).","En choisir une et trouver la bonne personne à contacter.","Imaginer une idée de contenu précise avec leur produit.","Envoyer mon message, avec mon idée et mon tarif."]},
+    {id:5,title:"Faire financer mon projet par mon public",when:"1 à 2 mois · si tu as une petite communauté",
+     body:"<p>Un financement participatif raconte une histoire : « aidez-moi à partir en résidence enregistrer mon EP ». En échange : avant-première, nom dans les crédits, concert privé.</p>",
+     steps:["Écrire mon projet en 3 lignes : quoi, pourquoi, combien.","Lister 3 contreparties à offrir.","Choisir la plateforme et tourner une courte vidéo de présentation.","Lancer la campagne et l'annoncer à mon public."]},
+    {id:6,title:"Aller chercher les aides et les tremplins",when:"Variable · si tu es déjà actif",
+     body:"<p>Tremplins avec prix, bourses des sociétés de gestion, aides régionales : de l'argent existe pour les artistes qui le demandent.</p>",
+     steps:["Chercher les tremplins et les bourses de ma région et de ma société de gestion.","En choisir 1 qui se clôture dans les 3 prochains mois.","Préparer mon dossier : bio, liens, présentation du projet.","L'envoyer avant la date limite."]}
+  ];
+  const KEY='guide500-v2', TDB=!!window.IN_TDB; let st={chosen:[],committed:false,done:{},money:{},carry:0,extra:[]};
+  try{const v=JSON.parse(localStorage.getItem(KEY)||'null'); if(v&&typeof v==='object') st=Object.assign(st,v)}catch(e){}
+  Object.keys(st.done).forEach(k=>{if(typeof st.done[k]!=='number') st.done[k]=0});
+  if(!Array.isArray(st.extra)) st.extra=[];
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+  /* Ancien compteur du tableau de bord artiste : repris une fois dans le palier 2. */
+  if(TDB&&!st.mig){ try{ const old=JSON.parse(localStorage.getItem('sos_money')||'[]'); if(Array.isArray(old)) old.forEach(m=>st.extra.push(m)); }catch(e){} st.mig=1; save(); }
+  const optSum=()=>st.chosen.reduce((a,id)=>a+Math.max(0,Number(st.money[id])||0),0);
+  const total=()=>optSum()+(TDB?Math.max(0,Number(st.carry)||0)+st.extra.reduce((a,m)=>a+(Number(m.eur)||0),0):0);
+  const $=id=>document.getElementById(id);
+  const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const eur=v=>Math.max(0,Number(v)||0).toLocaleString('fr-BE')+' €';
+
+  function confetti(el){
+    const c=document.createElement('div');c.className='confetti';
+    const cols=['#e07a00','#ffb84d','#2f8a3b','#7fd36b','#f6e2c6'];
+    for(let i=0;i<28;i++){const d=document.createElement('i');d.style.left=(Math.random()*100)+'%';d.style.background=cols[i%cols.length];d.style.animationDelay=(Math.random()*.4)+'s';c.appendChild(d)}
+    el.appendChild(c);setTimeout(()=>c.remove(),2200);
+  }
+  let lastT=null;
+  function gauge(){
+    const t=total(), p2=TDB&&t>=500, cap=p2?3000:500, bar=document.querySelector('.bar');
+    $('sum').textContent=t.toLocaleString('fr-BE')+' €'; $('cap').textContent='/ '+cap.toLocaleString('fr-BE')+' €';
+    $('fill').style.width=Math.min(100,t/cap*100)+'%';
+    const g=document.querySelector('.gauge'); g.setAttribute('aria-valuemax',String(cap)); g.setAttribute('aria-valuenow',String(Math.min(t,cap)));
+    const marks=p2?[[500,17],[1500,50],[3000,100]]:[[100,20],[250,50],[500,100]];
+    [['tk1','lb1'],['tk2','lb2']].forEach(([tk,lb],i)=>{ $(tk).style.left=marks[i][1]+'%'; $(lb).style.left=marks[i][1]+'%'; $(lb).dataset.v=marks[i][0]; }); $('lb3').dataset.v=marks[2][0];
+    const won=t>=cap, crossed=lastT!==null&&((lastT<500&&t>=500)||(lastT<cap&&t>=cap)); lastT=t;
+    bar.classList.toggle('won',won&&(!TDB||cap===3000));
+    if(crossed&&window.__ready){bar.classList.add('pop');setTimeout(()=>bar.classList.remove('pop'),900);confetti(bar)}
+    $('jt').textContent=TDB?(p2?(won?'Palier 2 · 3 000 € atteints ✓':'Palier 2 · ce que ta musique te rapporte'):'Palier 1 · ce que ta musique te rapporte'):(won?'500 € atteints · ACCOMPLI ✓':'Ce que ma musique me rapporte');
+    $('wonmsg').hidden=TDB||!won;
+    const m=$('mile');
+    if(!TDB&&!won&&t>=250){m.hidden=false;$('miletxt').textContent='🔥 250 € ! Tu es à mi-chemin.';$('milelink').textContent='Viens assister à un appel du lundi ›'}
+    else if(!TDB&&!won&&t>=100){m.hidden=false;$('miletxt').textContent='🎯 100 € ! Tes premiers euros sont là.';$('milelink').textContent='Rejoins le Challenge 30 jours dans STUDIO OS ›'}
+    else m.hidden=true;
+    document.querySelectorAll('.gwrap .lab[data-v]').forEach(l=>{const v=+l.dataset.v;l.classList.toggle('hit',t>=v);l.textContent=(t>=v?'✓ ':'')+v.toLocaleString('fr-BE')+' €'});
+    $('plannote').hidden=won||p2;
+    $('carry').hidden=!TDB||p2||!!st.carryNo; if(TDB&&st.carry) $('carryIn').value=st.carry;
+    $('p2').hidden=!p2; $('p2won').hidden=!(p2&&won);
+    const cel=$('cel'), showCel=p2&&!st.cel500;
+    if(showCel&&cel.hidden&&window.__ready){ cel.hidden=false; confetti(cel); setTimeout(()=>confetti(cel),700); cel.scrollIntoView({behavior:'smooth',block:'center'}); }
+    else cel.hidden=!showCel;
+    document.querySelector('#p2 .note').hidden=showCel;
+    if(TDB) renderExtra();
+  }
+  function renderExtra(){ const ul=$('xlist'); ul.textContent='';
+    st.extra.slice().reverse().forEach((x,ri)=>{ const i=st.extra.length-1-ri; const li=document.createElement('li'); const b=document.createElement('b'); b.textContent='+'+eur(x.eur); const sp=document.createElement('span'); sp.textContent=(x.src||'')+(x.d?' · '+new Date(x.d).toLocaleDateString('fr-BE',{day:'numeric',month:'short'}):'');
+      const bt=document.createElement('button'); bt.type='button'; bt.textContent='×'; bt.setAttribute('aria-label','Retirer cette entrée'); bt.onclick=()=>{st.extra.splice(i,1);save();gauge();}; li.append(b,sp,bt); ul.append(li); }); }
+  $('celok').addEventListener('click',()=>{st.cel500=1;save();gauge();});
+  $('carryNo').addEventListener('click',()=>{st.carryNo=1;save();gauge();});
+  $('carry').addEventListener('submit',e=>{e.preventDefault();st.carry=Math.max(0,Math.round(Number($('carryIn').value)||0));save();gauge();});
+  $('xform').addEventListener('submit',e=>{e.preventDefault();const v=Math.round(Number($('xEur').value));if(!v||v<=0)return;st.extra.push({eur:v,src:$('xSrc').value,d:new Date().toISOString()});$('xEur').value='';save();gauge();});
+
+  function renderChoose(){
+    $('lead').textContent="6 façons de gagner de l'argent avec ta musique. Choisis celles que tu veux suivre et engage-toi. Chaque euro gagné, c'est ton argent : pour investir dans ta musique, ou partir en résidence avec nous.";
+    const box=$('opts'); box.textContent='';
+    OPTS.forEach(o=>{
+      const picked=st.chosen.includes(o.id);
+      const d=document.createElement('details'); d.className='opt'+(picked?' pick':'');
+      d.innerHTML='<summary><span class="t"><strong>'+esc(o.title)+'</strong><small>'+esc(o.when)+'</small>'+(picked?'<span class="pickmark">✓ choisie</span>':'')+'</span><span class="chev" aria-hidden="true">›</span></summary><div class="body">'+o.body+'<p><b>Les étapes :</b></p><ol class="preview">'+o.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol><label class="choose"><input type="checkbox" id="c'+o.id+'"'+(picked?' checked':'')+'> Je choisis cette option</label></div>';
+      box.appendChild(d);
+      d.querySelector('#c'+o.id).addEventListener('change',e=>{
+        if(e.target.checked){ if(!st.chosen.includes(o.id)) st.chosen.push(o.id) } else st.chosen=st.chosen.filter(x=>x!==o.id);
+        save(); d.classList.toggle('pick',e.target.checked);
+        const t=d.querySelector('.t'); const m=t.querySelector('.pickmark'); if(e.target.checked&&!m){const sp=document.createElement('span');sp.className='pickmark';sp.textContent='✓ choisie';t.appendChild(sp)} else if(!e.target.checked&&m) m.remove();
+        updateCommit();
+      });
+    });
+    updateCommit();
+  }
+  function updateCommit(){
+    const n=st.chosen.length; $('commit').disabled=n===0;
+    $('commit').textContent=n?'Je m’engage sur '+n+' option'+(n>1?'s':''):'Je m’engage';
+    $('commitnote').textContent=n?'Tu pourras modifier tes options plus tard.':'Choisis au moins une option';
+  }
+
+  function card(o){
+    const total=o.steps.length, d=Math.min(total,st.done[o.id]||0);
+    const c=document.createElement('div'); c.className='card'+(d===total?' done':'');
+    let h='<div class="top"><h3>'+esc(o.title)+'</h3><span class="earn">'+eur(st.money[o.id])+'</span></div>';
+    h+='<div class="sp"><span>'+(d===total?'Option terminée 🎉':'Étape '+(d+1)+' sur '+total)+'</span><span class="mini"><i style="width:'+(d/total*100)+'%"></i></span></div>';
+    h+='<ol class="ssteps">';
+    o.steps.forEach((x,i)=>{
+      if(i<d) h+='<li class="ok"><button type="button" class="undo" data-i="'+i+'" aria-label="Annuler : '+esc(x)+'">✓</button><span>'+esc(x)+'</span></li>';
+      else if(i===d) h+='<li class="now"><label><input type="checkbox" data-i="'+i+'"><span>'+esc(x)+'</span></label></li>';
+      else h+='<li class="later"><span class="dot" aria-hidden="true"></span><span>'+esc(x)+'</span></li>';
+    });
+    h+='</ol><div class="money"><label for="m'+o.id+'">Ce que ça m’a rapporté :</label><input id="m'+o.id+'" type="number" inputmode="numeric" min="0" placeholder="0" value="'+(st.money[o.id]||'')+'"> €</div>';
+    c.innerHTML=h;
+    const nowBox=c.querySelector('li.now input');
+    if(nowBox) nowBox.addEventListener('change',()=>{st.done[o.id]=d+1;save();c.replaceWith(card(o))});
+    c.querySelectorAll('.undo').forEach(u=>u.addEventListener('click',()=>{st.done[o.id]=Number(u.dataset.i);save();c.replaceWith(card(o))}));
+    c.querySelector('#m'+o.id).addEventListener('input',e=>{st.money[o.id]=e.target.value;save();c.querySelector('.earn').textContent=eur(e.target.value);gauge()});
+    return c;
+  }
+  function renderPlan(){
+    $('lead').textContent="Ton plan est prêt. Une étape à la fois, à ton rythme : note ce que chaque option te rapporte, et regarde ta barre avancer.";
+    const n=st.chosen.length;
+    $('pledge').textContent='Tu t’es engagé·e sur '+n+' option'+(n>1?'s':'')+'. Fais la prochaine étape d’une option, puis va créer.';
+    const box=$('cards'); box.textContent='';
+    OPTS.filter(o=>st.chosen.includes(o.id)).forEach(o=>box.appendChild(card(o)));
+  }
+
+  function show(){
+    $('choose').hidden=st.committed; $('plan').hidden=!st.committed;
+    st.committed?renderPlan():renderChoose(); gauge();
+  }
+  $('commit').addEventListener('click',()=>{if(!st.chosen.length)return;st.committed=true;save();show();window.scrollTo({top:0,behavior:'smooth'})});
+  $('edit').addEventListener('click',()=>{st.committed=false;save();show()});
+  if(window.IN_TDB){ const dl=document.getElementById('deal'); if(dl) dl.hidden=false; document.querySelectorAll('.end,.home').forEach(e=>e.hidden=true); const t=document.querySelector('header .tag'); if(t) t.textContent='> STUDIO OS · gagner de l\'argent avec ta musique'; }
+  let tsel=0; const ET=window.ETAPES||[];
+  function renderTrk(){ const t=$('trk'), p=$('stg'); if(!t||!ET.length){ if(t) t.closest('.end') && (t.hidden=p.hidden=true); return; } t.textContent='';
+    ET.forEach((e,i)=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(i===tsel)); b.textContent=e.name; b.onclick=()=>{tsel=i;renderTrk();}; t.append(b); });
+    const e=ET[tsel]; p.innerHTML='<b>'+esc(e.name)+'</b><p>'+esc(e.goal)+'</p>'; const ol=document.createElement('ol');
+    e.items.forEach(it=>{ const li=document.createElement('li'); li.textContent=it.do||it.t; const tag=it.cours?'Chapitre STUDIO OS':it.appel?'Appel avec Donda':''; if(tag){const sp=document.createElement('span');sp.className='tagc';sp.textContent=tag;li.append(sp);} ol.append(li); }); p.append(ol); }
+  renderTrk();
+  show(); window.__ready=true;
+
+  // écran d'accueil, selon le navigateur
+  const ua=navigator.userAgent||'';
+  const B={
+    chromeios:['Chrome sur iPhone',['Touche l’icône Partager dans la barre d’adresse, en haut à droite.','Choisis « Ajouter à l’écran d’accueil ».']],
+    firefoxios:['Firefox sur iPhone',['Touche le menu ☰ en bas, puis « Partager ».','Choisis « Sur l’écran d’accueil ».']],
+    safari:['Safari',['Touche le bouton Partager (le carré avec une flèche vers le haut).','Choisis « Sur l’écran d’accueil », puis « Ajouter ».']],
+    chrome:['Chrome sur Android',['Touche le menu ⋮ en haut à droite.','Choisis « Ajouter à l’écran d’accueil ».']],
+    samsung:['Samsung Internet',['Touche le menu ≡ en bas.','Choisis « Ajouter la page à », puis « Écran d’accueil ».']],
+    firefox:['Firefox sur Android',['Touche le menu ⋮.','Choisis « Ajouter à l’écran d’accueil ».']],
+    edge:['Edge',['Touche le menu ⋯.','Choisis « Ajouter au téléphone » ou « Ajouter à l’écran d’accueil ».']],
+    desktop:['Sur ordinateur',['Ajoute la page à tes favoris (Ctrl+D ou ⌘+D).']]
+  };
+  const k=/CriOS/.test(ua)?'chromeios':/FxiOS/.test(ua)?'firefoxios':/EdgiOS|EdgA|Edg\//.test(ua)?'edge':/SamsungBrowser/.test(ua)?'samsung':/Firefox/.test(ua)&&/Android/.test(ua)?'firefox':/Android/.test(ua)&&/Chrome/.test(ua)?'chrome':/iPhone|iPad|iPod/.test(ua)?'safari':'desktop';
+  $('hbname').textContent='Ton navigateur : '+B[k][0];
+  B[k][1].forEach(t=>{const li=document.createElement('li');li.textContent=t;$('homesteps').appendChild(li)});
+  Object.keys(B).filter(x=>x!==k).forEach(x=>{const li=document.createElement('li');li.textContent=B[x][0]+' : '+B[x][1].join(' ');$('otherb').appendChild(li)});
+  $('homebtn').addEventListener('click',()=>{const h=$('homehelp');h.hidden=!h.hidden;$('homebtn').setAttribute('aria-expanded',String(!h.hidden))});
+})();
+</script>
+</body></html>
