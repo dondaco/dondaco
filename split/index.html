@@ -1,0 +1,75 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Split Sheet · STUDIO_OS</title>
+<meta name="description" content="Outil gratuit : remplis ta split sheet (répartition des droits d'un morceau) et télécharge-la en PDF.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#0b0704;--pan:#15110c;--ambre:#E89A2C;--dore:#D9B84A;--os:#E6DFCC;--gris:#9A968A;--filet:rgba(232,154,44,.45);--rouge:#E0603F}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(70% 50% at 50% 0%,#2a1707,var(--bg) 70%);color:var(--os);font:16px/1.5 Inter,Arial,sans-serif;min-height:100vh}
+.w{max-width:860px;margin:0 auto;padding:28px 16px 60px}
+.sys{font:700 13px 'Courier New',monospace;letter-spacing:.1em;color:var(--ambre)}
+h1{font:400 clamp(40px,8vw,64px)/1 Anton;margin:10px 0 8px}h1 i{font-style:normal;color:var(--dore)}
+.lead{color:var(--os);opacity:.88;max-width:640px}
+.win{background:var(--pan);border:1px solid var(--filet);border-radius:14px;padding:18px;margin-top:18px}
+label{display:block;font:700 12px 'Courier New',monospace;letter-spacing:.08em;color:var(--gris);text-transform:uppercase;margin-bottom:4px}
+input,select{width:100%;background:#0e0b08;color:var(--os);border:1px solid #3a2c1c;border-radius:8px;padding:10px;font:500 15px Inter}
+input:focus,select:focus{outline:2px solid var(--ambre);border-color:transparent}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+.row{display:grid;grid-template-columns:1.6fr 1.2fr .8fr .8fr 1.2fr 36px;gap:8px;align-items:end;padding:10px 0;border-bottom:1px solid #2a2016}
+.row button.x{background:none;border:1px solid #3a2c1c;color:var(--gris);border-radius:8px;height:42px;cursor:pointer}
+.btn{font:400 20px Anton;letter-spacing:.03em;background:var(--ambre);color:#150B03;border:0;border-radius:10px;padding:12px 20px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ambre);border:1px solid var(--filet)}
+.tot{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font:700 14px 'Courier New',monospace}.ok{color:#8fce7a}.ko{color:var(--rouge)}
+.acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.pro{border-color:var(--ambre)}.pro b{color:var(--dore)}
+.pro a{color:var(--ambre)}
+.note{font-size:13px;color:var(--gris)}
+@media(max-width:640px){.g2,.g3{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr}.row .x{grid-column:span 2}}
+/* impression = la split sheet seule */
+#print{display:none}
+@media print{body{background:#fff;color:#000}.w>*:not(#print){display:none!important}#print{display:block;font:12pt/1.4 Arial,sans-serif;color:#000}
+#print h2{font:700 20pt Arial;margin:0 0 4mm}#print table{width:100%;border-collapse:collapse;margin:4mm 0}#print td,#print th{border:1px solid #999;padding:2mm;text-align:left;font-size:10pt}
+#print .sig{height:14mm}@page{size:A4;margin:14mm}}
+</style></head><body><div class="w">
+<div class="sys">&gt; STUDIO_OS · OUTIL GRATUIT</div>
+<h1>Ta split sheet, <i>en 5 minutes.</i></h1>
+<p class="lead">Une page, signée par tout le monde, qui dit qui a fait quoi sur le morceau et qui touche quelle part. Remplis, vérifie que ça fait 100 %, télécharge le PDF, faites signer.</p>
+
+<div class="win"><div class="g3">
+<div><label for="t">Titre du morceau</label><input id="t" placeholder="Ex. Neige en été"></div>
+<div><label for="d">Date de la session</label><input id="d" type="date"></div>
+<div><label for="v">Version</label><input id="v" placeholder="Démo, final…"></div></div>
+<div class="g2" style="margin-top:12px"><div><label for="ar">Artiste principal</label><input id="ar"></div><div><label for="lab">Label / éditeur (si il y en a)</label><input id="lab" placeholder="Aucun"></div></div></div>
+
+<div class="win"><div class="sys">&gt; QUI A FAIT QUOI</div>
+<p class="note">Paroles et musique se partagent séparément : chaque colonne doit faire 100 %. Le master (l'enregistrement) appartient en général à celui qui l'a payé : c'est une autre question.</p>
+<div id="rows"></div>
+<div class="tot"><span id="tp">Paroles : 0 %</span><span id="tm">Musique : 0 %</span></div>
+<div class="acts"><button class="btn ghost" id="add" type="button">+ Ajouter une personne</button>
+<button class="btn ghost" id="eq" type="button">Répartir à parts égales</button></div></div>
+
+<div class="acts"><button class="btn" id="pdf" type="button">TÉLÉCHARGER LE PDF</button><button class="btn ghost" id="raz" type="button">Tout effacer</button></div>
+<p class="note">Le PDF : choisis « Enregistrer en PDF » dans la fenêtre d'impression. Rien n'est envoyé : tout reste sur ton appareil, et s'efface quand tu fermes la page.</p>
+
+<div class="win pro"><div class="sys">&gt; DANS TON TABLEAU DE BORD (PREMIUM)</div>
+<p><b>Garde tes collaborateurs et toutes tes split sheets</b> : tu ne retapes plus jamais les mêmes noms, tu retrouves chaque morceau, d'un appareil à l'autre. Avec tes autres outils (contrats, devis) et ta quête du moment.</p>
+<p><a href="https://www.skool.com/studio-virtuel-8936/about">Rejoindre STUDIO_OS (c'est gratuit) →</a></p></div>
+<p class="note">Ce document aide à se mettre d'accord. Il ne remplace pas le dépôt de tes œuvres auprès de ta société de gestion (Sabam, Sacem…) ni l'avis d'un juriste.</p>
+
+<div id="print"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);const R=$('rows');
+const ROLES=['Auteur (paroles)','Compositeur (musique)','Auteur-compositeur','Beatmaker / producteur','Arrangeur','Interprète'];
+function row(p={}){const d=document.createElement('div');d.className='row';d.innerHTML=`<div><label>Nom</label><input class="n" value="${p.n||''}"></div><div><label>Rôle</label><select class="r">${ROLES.map(r=>`<option${r===p.r?' selected':''}>${r}</option>`).join('')}</select></div><div><label>Paroles %</label><input class="p" type="number" min="0" max="100" step="0.5" value="${p.p??''}"></div><div><label>Musique %</label><input class="m" type="number" min="0" max="100" step="0.5" value="${p.m??''}"></div><div><label>Société (Sabam…)</label><input class="s" value="${p.s||''}"></div><button class="x" type="button" aria-label="Retirer">✕</button>`;d.querySelector('.x').onclick=()=>{d.remove();tot()};d.oninput=tot;R.appendChild(d)}
+function all(){return[...R.children].map(d=>({n:d.querySelector('.n').value.trim(),r:d.querySelector('.r').value,p:+d.querySelector('.p').value||0,m:+d.querySelector('.m').value||0,s:d.querySelector('.s').value.trim()}))}
+function tot(){const a=all();const P=a.reduce((x,y)=>x+y.p,0),M=a.reduce((x,y)=>x+y.m,0);const f=(e,l,v)=>{e.textContent=`${l} : ${+v.toFixed(2)} %`+(Math.abs(v-100)<.01?' ✓':' (doit faire 100)');e.className=Math.abs(v-100)<.01?'ok':'ko'};f($('tp'),'Paroles',P);f($('tm'),'Musique',M);return Math.abs(P-100)<.01&&Math.abs(M-100)<.01}
+$('add').onclick=()=>{row();tot()};
+$('eq').onclick=()=>{const ds=[...R.children];const n=ds.length;if(!n)return;const v=+(100/n).toFixed(2);ds.forEach((d,i)=>{const last=i===n-1;const x=last?+(100-v*(n-1)).toFixed(2):v;d.querySelector('.p').value=x;d.querySelector('.m').value=x});tot()};
+$('raz').onclick=()=>{if(confirm('Tout effacer ?')){R.innerHTML='';['t','d','v','ar','lab'].forEach(k=>$(k).value='');row();row();tot()}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+$('pdf').onclick=()=>{if(!tot()&&!confirm('Les totaux ne font pas 100 %. Télécharger quand même ?'))return;const a=all().filter(x=>x.n);
+$('print').innerHTML=`<h2>SPLIT SHEET</h2><p><b>Titre :</b> ${esc($('t').value)}<br><b>Artiste :</b> ${esc($('ar').value)}<br><b>Date :</b> ${esc($('d').value)} · <b>Version :</b> ${esc($('v').value)}<br><b>Label / éditeur :</b> ${esc($('lab').value||'Aucun')}</p>
+<table><tr><th>Nom</th><th>Rôle</th><th>Paroles %</th><th>Musique %</th><th>Société</th><th>Signature</th></tr>${a.map(x=>`<tr><td>${esc(x.n)}</td><td>${esc(x.r)}</td><td>${x.p}</td><td>${x.m}</td><td>${esc(x.s)}</td><td class="sig"></td></tr>`).join('')}</table>
+<p>Les soussignés confirment la répartition ci-dessus des droits d'auteur (paroles et musique) de l'œuvre. Fait le ${new Date().toLocaleDateString('fr-BE')}.</p><p style="font-size:9pt;color:#555">Modèle gratuit STUDIO_OS. Ne remplace pas le dépôt auprès de votre société de gestion ni un avis juridique.</p>`;window.print()};
+row({r:'Auteur-compositeur'});row({r:'Beatmaker / producteur'});tot();
+</script></body></html>
