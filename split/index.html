@@ -4,18 +4,18 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600&display=swap">
 <style>
 :root{--bg:#0b0704;--pan:#15110c;--ambre:#E89A2C;--dore:#D9B84A;--os:#E6DFCC;--gris:#9A968A;--filet:rgba(232,154,44,.45);--rouge:#E0603F}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(70% 50% at 50% 0%,#2a1707,var(--bg) 70%);color:var(--os);font:16px/1.5 Inter,Arial,sans-serif;min-height:100vh}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:radial-gradient(70% 50% at 50% 0%,#2a1707,var(--bg) 70%);color:var(--os);font:16px/1.5 Inter,Arial,sans-serif;min-height:100vh;min-height:100dvh}
 .w{max-width:860px;margin:0 auto;padding:28px 16px 60px}
 .sys{font:700 13px 'Courier New',monospace;letter-spacing:.1em;color:var(--ambre)}
 h1{font:400 clamp(40px,8vw,64px)/1 Anton;margin:10px 0 8px}h1 i{font-style:normal;color:var(--dore)}
 .lead{color:var(--os);opacity:.88;max-width:640px}
 .win{background:var(--pan);border:1px solid var(--filet);border-radius:14px;padding:18px;margin-top:18px}
 label{display:block;font:700 12px 'Courier New',monospace;letter-spacing:.08em;color:var(--gris);text-transform:uppercase;margin-bottom:4px}
-input,select{width:100%;background:#0e0b08;color:var(--os);border:1px solid #3a2c1c;border-radius:8px;padding:10px;font:500 15px Inter}
+input,select{width:100%;background:#0e0b08;color:var(--os);border:1px solid rgba(207,158,83,.22);border-radius:8px;padding:10px;font:500 15px Inter}
 input:focus,select:focus{outline:2px solid var(--ambre);border-color:transparent}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
-.row{display:grid;grid-template-columns:1.6fr 1.2fr .8fr .8fr 1.2fr 36px;gap:8px;align-items:end;padding:10px 0;border-bottom:1px solid #2a2016}
-.row button.x{background:none;border:1px solid #3a2c1c;color:var(--gris);border-radius:8px;height:42px;cursor:pointer}
+.row{display:grid;grid-template-columns:1.6fr 1.2fr .8fr .8fr 1.2fr 36px;gap:8px;align-items:end;padding:10px 0;border-bottom:1px solid rgba(207,158,83,.12)}
+.row button.x{background:none;border:1px solid rgba(207,158,83,.22);color:var(--gris);border-radius:8px;height:42px;cursor:pointer}
 .btn{font:400 20px Anton;letter-spacing:.03em;background:var(--ambre);color:#150B03;border:0;border-radius:10px;padding:12px 20px;cursor:pointer}
 .btn.ghost{background:transparent;color:var(--ambre);border:1px solid var(--filet)}
 .tot{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font:700 14px 'Courier New',monospace}.ok{color:#8fce7a}.ko{color:var(--rouge)}
