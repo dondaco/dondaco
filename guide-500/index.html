@@ -219,7 +219,7 @@ h1 span{color:var(--dore)!important}
     <div class="mile" id="mile" hidden><p id="miletxt"></p><a id="milelink" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener"></a></div>
     <form class="carry" id="carry" hidden><label for="carryIn">Tu avais déjà commencé avec le guide gratuit ? Reporte ton montant :</label><span><input id="carryIn" type="number" inputmode="numeric" min="0" placeholder="0"> € <button class="btn ghost" type="submit">OK</button> <button class="rien" type="button" id="carryNo">Rien à reporter</button></span></form>
 
-    <p class="note deal" id="deal" hidden>💸 De temps en temps, on fête dans nos vidéos le total gagné par toute la bande de la Donda Skool. Juste la somme de tout le monde : jamais ton nom, jamais ton montant.</p>
+    <p class="note deal" id="deal" hidden>💸 De temps en temps, on fête dans nos vidéos le total gagné par toute la bande de la DONDA⁺ Skool. Juste la somme de tout le monde : jamais ton nom, jamais ton montant.</p>
   </div>
   <section class="p2" id="p2" hidden aria-labelledby="t-p2">
     <div class="cel" id="cel" hidden role="status">
@@ -261,10 +261,10 @@ h1 span{color:var(--dore)!important}
   <section class="end">
     <h2>Remplir cette barre, ça se fait mieux à plusieurs.</h2>
     <p>Et si tu veux aller plus loin, je t'accompagne : on fait grandir ce que ta musique te rapporte, on concrétise ta carrière, et on part en résidence pour trouver ta DA.</p>
-    <p class="trkhint">Le parcours en 4 étapes, dans la Donda Skool : touche une étape pour voir ce qu'on y fait.</p>
+    <p class="trkhint">Le parcours en 4 étapes, dans la DONDA⁺ Skool : touche une étape pour voir ce qu'on y fait.</p>
     <div class="trk" id="trk" role="tablist" aria-label="Les 4 étapes"></div>
     <div class="stg" id="stg" role="tabpanel"></div>
-    <a class="cta" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener">Rejoindre gratuitement la Donda Skool</a>
+    <a class="cta" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener">Rejoindre gratuitement la DONDA⁺ Skool</a>
   </section>
 
   <div class="home">
@@ -337,7 +337,7 @@ h1 span{color:var(--dore)!important}
     $('wonmsg').hidden=TDB||!won;
     const m=$('mile');
     if(!TDB&&!won&&t>=250){m.hidden=false;$('miletxt').textContent='🔥 250 € ! Tu es à mi-chemin.';$('milelink').textContent='Viens assister à un appel du lundi ›'}
-    else if(!TDB&&!won&&t>=100){m.hidden=false;$('miletxt').textContent='🎯 100 € ! Tes premiers euros sont là.';$('milelink').textContent='Rejoins le Challenge 30 jours dans la Donda Skool ›'}
+    else if(!TDB&&!won&&t>=100){m.hidden=false;$('miletxt').textContent='🎯 100 € ! Tes premiers euros sont là.';$('milelink').textContent='Rejoins le Challenge 30 jours dans la DONDA⁺ Skool ›'}
     else m.hidden=true;
     document.querySelectorAll('.gwrap .lab[data-v]').forEach(l=>{const v=+l.dataset.v;l.classList.toggle('hit',t>=v);l.textContent=(t>=v?'✓ ':'')+v.toLocaleString('fr-BE')+' €'});
     $('plannote').hidden=won||p2;
@@ -418,7 +418,7 @@ h1 span{color:var(--dore)!important}
   function renderTrk(){ const t=$('trk'), p=$('stg'); if(!t||!ET.length){ if(t) t.closest('.end') && (t.hidden=p.hidden=true); return; } t.textContent='';
     ET.forEach((e,i)=>{ const b=document.createElement('button'); b.type='button'; b.setAttribute('role','tab'); b.setAttribute('aria-selected',String(i===tsel)); b.textContent=e.name; b.onclick=()=>{tsel=i;renderTrk();}; t.append(b); });
     const e=ET[tsel]; p.innerHTML='<b>'+esc(e.name)+'</b><p>'+esc(e.goal)+'</p>'; const ol=document.createElement('ol');
-    e.items.forEach(it=>{ const li=document.createElement('li'); li.textContent=it.do||it.t; const tag=it.cours?'Chapitre Donda Skool':it.appel?'Appel avec Donda':''; if(tag){const sp=document.createElement('span');sp.className='tagc';sp.textContent=tag;li.append(sp);} ol.append(li); }); p.append(ol); }
+    e.items.forEach(it=>{ const li=document.createElement('li'); li.textContent=it.do||it.t; const tag=it.cours?'Chapitre DONDA⁺ Skool':it.appel?'Appel avec Donda':''; if(tag){const sp=document.createElement('span');sp.className='tagc';sp.textContent=tag;li.append(sp);} ol.append(li); }); p.append(ol); }
   renderTrk();
   show(); window.__ready=true;
 
