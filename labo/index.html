@@ -344,7 +344,7 @@ h1,h2{color:var(--os)!important;text-shadow:none!important}
     <div class="join">
       <span class="k">> REC · POST · DROP · LIVE</span>
       <b id="apT">Du premier son fini à ta propre résidence.</b>
-      <p>Le parcours se vit dans la Donda Skool, la communauté gratuite de Donda : des cours pour chaque étape, des appels en groupe, et un suivi de ton avancée.</p>
+      <p>Le parcours se vit dans la DONDA⁺ Skool, la communauté gratuite de Donda : des cours pour chaque étape, des appels en groupe, et un suivi de ton avancée.</p>
       <p class="sm">Quand tu la rejoins, tu reçois ton tableau de bord artiste. Tu y coches ce que tu as fait ; à chaque étape réussie, Donda la valide avec toi et t'ouvre la suivante.</p>
     </div>
     <p class="here">> Tu es ici : REC · étape 1 sur 4. <span>Touche une étape pour voir son contenu.</span></p>
@@ -1310,7 +1310,7 @@ function loop(){ sizeCanvas(); checkOk(); try{ if(mod===modEQ){ if(built||!ac){ 
 /* =================================================================== */
 /*  VIEWS / ROUTING                                                    */
 /* =================================================================== */
-/* L'aperçu du parcours : REC se coche déjà ici (sur cet appareil) ; la dernière case de REC = rejoindre la Donda Skool et y poster sa démo. */
+/* L'aperçu du parcours : REC se coche déjà ici (sur cet appareil) ; la dernière case de REC = rejoindre la DONDA⁺ Skool et y poster sa démo. */
 const STAGES=window.ETAPES||[]; let pre={}; try{pre=JSON.parse(localStorage.getItem('labo_rec')||'{}')||{};}catch(e){}
 let apSel=0;
 function renderApercu(){
@@ -1322,11 +1322,11 @@ function renderApercu(){
     el.innerHTML=`<h2>${s.name}<small class="${i===0?'openk':'lockk'}">${i===0?'ouverte : tu y es déjà':'🔒 étape '+(i+1)}</small></h2><p>${s.goal}</p>`;
     const ol=document.createElement('ol'); ol.className='ssteps';
     s.items.forEach(it=>{ const li=document.createElement('li'); if(it.cle||it.appel) li.dataset.cle='1'; const sp=document.createElement('span'); sp.textContent=it.t;
-      if(it.cours){const c=document.createElement('a');c.className='cours';c.href=window.coursUrl(it.cours);c.target='_blank';c.rel='noopener';c.title='Ouvrir le chapitre dans la Donda Skool : plusieurs leçons, avec Donda';c.textContent='CHAPITRE DONDA SKOOL · '+it.cours+' ↗';c.addEventListener('click',e=>e.stopPropagation());sp.append(c);}
-      if(it.appel){const c=document.createElement('a');const seen=!!pre['vu_'+it.k];c.className='appel'+(seen?' vu':'');c.href=window.SKOOL_URL+'/calendar';c.target='_blank';c.rel='noopener';c.title='Ouvrir l\'agenda de la Donda Skool';c.textContent='APPEL AVEC DONDA · '+it.appel+(seen?' ✓':' ↗');
+      if(it.cours){const c=document.createElement('a');c.className='cours';c.href=window.coursUrl(it.cours);c.target='_blank';c.rel='noopener';c.title='Ouvrir le chapitre dans la DONDA⁺ Skool : plusieurs leçons, avec Donda';c.textContent='CHAPITRE DONDA⁺ SKOOL · '+it.cours+' ↗';c.addEventListener('click',e=>e.stopPropagation());sp.append(c);}
+      if(it.appel){const c=document.createElement('a');const seen=!!pre['vu_'+it.k];c.className='appel'+(seen?' vu':'');c.href=window.SKOOL_URL+'/calendar';c.target='_blank';c.rel='noopener';c.title='Ouvrir l\'agenda de la DONDA⁺ Skool';c.textContent='APPEL AVEC DONDA · '+it.appel+(seen?' ✓':' ↗');
         c.addEventListener('click',()=>{ if(!pre['vu_'+it.k]){ pre['vu_'+it.k]=1; try{localStorage.setItem('labo_rec',JSON.stringify(pre));}catch(e){} c.classList.add('vu'); c.textContent='APPEL AVEC DONDA · '+it.appel+' ✓'; } });sp.append(c);}
       if(it.hint){const h=document.createElement('small');h.className='hint';h.textContent=it.hint;sp.append(h);}
-      if(i===0&&it.join){ li.className='joinrow'; const a=document.createElement('a'); a.className='cta'; a.href=window.SKOOL_JOIN||window.SKOOL_URL; a.target='_blank'; a.rel='noopener'; a.textContent='Rejoindre la Donda Skool gratuitement et y poster ma démo ↗'; sp.append(a); const d=document.createElement('span'); d.className='dot'; d.setAttribute('aria-hidden','true'); li.append(d,sp); }
+      if(i===0&&it.join){ li.className='joinrow'; const a=document.createElement('a'); a.className='cta'; a.href=window.SKOOL_JOIN||window.SKOOL_URL; a.target='_blank'; a.rel='noopener'; a.textContent='Rejoindre la DONDA⁺ Skool gratuitement et y poster ma démo ↗'; sp.append(a); const d=document.createElement('span'); d.className='dot'; d.setAttribute('aria-hidden','true'); li.append(d,sp); }
       else if(i===0){ const lb=document.createElement('label'); lb.className='pc'; const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!pre[it.k];
         cb.addEventListener('change',()=>{ pre[it.k]=cb.checked; try{localStorage.setItem('labo_rec',JSON.stringify(pre));}catch(e){} li.classList.toggle('ok',cb.checked); });
         li.className=pre[it.k]?'ok':''; lb.append(cb,sp); li.append(lb); }
