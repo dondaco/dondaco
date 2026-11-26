@@ -157,11 +157,11 @@ h1,h2{color:var(--os)!important;text-shadow:none!important}
 <div class="dl"><a href="guide-eq-vocal.pdf" id="dlb" download>TÉLÉCHARGER LE PDF ↓</a></div>
 <section class="end">
   <h2>Bien régler ta voix, ça s’apprend mieux à plusieurs.</h2>
-  <p>Ce guide te donne la carte. Dans la Donda Skool, je t’apprends à mixer ta voix étape par étape, et on avance ensemble jusqu’à ton premier son fini.</p>
-  <p class="trkhint">Le parcours en 4 étapes, dans la Donda Skool : touche une étape pour voir ce qu’on y fait.</p>
+  <p>Ce guide te donne la carte. Dans la DONDA⁺ Skool, je t’apprends à mixer ta voix étape par étape, et on avance ensemble jusqu’à ton premier son fini.</p>
+  <p class="trkhint">Le parcours en 4 étapes, dans la DONDA⁺ Skool : touche une étape pour voir ce qu’on y fait.</p>
   <div class="trk" id="trk" role="tablist" aria-label="Les 4 étapes"></div>
   <div class="stg" id="stg" role="tabpanel"></div>
-  <a class="cta" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener">Rejoindre gratuitement la Donda Skool</a>
+  <a class="cta" href="https://www.skool.com/studio-virtuel-8936/about" target="_blank" rel="noopener">Rejoindre gratuitement la DONDA⁺ Skool</a>
 </section>
 <script src="etapes.js"></script>
 <script>
@@ -169,7 +169,7 @@ h1,h2{color:var(--os)!important;text-shadow:none!important}
 (function(){const f=document.getElementById('fit'),pg=f.firstElementChild;function fit(){if(matchMedia('print').matches){f.style.transform='';f.style.height='';return}const w=pg.offsetWidth,h=pg.offsetHeight,k=Math.min(1,document.documentElement.clientWidth/w);f.style.transform='scale('+k+')';f.style.height=(h*k)+'px';f.style.width=(w*k)+'px';f.style.margin='0 auto'}addEventListener('resize',fit);if(document.fonts)document.fonts.ready.then(fit);fit()})();
 (function(){let tsel=0;const ET=window.ETAPES||[],t=document.getElementById('trk'),p=document.getElementById('stg');const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  function r(){if(!ET.length){t.hidden=p.hidden=true;return}t.textContent='';ET.forEach((e,i)=>{const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(i===tsel));b.textContent=e.name;b.onclick=()=>{tsel=i;r()};t.append(b)});
- const e=ET[tsel];p.innerHTML='<b>'+esc(e.name)+'</b><p>'+esc(e.goal)+'</p>';const ol=document.createElement('ol');e.items.forEach(it=>{const li=document.createElement('li');li.textContent=it.do||it.t;const tag=it.cours?'Chapitre Donda Skool':it.appel?'Appel avec Donda':'';if(tag){const sp=document.createElement('span');sp.className='tagc';sp.textContent=tag;li.append(sp)}ol.append(li)});p.append(ol)}r()})();
+ const e=ET[tsel];p.innerHTML='<b>'+esc(e.name)+'</b><p>'+esc(e.goal)+'</p>';const ol=document.createElement('ol');e.items.forEach(it=>{const li=document.createElement('li');li.textContent=it.do||it.t;const tag=it.cours?'Chapitre DONDA⁺ Skool':it.appel?'Appel avec Donda':'';if(tag){const sp=document.createElement('span');sp.className='tagc';sp.textContent=tag;li.append(sp)}ol.append(li)});p.append(ol)}r()})();
 (async function(){const b=document.getElementById('dlb');try{const d=window.claude&&await window.claude.use('downloads');if(!d)return;b.addEventListener('click',async e=>{e.preventDefault();try{const blob=await (await fetch('guide-eq-vocal.pdf')).blob();await d.save({filename:'Guide EQ vocal - Dondacruz.pdf',data:blob});}catch(err){}});}catch(e){}})();
 </script>
 </body></html>
