@@ -1,18 +1,18 @@
 /* Les 4 étapes du parcours : SOURCE UNIQUE, partagée par le Labo (aperçu) et le tableau de bord artiste (cases à cocher).
-   Chaque case : k (identifiant, ne pas changer), t (texte), hint (explication), cours (cours STUDIO OS qui accompagne), cle (case mise en avant), appel (appel de groupe avec Donda), do (la même chose dite comme une action, pour « Ta prochaine action »), labo / join (liens). */
+   Chaque case : k (identifiant, ne pas changer), t (texte), hint (explication), cours (cours de la Donda Skool qui accompagne), cle (case mise en avant), appel (appel de groupe avec Donda), do (la même chose dite comme une action, pour « Ta prochaine action »), labo / join (liens). */
 window.SKOOL_URL='https://www.skool.com/studio-virtuel-8936';
 /* Lien pour REJOINDRE : toujours la page « À propos » (Skool donne un bonus de classement au trafic que le propriétaire y envoie). */
 window.SKOOL_JOIN=window.SKOOL_URL+'/about';
-/* Liens des chapitres STUDIO OS (à compléter avec les vrais liens ; sinon : l'onglet Classroom). */
+/* Liens des chapitres de la Donda Skool (à compléter avec les vrais liens ; sinon : l'onglet Classroom). */
 window.COURS_URL={};
 window.coursUrl=n=>(window.COURS_URL&&window.COURS_URL[n])||(window.SKOOL_URL+'/classroom');
 window.LABO_URL='https://dondaco.github.io/dondaco/labo/';
 window.ETAPES=[
  {id:'rec',name:'REC',goal:'Finir un son',items:[
    {k:'rec1',t:'Mon logiciel de musique est installé',do:'Installer un logiciel de musique',cours:'Installer ton logiciel'},
-   {k:'recl',t:'Je sais utiliser les 7 outils du Labo',do:'Apprendre les 7 outils du Labo',hint:'EQ, compression, saturation, reverb, delay, clipping, de-esser : les bases pour t\'enregistrer et te mixer. Tu préfères que Donda t\'explique ? Le chapitre est aussi dans STUDIO OS.',labo:true,cours:'Mixe tes propres sons'},
+   {k:'recl',t:'Je sais utiliser les 7 outils du Labo',do:'Apprendre les 7 outils du Labo',hint:'EQ, compression, saturation, reverb, delay, clipping, de-esser : les bases pour t\'enregistrer et te mixer. Tu préfères que Donda t\'explique ? Le chapitre est aussi dans la Donda Skool.',labo:true,cours:'Mixe tes propres sons'},
    {k:'rec2',t:'J\'ai fini une démo, du début à la fin',do:'Finir une démo, du début à la fin',hint:'C\'est le devoir de fin du chapitre mix : tu reçois le template et tu finis ta première démo.',cours:'Mixe tes propres sons'},
-   {k:'rec3',t:'J\'ai posté ma démo dans STUDIO OS',do:'Poster ta démo dans STUDIO OS',hint:'La communauté gratuite : tu y retrouves les cours, les autres artistes et Donda, qui écoute ta démo.',join:true}]},
+   {k:'rec3',t:'J\'ai posté ma démo dans la Donda Skool',do:'Poster ta démo dans la Donda Skool',hint:'La communauté gratuite : tu y retrouves les cours, les autres artistes et Donda, qui écoute ta démo.',join:true}]},
  {id:'loop',name:'POST',goal:'Poster régulièrement',items:[
    {k:'loop0',t:'J\'ai rejoint l\'appel de lancement POST',do:'Rejoindre l\'appel de lancement POST',appel:'Lancement',hint:'Donda organise tes 4 semaines avec toi : quoi poster, et quand.'},
    {k:'loopv',t:'J\'ai fini mon premier reel viral',do:'Finir ton premier reel viral',cours:'Viral TikTok & Reel'},
