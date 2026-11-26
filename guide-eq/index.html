@@ -56,7 +56,7 @@ footer a b{font-family:var(--display);font-weight:400;font-size:22px;color:var(-
 footer .pill{border:1.5px solid var(--accent);border-radius:999px;padding:5px 14px;color:var(--accent);font-family:var(--mono);font-size:12px;letter-spacing:.08em}
 footer .me{font-family:var(--mono);font-size:12px;letter-spacing:.1em}
 
-@media screen{html,body{overflow-x:hidden}body{min-height:100vh}.fit{transform-origin:0 0}.dl{display:flex;justify-content:center;padding:14px 16px 24px}.dl a{font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:8px 16px;text-decoration:none}.dl a:hover{background:rgba(255,154,31,.12)}}
+@media screen{html,body{overflow-x:hidden}body{min-height:100vh;min-height:100dvh}.fit{transform-origin:0 0}.dl{display:flex;justify-content:center;padding:14px 16px 24px}.dl a{font-family:var(--mono);font-size:13px;letter-spacing:.08em;color:var(--accent);border:1.5px solid var(--accent);border-radius:999px;padding:8px 16px;text-decoration:none}.dl a:hover{background:rgba(255,154,31,.12)}}
 .end{max-width:640px;margin:0 auto 40px;padding:18px;background:#21160b;border:1px solid var(--accent);border-radius:12px;display:grid;gap:12px;font-size:16px;line-height:1.55}
 .end h2{font-family:var(--display);font-weight:400;font-size:34px;margin:0;line-height:1;color:var(--fg)}
 .end>p{margin:0;color:var(--fg)}
@@ -87,7 +87,7 @@ footer .me{font-family:var(--mono);font-size:12px;letter-spacing:.1em}
   --mono:"Courier New",Courier,monospace;
   /* noms des pages existantes */
   --bg:#0b0603; --panel:#16120d; --card:#16120d; --screen:#100c08; --soft:#1d150b;
-  --line:#3b2e1b; --fg:#E6DFCC; --dim:#B4AA94; --muted:#B4AA94; --grey:#8C8676;
+  --line:rgba(207,158,83,.2); /* = #3b2e1b sur le panneau, mais se fond sur tous les fonds (astuce design 26/11) */ --fg:#E6DFCC; --dim:#B4AA94; --muted:#B4AA94; --grey:#8C8676;
   --amber:#E89A2C; --amber-soft:#F0B45A; --accent:#E89A2C; --accent2:#D9B84A; --accent-ink:#150B03; --ink:#150B03;
   --cut:#C4472E; --hot:#C4472E; --ok:#D9B84A; --okbg:#2a220c; --okbg2:#1d1709; --gauge-bg:#241a0e;
   --r:14px;
