@@ -172,7 +172,7 @@ button{font:inherit}
 .rail{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:2px}
 .rail .t{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.08em;padding:2px 8px}
 .rail .h{font-family:var(--display);font-size:26px;line-height:1;padding:0 8px 8px;color:var(--fg)}
-@media (max-width:860px){.rail{flex-direction:row;overflow-x:auto;align-items:center;gap:4px;scrollbar-width:thin}.rail .t,.rail .h{display:none}.rail .step{flex:0 0 auto;grid-template-columns:22px auto}.rail .step .lbl{min-width:max-content}}
+@media (max-width:860px){.rail{flex-direction:row;overflow-x:auto;align-items:center;gap:4px;scrollbar-width:thin;background:none;border-color:transparent;padding-inline:14px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 14px calc(100% - 14px),transparent);mask-image:linear-gradient(90deg,transparent,#000 14px calc(100% - 14px),transparent)}.rail .t,.rail .h{display:none}.rail .step{flex:0 0 auto;grid-template-columns:22px auto}.rail .step .lbl{min-width:max-content}}
 .step{all:unset;cursor:pointer;display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:center;padding:6px 8px;border-radius:4px;color:var(--dim);font-size:14px;white-space:nowrap}
 .step .num{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-family:var(--mono);font-size:11px}
 .step em{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.06em;border:1px solid var(--line);padding:0 4px;border-radius:2px;justify-self:start;color:var(--dim)}
@@ -266,7 +266,7 @@ footer{font-family:var(--mono);font-size:11px;color:var(--dim);border-top:1px so
   --mono:"Courier New",Courier,monospace;
   /* noms des pages existantes */
   --bg:#0b0603; --panel:#16120d; --card:#16120d; --screen:#100c08; --soft:#1d150b;
-  --line:#3b2e1b; --fg:#E6DFCC; --dim:#B4AA94; --muted:#B4AA94; --grey:#8C8676;
+  --line:rgba(207,158,83,.2); /* = #3b2e1b sur le panneau, mais se fond sur tous les fonds (astuce design 26/11) */ --fg:#E6DFCC; --dim:#B4AA94; --muted:#B4AA94; --grey:#8C8676;
   --amber:#E89A2C; --amber-soft:#F0B45A; --accent:#E89A2C; --accent2:#D9B84A; --accent-ink:#150B03; --ink:#150B03;
   --cut:#C4472E; --hot:#C4472E; --ok:#D9B84A; --okbg:#2a220c; --okbg2:#1d1709; --gauge-bg:#241a0e;
   --r:14px;
